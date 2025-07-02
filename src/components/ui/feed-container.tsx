@@ -12,13 +12,16 @@ interface Offer {
   date: string;
   discount: string;
   category: string;
-  image: string;
+  image?: string;
+  video?: string;
   flames: number;
   isLiked?: boolean;
 }
 
 interface FeedContainerProps {
   offers: Offer[];
+  hasGivenFlame?: boolean;
+  likedOffers?: Set<string>;
   onLike?: (id: string) => void;
   onBook?: (id: string) => void;
   className?: string;
@@ -26,6 +29,8 @@ interface FeedContainerProps {
 
 export function FeedContainer({ 
   offers, 
+  hasGivenFlame = false,
+  likedOffers = new Set(),
   onLike, 
   onBook, 
   className 
@@ -74,6 +79,8 @@ export function FeedContainer({
           >
             <OfferCard
               {...offer}
+              isLiked={likedOffers.has(offer.id)}
+              hasGivenFlame={hasGivenFlame}
               onLike={onLike}
               onBook={onBook}
             />

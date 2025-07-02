@@ -1,8 +1,10 @@
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Badge } from "./badge";
-import { Heart, MapPin, Clock, Calendar, Star } from "lucide-react";
+import { VideoPlayer } from "./video-player";
+import { Heart, MapPin, Clock, Calendar, Star, Play } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 interface OfferCardProps {
   id: string;
@@ -14,9 +16,11 @@ interface OfferCardProps {
   date: string;
   discount: string;
   category: string;
-  image: string;
+  image?: string;
+  video?: string;
   flames: number;
   isLiked?: boolean;
+  hasGivenFlame?: boolean;
   onLike?: (id: string) => void;
   onBook?: (id: string) => void;
   className?: string;
@@ -33,8 +37,10 @@ export function OfferCard({
   discount,
   category,
   image,
+  video,
   flames,
   isLiked = false,
+  hasGivenFlame = false,
   onLike,
   onBook,
   className
@@ -43,9 +49,14 @@ export function OfferCard({
   const [currentFlames, setCurrentFlames] = useState(flames);
 
   const handleLike = () => {
-    if (!liked) {
-      setLiked(true);
-      setCurrentFlames(prev => prev + 1);
+    if (!hasGivenFlame) {
+      if (!liked) {
+        setLiked(true);
+        setCurrentFlames(prev => prev + 1);
+      } else {
+        setLiked(false);
+        setCurrentFlames(prev => prev - 1);
+      }
       onLike?.(id);
     }
   };
@@ -60,13 +71,28 @@ export function OfferCard({
         className
       )}
     >
-      {/* Image with overlay */}
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img 
-          src={image} 
-          alt={title}
-          className="w-full h-full object-cover"
-        />
+      {/* Media with overlay */}
+      <Link to={`/offer/${id}`} className="relative aspect-[4/3] overflow-hidden block group">
+        {video ? (
+          <>
+            <VideoPlayer 
+              src={video}
+              poster={image}
+              className="w-full h-full"
+              autoPlay={true}
+              muted={true}
+            />
+            <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm rounded-full p-1">
+              <Play size={12} className="text-white" />
+            </div>
+          </>
+        ) : (
+          <img 
+            src={image} 
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
         
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -97,7 +123,7 @@ export function OfferCard({
           />
           <span className="text-white text-sm font-medium">{currentFlames}</span>
         </div>
-      </div>
+      </Link>
 
       {/* Content */}
       <div className="p-4">
@@ -142,12 +168,14 @@ export function OfferCard({
               variant="outline"
               size="sm"
               onClick={handleLike}
-              disabled={liked}
+              disabled={hasGivenFlame && !liked}
               className={cn(
                 "flex-1 transition-all duration-300",
                 liked 
                   ? "bg-flame/10 border-flame text-flame" 
-                  : "hover:bg-flame/10 hover:border-flame hover:text-flame"
+                  : hasGivenFlame 
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-flame/10 hover:border-flame hover:text-flame"
               )}
             >
               <Heart 
@@ -157,16 +185,17 @@ export function OfferCard({
                   liked && "fill-current"
                 )} 
               />
-              {liked ? "Flammé!" : "Flamme"}
+              {liked ? "Retirer" : hasGivenFlame ? "Déjà flammé" : "Flamme"}
             </Button>
             
-            <Button
-              size="sm"
-              onClick={() => onBook?.(id)}
-              className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity duration-300"
-            >
-              Réserver
-            </Button>
+            <Link to={`/booking/${id}`} className="flex-1">
+              <Button
+                size="sm"
+                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity duration-300"
+              >
+                Réserver
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

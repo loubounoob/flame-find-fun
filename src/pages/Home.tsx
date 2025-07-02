@@ -18,6 +18,7 @@ const mockOffers = [
     discount: "Une partie gratuite",
     category: "Bowling",
     image: "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop",
+    video: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
     flames: 247,
     isLiked: false
   },
@@ -45,7 +46,7 @@ const mockOffers = [
     date: "Vendredi",
     discount: "Salon gratuit",
     category: "Karaoké",
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+    video: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
     flames: 156,
     isLiked: false
   },
@@ -73,7 +74,7 @@ const mockOffers = [
     date: "Dimanche",
     discount: "2h pour le prix d'1h",
     category: "Billard",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
+    image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800&h=600&fit=crop",
     flames: 92,
     isLiked: false
   }
@@ -81,12 +82,16 @@ const mockOffers = [
 
 export default function Home() {
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [flamesUsed, setFlamesUsed] = useState(0);
+  const [hasGivenFlame, setHasGivenFlame] = useState(false);
+  const [likedOffers, setLikedOffers] = useState<Set<string>>(new Set());
 
   const handleLike = (offerId: string) => {
-    if (flamesUsed < 1) {
-      setFlamesUsed(prev => prev + 1);
-      console.log(`Liked offer: ${offerId}`);
+    if (!hasGivenFlame) {
+      setHasGivenFlame(true);
+      setLikedOffers(new Set([offerId]));
+    } else if (likedOffers.has(offerId)) {
+      setHasGivenFlame(false);
+      setLikedOffers(new Set());
     }
   };
 
@@ -115,7 +120,7 @@ export default function Home() {
             <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
               <Zap size={14} className="text-white" />
               <span className="text-white text-sm font-semibold">
-                {1 - flamesUsed} flamme{1 - flamesUsed !== 1 ? 's' : ''}
+                {hasGivenFlame ? 0 : 1} flamme{hasGivenFlame ? 's' : ''}
               </span>
             </div>
             
@@ -206,6 +211,8 @@ export default function Home() {
       {/* Main Feed */}
       <FeedContainer 
         offers={mockOffers}
+        hasGivenFlame={hasGivenFlame}
+        likedOffers={likedOffers}
         onLike={handleLike}
         onBook={handleBook}
       />
