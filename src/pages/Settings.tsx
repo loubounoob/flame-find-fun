@@ -16,12 +16,15 @@ import {
   MapPin,
   Smartphone,
   Volume2,
-  Vibrate
+  Vibrate,
+  Edit,
+  User
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(true);
@@ -31,7 +34,24 @@ export default function Settings() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoPlay, setAutoPlay] = useState(false);
   const [dataUsage, setDataUsage] = useState("wifi");
+  const [user, setUser] = useState(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleExportData = () => {
     toast({
@@ -72,6 +92,26 @@ export default function Settings() {
       </header>
 
       <div className="p-4 space-y-6">
+        {/* Profile Section - Only if logged in */}
+        {user && (
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User size={20} />
+                Profil
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link to="/profile/edit">
+                <Button variant="outline" className="w-full justify-start">
+                  <Edit className="mr-3" size={16} />
+                  Modifier mon profil
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Appearance */}
         <Card className="bg-gradient-card border-border/50">
           <CardHeader>

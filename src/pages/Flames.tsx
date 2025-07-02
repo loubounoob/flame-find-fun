@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Heart, Trophy, Zap, Star, TrendingUp, Award } from "lucide-react";
+import { Heart, Trophy, Zap, Star, TrendingUp, Award, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { BottomNav } from "@/components/ui/bottom-nav";
+import { useToast } from "@/hooks/use-toast";
 
 const stats = {
   totalFlames: 247,
@@ -14,7 +17,7 @@ const stats = {
   totalUsers: 2847
 };
 
-const likedOffers = [
+const initialLikedOffers = [
   {
     id: "liked-1",
     title: "Bowling Party 🎳",
@@ -57,6 +60,17 @@ const achievements = [
 ];
 
 export default function Flames() {
+  const [likedOffers, setLikedOffers] = useState(initialLikedOffers);
+  const { toast } = useToast();
+
+  const removeFlame = (offerId: string) => {
+    setLikedOffers(prev => prev.filter(offer => offer.id !== offerId));
+    toast({
+      title: "Flamme retirée",
+      description: "Tu as retiré ta flamme de cette offre.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -173,16 +187,31 @@ export default function Flames() {
                         />
                         <div className="flex-1 p-4">
                           <div className="flex items-start justify-between">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold text-foreground">{offer.title}</h3>
                               <p className="text-sm text-muted-foreground">{offer.business}</p>
                               <p className="text-xs text-muted-foreground mt-1">
                                 Flammé {offer.myFlameDate}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Heart size={14} className="text-flame fill-current" />
-                              <span className="text-sm font-medium">{offer.flames}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Heart size={14} className="text-flame fill-current" />
+                                <span className="text-sm font-medium">{offer.flames}</span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  removeFlame(offer.id);
+                                }}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Minus size={12} className="mr-1" />
+                                Retirer
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -210,6 +239,8 @@ export default function Flames() {
           )}
         </section>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

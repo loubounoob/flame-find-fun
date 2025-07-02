@@ -70,7 +70,23 @@ export default function Notifications() {
     premium: true
   });
 
-  const [notificationList, setNotificationList] = useState(notifications);
+  const [notificationList, setNotificationList] = useState(
+    notifications.sort((a, b) => {
+      // Sort by read status first (unread first), then by time (most recent first)
+      if (a.read !== b.read) {
+        return a.read ? 1 : -1;
+      }
+      // For time comparison, we'll use a simple heuristic based on the time strings
+      const timeToMinutes = (timeStr) => {
+        if (timeStr.includes('minutes')) return parseInt(timeStr);
+        if (timeStr.includes('heure')) return parseInt(timeStr) * 60;
+        if (timeStr.includes('Hier')) return 24 * 60;
+        if (timeStr.includes('jours')) return parseInt(timeStr) * 24 * 60;
+        return 0;
+      };
+      return timeToMinutes(a.time) - timeToMinutes(b.time);
+    })
+  );
 
   const markAsRead = (id: number) => {
     setNotificationList(prev => 

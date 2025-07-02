@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,8 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
+  const [accountType, setAccountType] = useState("student");
+  const [companyName, setCompanyName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -25,7 +28,13 @@ export default function Auth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        navigate("/");
+        // Redirect based on user type stored in metadata
+        const userType = session.user.user_metadata?.account_type;
+        if (userType === "business") {
+          navigate("/business-dashboard");
+        } else {
+          navigate("/");
+        }
       }
     });
 
@@ -33,7 +42,12 @@ export default function Auth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        navigate("/");
+        const userType = session.user.user_metadata?.account_type;
+        if (userType === "business") {
+          navigate("/business-dashboard");
+        } else {
+          navigate("/");
+        }
       }
     });
 
@@ -91,7 +105,9 @@ export default function Auth() {
           emailRedirectTo: redirectUrl,
           data: {
             first_name: firstName,
-            last_name: lastName
+            last_name: lastName,
+            account_type: accountType,
+            company_name: accountType === "business" ? companyName : null
           }
         }
       });
@@ -200,39 +216,80 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first-name">Prénom</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="account-type">Type de compte</Label>
+                    <Select value={accountType} onValueChange={setAccountType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisis ton type de compte" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">
+                          <div className="flex items-center gap-2">
+                            <User size={16} />
+                            Étudiant
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="business">
+                          <div className="flex items-center gap-2">
+                            <Building size={16} />
+                            Entreprise
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {accountType === "business" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="company-name">Nom de l'entreprise</Label>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="company-name"
+                          placeholder="Mon Entreprise"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first-name">{accountType === "business" ? "Prénom du contact" : "Prénom"}</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="first-name"
+                          placeholder="Alex"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last-name">{accountType === "business" ? "Nom du contact" : "Nom"}</Label>
                       <Input
-                        id="first-name"
-                        placeholder="Alex"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="pl-10"
+                        id="last-name"
+                        placeholder="Dubois"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last-name">Nom</Label>
-                    <Input
-                      id="last-name"
-                      placeholder="Dubois"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email étudiant</Label>
+                  <Label htmlFor="signup-email">{accountType === "business" ? "Email professionnel" : "Email étudiant"}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="votre.email@etudiant.univ-lyon1.fr"
+                      placeholder={accountType === "business" ? "contact@entreprise.com" : "votre.email@etudiant.univ-lyon1.fr"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -266,7 +323,7 @@ export default function Auth() {
 
                 <Button 
                   onClick={signUp} 
-                  disabled={loading || !email || !password || !firstName || !lastName}
+                  disabled={loading || !email || !password || !firstName || !lastName || (accountType === "business" && !companyName)}
                   className="w-full bg-gradient-primary hover:opacity-90"
                 >
                   {loading ? "Inscription..." : "S'inscrire"}
