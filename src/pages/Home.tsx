@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Star, Zap } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -124,12 +125,14 @@ export default function Home() {
               </span>
             </div>
             
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell size={20} />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-flame text-white text-xs p-0 flex items-center justify-center">
-                3
-              </Badge>
-            </Button>
+            <Link to="/notifications">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell size={20} />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-flame text-white text-xs p-0 flex items-center justify-center">
+                  3
+                </Badge>
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -154,15 +157,16 @@ export default function Home() {
               </p>
               
               {!isSubscribed && (
-                <Button 
-                  variant="premium" 
-                  size="lg"
-                  className="animate-bounce-in"
-                  onClick={() => setIsSubscribed(true)}
-                >
-                  <Star className="mr-2" size={18} />
-                  S'abonner - 20€/mois
-                </Button>
+                <Link to="/subscription">
+                  <Button 
+                    variant="premium" 
+                    size="lg"
+                    className="animate-bounce-in"
+                  >
+                    <Star className="mr-2" size={18} />
+                    S'abonner - 20€/mois
+                  </Button>
+                </Link>
               )}
             </div>
           </div>
@@ -197,13 +201,14 @@ export default function Home() {
             <p className="text-white/90 text-sm mb-3">
               Tu peux voir les offres mais pas les réserver. Abonne-toi pour débloquer toutes les activités !
             </p>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              onClick={() => setIsSubscribed(true)}
-            >
-              Découvrir l'abonnement
-            </Button>
+            <Link to="/subscription">
+              <Button 
+                variant="secondary" 
+                size="sm"
+              >
+                Découvrir l'abonnement
+              </Button>
+            </Link>
           </div>
         </section>
       )}

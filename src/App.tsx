@@ -11,6 +11,11 @@ import Profile from "./pages/Profile";
 import OfferDetail from "./pages/OfferDetail";
 import Booking from "./pages/Booking";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import ProfileEdit from "./pages/ProfileEdit";
+import Subscription from "./pages/Subscription";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +33,11 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/offer/:id" element={<OfferDetail />} />
           <Route path="/booking/:id" element={<Booking />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/profile/edit" element={<ProfileEdit />} />
+          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
