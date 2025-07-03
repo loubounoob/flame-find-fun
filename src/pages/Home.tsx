@@ -1,11 +1,17 @@
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { OfferCard } from "@/components/ui/offer-card";
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Star, Zap } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -83,109 +89,120 @@ const mockOffers = [
 ];
 
 export default function Home() {
+  const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [hasGivenFlame, setHasGivenFlame] = useState(false);
   const [likedOffers, setLikedOffers] = useState<Set<string>>(new Set());
-  const [offers, setOffers] = useState(mockOffers);
-  const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    checkAuth();
-    loadOffers();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user || null);
-  };
-
-  const loadOffers = async () => {
-    try {
-      const { data: offersData, error } = await supabase
-        .from('offers')
-        .select(`
-          *,
-          flames_count:flames(count)
-        `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
+  const { data: offers = [], isLoading } = useQuery({
+    queryKey: ["offers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
+      return data;
+    },
+  });
 
-      const formattedOffers = offersData?.map(offer => ({
-        id: offer.id,
-        title: offer.title,
-        business: "Entreprise", // TODO: Join with profiles
-        description: offer.description,
-        location: offer.location,
-        timeSlot: "À définir", // TODO: Add time slots
-        date: "Disponible",
-        discount: offer.price || "Gratuit",
-        category: offer.category,
-        image: offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop",
-        video: offer.video_url,
-        flames: offer.flames_count?.[0]?.count || 0,
-        isLiked: false
-      })) || [];
+  const { data: userFlames = [] } = useQuery({
+    queryKey: ["userFlames", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("flames")
+        .select("offer_id")
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      return data.map(flame => flame.offer_id);
+    },
+    enabled: !!user,
+  });
 
-      // Combine with mock data for now
-      setOffers([...formattedOffers, ...mockOffers]);
-    } catch (error) {
-      console.error('Error loading offers:', error);
-      setOffers(mockOffers);
-    }
-  };
+  const { data: flamesCounts = {} } = useQuery({
+    queryKey: ["flamesCounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("flames")
+        .select("offer_id");
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data.forEach(flame => {
+        counts[flame.offer_id] = (counts[flame.offer_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
 
-  const handleLike = async (offerId: string) => {
-    if (!user) {
-      alert("Connecte-toi pour donner des flammes ! 🔥");
-      return;
-    }
+  const toggleFlameMutation = useMutation({
+    mutationFn: async ({ offerId, isLiked }: { offerId: string; isLiked: boolean }) => {
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
 
-    try {
-      if (likedOffers.has(offerId)) {
+      if (isLiked) {
         // Remove flame
         const { error } = await supabase
-          .from('flames')
+          .from("flames")
           .delete()
-          .eq('user_id', user.id)
-          .eq('offer_id', offerId);
-
+          .eq("user_id", user.id)
+          .eq("offer_id", offerId);
+        
         if (error) throw error;
-
-        setLikedOffers(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(offerId);
-          return newSet;
-        });
       } else {
         // Add flame
         const { error } = await supabase
-          .from('flames')
+          .from("flames")
           .insert({
             user_id: user.id,
-            offer_id: offerId
+            offer_id: offerId,
           });
-
+        
         if (error) throw error;
-
-        setLikedOffers(prev => new Set([...prev, offerId]));
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userFlames"] });
+      queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
+      toast({
+        title: "Flamme mise à jour !",
+        description: "Votre flamme a été enregistrée.",
+      });
+    },
+    onError: (error: any) => {
+      if (error.message?.includes("duplicate key")) {
+        toast({
+          title: "Déjà flammé !",
+          description: "Vous avez déjà donné une flamme à cette offre.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors de la mise à jour de la flamme.",
+          variant: "destructive",
+        });
+      }
+    },
+  });
 
-      // Update local offer count
-      setOffers(prev => prev.map(offer => 
-        offer.id === offerId 
-          ? { 
-              ...offer, 
-              flames: likedOffers.has(offerId) ? offer.flames - 1 : offer.flames + 1 
-            }
-          : offer
-      ));
-    } catch (error) {
-      console.error('Error handling flame:', error);
-      alert("Erreur lors de l'ajout de la flamme. Réessaie plus tard.");
-    }
+  const handleLike = (offerId: string) => {
+    toggleFlameMutation.mutate({ 
+      offerId, 
+      isLiked: userFlames.includes(offerId) 
+    });
   };
 
   const handleBook = (offerId: string) => {
@@ -306,13 +323,28 @@ export default function Home() {
       )}
 
       {/* Main Feed */}
-      <FeedContainer 
-        offers={offers}
-        hasGivenFlame={hasGivenFlame}
-        likedOffers={likedOffers}
-        onLike={handleLike}
-        onBook={handleBook}
-      />
+      <section className="p-4 space-y-4">
+        {offers.map((offer) => (
+          <OfferCard
+            key={offer.id}
+            id={offer.id}
+            title={offer.title}
+            business="Business Name" // TODO: Add business relation
+            description={offer.description}
+            location={offer.location}
+            timeSlot="16h00 - 18h00" // TODO: Add time fields
+            date="Aujourd'hui" // TODO: Add date fields
+            discount="Offre spéciale" // TODO: Add discount field
+            category={offer.category}
+            image={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"}
+            video={offer.video_url}
+            flames={flamesCounts[offer.id] || 0}
+            isLiked={userFlames.includes(offer.id)}
+            hasGivenFlame={userFlames.includes(offer.id)}
+            onLike={handleLike}
+          />
+        ))}
+      </section>
     </div>
   );
 }
