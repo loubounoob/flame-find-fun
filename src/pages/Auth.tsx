@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building, Camera } from "lucide-react";
+import { generateInitialsAvatar } from "@/utils/avatarUtils";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ export default function Auth() {
   const [user, setUser] = useState(null);
   const [accountType, setAccountType] = useState("student");
   const [companyName, setCompanyName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -98,6 +100,8 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
+      const finalAvatarUrl = avatarUrl || generateInitialsAvatar(firstName, lastName);
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -107,6 +111,7 @@ export default function Auth() {
             first_name: firstName,
             last_name: lastName,
             account_type: accountType,
+            avatar_url: finalAvatarUrl,
             company_name: accountType === "business" ? companyName : null
           }
         }
@@ -280,6 +285,24 @@ export default function Auth() {
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="avatar-url">Photo de profil (optionnel)</Label>
+                  <div className="relative">
+                    <Camera className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="avatar-url"
+                      type="url"
+                      placeholder="https://..."
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Si aucune photo n'est fournie, un avatar avec tes initiales sera créé automatiquement.
+                  </p>
                 </div>
 
                 <div className="space-y-2">

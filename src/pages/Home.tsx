@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Star, Zap } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -85,14 +86,105 @@ export default function Home() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [hasGivenFlame, setHasGivenFlame] = useState(false);
   const [likedOffers, setLikedOffers] = useState<Set<string>>(new Set());
+  const [offers, setOffers] = useState(mockOffers);
+  const [user, setUser] = useState(null);
 
-  const handleLike = (offerId: string) => {
-    if (!hasGivenFlame) {
-      setHasGivenFlame(true);
-      setLikedOffers(new Set([offerId]));
-    } else if (likedOffers.has(offerId)) {
-      setHasGivenFlame(false);
-      setLikedOffers(new Set());
+  useEffect(() => {
+    checkAuth();
+    loadOffers();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || null);
+  };
+
+  const loadOffers = async () => {
+    try {
+      const { data: offersData, error } = await supabase
+        .from('offers')
+        .select(`
+          *,
+          flames_count:flames(count)
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      const formattedOffers = offersData?.map(offer => ({
+        id: offer.id,
+        title: offer.title,
+        business: "Entreprise", // TODO: Join with profiles
+        description: offer.description,
+        location: offer.location,
+        timeSlot: "À définir", // TODO: Add time slots
+        date: "Disponible",
+        discount: offer.price || "Gratuit",
+        category: offer.category,
+        image: offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop",
+        video: offer.video_url,
+        flames: offer.flames_count?.[0]?.count || 0,
+        isLiked: false
+      })) || [];
+
+      // Combine with mock data for now
+      setOffers([...formattedOffers, ...mockOffers]);
+    } catch (error) {
+      console.error('Error loading offers:', error);
+      setOffers(mockOffers);
+    }
+  };
+
+  const handleLike = async (offerId: string) => {
+    if (!user) {
+      alert("Connecte-toi pour donner des flammes ! 🔥");
+      return;
+    }
+
+    try {
+      if (likedOffers.has(offerId)) {
+        // Remove flame
+        const { error } = await supabase
+          .from('flames')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('offer_id', offerId);
+
+        if (error) throw error;
+
+        setLikedOffers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(offerId);
+          return newSet;
+        });
+      } else {
+        // Add flame
+        const { error } = await supabase
+          .from('flames')
+          .insert({
+            user_id: user.id,
+            offer_id: offerId
+          });
+
+        if (error) throw error;
+
+        setLikedOffers(prev => new Set([...prev, offerId]));
+      }
+
+      // Update local offer count
+      setOffers(prev => prev.map(offer => 
+        offer.id === offerId 
+          ? { 
+              ...offer, 
+              flames: likedOffers.has(offerId) ? offer.flames - 1 : offer.flames + 1 
+            }
+          : offer
+      ));
+    } catch (error) {
+      console.error('Error handling flame:', error);
+      alert("Erreur lors de l'ajout de la flamme. Réessaie plus tard.");
     }
   };
 
@@ -215,7 +307,7 @@ export default function Home() {
 
       {/* Main Feed */}
       <FeedContainer 
-        offers={mockOffers}
+        offers={offers}
         hasGivenFlame={hasGivenFlame}
         likedOffers={likedOffers}
         onLike={handleLike}

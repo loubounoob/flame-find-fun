@@ -55,27 +55,34 @@ export default function BusinessDashboard() {
   };
 
   const loadOffers = async () => {
-    // Mock data for now
-    setOffers([
-      {
-        id: 1,
-        title: "Escape Game Mystery",
-        category: "Divertissement",
-        price: "15€",
-        flames: 45,
-        bookings: 12,
-        status: "active"
-      },
-      {
-        id: 2,
-        title: "Cours de cuisine italienne",
-        category: "Formation",
-        price: "25€",
-        flames: 23,
-        bookings: 8,
-        status: "active"
-      }
-    ]);
+    if (!user) return;
+
+    try {
+      const { data: offersData, error } = await supabase
+        .from('offers')
+        .select(`
+          *,
+          flames_count:flames(count)
+        `)
+        .eq('business_user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedOffers = offersData?.map(offer => ({
+        id: offer.id,
+        title: offer.title,
+        category: offer.category,
+        price: offer.price || 'Gratuit',
+        flames: offer.flames_count?.[0]?.count || 0,
+        bookings: 0, // TODO: Implement bookings
+        status: offer.status
+      })) || [];
+
+      setOffers(formattedOffers);
+    } catch (error) {
+      console.error('Error loading offers:', error);
+    }
   };
 
   const handleLogout = async () => {
@@ -84,23 +91,50 @@ export default function BusinessDashboard() {
   };
 
   const createOffer = async () => {
-    // Here you would create the offer in the database
-    toast({
-      title: "Offre créée",
-      description: "Votre offre a été créée avec succès !",
-    });
-    setShowCreateForm(false);
-    setFormData({
-      title: "",
-      description: "",
-      category: "",
-      price: "",
-      location: "",
-      max_participants: "",
-      image_url: "",
-      video_url: ""
-    });
-    loadOffers();
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .insert({
+          business_user_id: user.id,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          price: formData.price,
+          location: formData.location,
+          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+          image_url: formData.image_url || null,
+          video_url: formData.video_url || null
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Offre créée",
+        description: "Votre offre a été créée avec succès !",
+      });
+      
+      setShowCreateForm(false);
+      setFormData({
+        title: "",
+        description: "",
+        category: "",
+        price: "",
+        location: "",
+        max_participants: "",
+        image_url: "",
+        video_url: ""
+      });
+      
+      loadOffers();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer l'offre. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!user) {
