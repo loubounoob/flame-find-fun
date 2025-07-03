@@ -6,27 +6,127 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Camera, Save } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 export default function ProfileEdit() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
-    firstName: "Alex",
-    lastName: "Dubois",
-    email: "alex.dubois@etudiant.univ-lyon1.fr",
-    bio: "Étudiant en informatique passionné d'activités ludiques !",
-    location: "Lyon, France",
-    university: "Université Claude Bernard Lyon 1",
-    studyLevel: "Master 1",
-    birthDate: "2001-05-15",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+    firstName: "",
+    lastName: "",
+    email: "",
+    bio: "",
+    location: "",
+    university: "",
+    studyLevel: "",
+    birthDate: "",
+    avatar: ""
   });
 
-  const handleSave = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      
+      setUser(session.user);
+      
+      // Load existing profile data
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileData) {
+        setProfile({
+          firstName: profileData.first_name || "",
+          lastName: profileData.last_name || "",
+          email: profileData.email || session.user.email || "",
+          bio: profileData.bio || "",
+          location: profileData.location || "",
+          university: profileData.university || "",
+          studyLevel: profileData.study_level || "",
+          birthDate: profileData.birth_date || "",
+          avatar: profileData.avatar_url || ""
+        });
+      } else {
+        // Create profile if it doesn't exist
+        setProfile(prev => ({ ...prev, email: session.user.email || "" }));
+      }
+      
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    
+    setSaving(true);
     console.log("Saving profile:", profile);
-    // Here you would save to Supabase
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          first_name: profile.firstName,
+          last_name: profile.lastName,
+          email: profile.email,
+          bio: profile.bio,
+          location: profile.location,
+          university: profile.university,
+          study_level: profile.studyLevel,
+          birth_date: profile.birthDate || null,
+          avatar_url: profile.avatar
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Profil sauvegardé",
+        description: "Tes modifications ont été enregistrées avec succès!",
+      });
+
+      navigate('/profile');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder le profil. Réessaye plus tard.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement du profil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -182,11 +282,12 @@ export default function ProfileEdit() {
         {/* Save Button */}
         <Button 
           onClick={handleSave}
+          disabled={saving}
           className="w-full bg-gradient-primary hover:opacity-90"
           size="lg"
         >
           <Save className="mr-2" size={20} />
-          Sauvegarder les modifications
+          {saving ? "Sauvegarde en cours..." : "Sauvegarder les modifications"}
         </Button>
       </div>
 

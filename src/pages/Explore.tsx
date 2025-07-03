@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, MapPin, Clock, Star, Filter } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 const categories = [
   { name: "Bowling", count: 12, icon: "🎳" },
@@ -157,6 +158,8 @@ export default function Explore() {
           </div>
         </section>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

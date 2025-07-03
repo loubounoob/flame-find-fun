@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { 
-  User, 
+  User as UserIcon, 
   MapPin, 
   Calendar, 
   Star, 
@@ -16,23 +16,27 @@ import {
   LogOut,
   Edit3
 } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { BottomNav } from "@/components/ui/bottom-nav";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import type { User } from "@supabase/supabase-js";
 
-const userProfile = {
-  name: "Alex Dubois",
-  email: "alex.dubois@etudiant.univ-lyon1.fr",
-  avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-  location: "Lyon, France",
-  joinDate: "Septembre 2024",
-  subscription: "Premium Étudiant",
+interface UserProfile {
+  name: string;
+  email: string;
+  avatar: string;
+  location: string;
+  joinDate: string;
+  subscription: string;
   stats: {
-    flamesToday: 12,
-    totalFlames: 247,
-    offersBooked: 18,
-    rating: 4.8
-  }
-};
+    flamesToday: number;
+    totalFlames: number;
+    offersBooked: number;
+    rating: number;
+  };
+}
 
 const menuItems = [
   { icon: Edit3, label: "Modifier le profil", href: "/profile/edit" },
@@ -42,12 +46,97 @@ const menuItems = [
 ];
 
 export default function Profile() {
-  const [isSubscribed, setIsSubscribed] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    // Logique de déconnexion
-    console.log("Logout");
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      
+      setUser(session.user);
+      
+      // Load profile data
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileData) {
+        setUserProfile({
+          name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim(),
+          email: profileData.email || session.user.email || '',
+          avatar: profileData.avatar_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+          location: profileData.location || "Lyon, France",
+          joinDate: new Date(profileData.created_at).toLocaleDateString('fr-FR', { 
+            month: 'long', 
+            year: 'numeric' 
+          }),
+          subscription: "Premium Étudiant",
+          stats: {
+            flamesToday: 12,
+            totalFlames: 247,
+            offersBooked: 18,
+            rating: 4.8
+          }
+        });
+      } else {
+        // Default profile if no data exists
+        setUserProfile({
+          name: session.user.email?.split('@')[0] || 'Utilisateur',
+          email: session.user.email || '',
+          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+          location: "Lyon, France",
+          joinDate: new Date().toLocaleDateString('fr-FR', { 
+            month: 'long', 
+            year: 'numeric' 
+          }),
+          subscription: "Premium Étudiant",
+          stats: {
+            flamesToday: 0,
+            totalFlames: 0,
+            offersBooked: 0,
+            rating: 0
+          }
+        });
+      }
+      
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt sur FlameUp!",
+      });
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
+
+  if (loading || !userProfile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement du profil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -175,6 +264,8 @@ export default function Profile() {
           FlameUp v1.0.0 • Made with 🔥 for students
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
