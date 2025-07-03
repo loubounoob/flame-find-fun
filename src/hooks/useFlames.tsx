@@ -82,6 +82,12 @@ export function useFlames() {
     }
 
     try {
+      // Si l'utilisateur a déjà donné sa flamme à cette offre, on la retire
+      if (dailyFlame.offer_id === offerId) {
+        return await removeFlame();
+      }
+
+      // Sinon, on donne la flamme à cette offre (retire automatiquement de l'autre)
       const { error } = await supabase
         .from('user_flames_daily')
         .update({ offer_id: offerId })

@@ -169,14 +169,11 @@ export function OfferCard({
               variant="outline"
               size="sm"
               onClick={handleLike}
-              disabled={hasGivenFlame && !liked}
               className={cn(
                 "flex-1 transition-all duration-300",
                 liked 
                   ? "bg-flame/10 border-flame text-flame" 
-                  : hasGivenFlame 
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-flame/10 hover:border-flame hover:text-flame"
+                  : "hover:bg-flame/10 hover:border-flame hover:text-flame"
               )}
             >
               <Flame 
@@ -187,7 +184,7 @@ export function OfferCard({
                   "hover:scale-110 hover:animate-flame-glow"
                 )} 
               />
-              {liked ? "Retirer" : hasGivenFlame ? "Déjà flammé" : "Flamme"}
+              {liked ? "Retirer" : "Flamme"}
             </Button>
             
             <Link to={`/booking/${id}`} className="flex-1">

@@ -5,6 +5,9 @@ import { MapPin, Navigation, Filter, List, Heart, Flame } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
+import { MapboxMap } from "@/components/ui/mapbox-map";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const nearbyOffers = [
   {
@@ -46,20 +49,22 @@ export default function Map() {
   const [showList, setShowList] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error("Erreur de géolocalisation:", error);
-        }
-      );
-    }
+  // Récupérer les vraies offres depuis Supabase
+  const { data: offers = [] } = useQuery({
+    queryKey: ["offers-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("status", "active");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleLocationUpdate = (location: { lat: number; lng: number }) => {
+    setUserLocation(location);
   };
 
   return (
@@ -81,89 +86,43 @@ export default function Map() {
         </div>
         
         <div className="mt-3 flex gap-2">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={getCurrentLocation}
-            className="flex-1"
-          >
-            <Navigation size={16} className="mr-2" />
-            Ma position
-          </Button>
-          <Badge variant="secondary" className="px-3 py-1">
-            {nearbyOffers.length} offres près de toi
+          <Badge variant="secondary" className="px-3 py-1 flex-1 justify-center">
+            {offers.length} offres disponibles
           </Badge>
+          {userLocation && (
+            <Badge variant="outline" className="px-3 py-1">
+              Position active
+            </Badge>
+          )}
         </div>
       </header>
 
       <div className="relative h-[calc(100vh-180px)]">
-        {/* Map Placeholder */}
-        <div className="w-full h-full bg-gradient-to-br from-muted/20 to-muted/40 flex items-center justify-center relative overflow-hidden">
-          {/* Map pins */}
-          {nearbyOffers.map((offer, index) => (
-            <div
-              key={offer.id}
-              className={`absolute animate-bounce-in`}
-              style={{
-                left: `${20 + index * 25}%`,
-                top: `${30 + index * 15}%`,
-                animationDelay: `${index * 0.2}s`
-              }}
-            >
-              <Button
-                variant="flame"
-                size="icon"
-                className="rounded-full shadow-lg animate-pulse-glow"
-              >
-                <MapPin size={20} />
-              </Button>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                {offer.business}
-              </div>
-            </div>
-          ))}
-
-          {/* User location */}
-          {userLocation && (
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="w-4 h-4 bg-info rounded-full animate-ping"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-info rounded-full"></div>
-            </div>
-          )}
-
-          <div className="text-center text-muted-foreground">
-            <MapPin size={48} className="mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Carte interactive</p>
-            <p className="text-sm">Découvre les offres autour de toi</p>
-          </div>
-        </div>
+        {/* Vraie carte Mapbox */}
+        <MapboxMap onLocationUpdate={handleLocationUpdate} />
 
         {/* Floating List Toggle */}
         {showList && (
           <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-80 overflow-y-auto">
             <div className="p-4 space-y-3">
-              <h3 className="font-semibold text-foreground mb-3">Offres à proximité</h3>
-              {nearbyOffers.map((offer) => (
+              <h3 className="font-semibold text-foreground mb-3">Offres disponibles</h3>
+              {offers.map((offer) => (
                 <Link key={offer.id} to={`/offer/${offer.id}`}>
                   <Card className="bg-gradient-card border-border/50 hover-lift">
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <h4 className="font-semibold text-foreground">{offer.title}</h4>
-                          <p className="text-sm text-muted-foreground">{offer.business}</p>
+                          <p className="text-sm text-muted-foreground">{offer.category}</p>
                           <div className="flex items-center gap-4 mt-1">
                             <div className="flex items-center gap-1">
                               <MapPin size={12} className="text-primary" />
-                              <span className="text-xs text-muted-foreground">{offer.distance}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Flame size={12} className="text-flame fill-current" />
-                              <span className="text-xs text-muted-foreground">{offer.flames}</span>
+                              <span className="text-xs text-muted-foreground">{offer.location}</span>
                             </div>
                           </div>
                         </div>
                         <Badge className="bg-gradient-flame text-white">
-                          {offer.discount}
+                          Voir détails
                         </Badge>
                       </div>
                     </CardContent>
