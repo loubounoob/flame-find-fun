@@ -1,203 +1,144 @@
-import { cn } from "@/lib/utils";
-import { Button } from "./button";
-import { Badge } from "./badge";
-import { VideoPlayer } from "./video-player";
-import { Heart, MapPin, Clock, Calendar, Star, Play, Flame } from "lucide-react";
-import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Users, Flame, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useFlames } from "@/hooks/useFlames";
+import { useBookings } from "@/hooks/useBookings";
+import { useState } from "react";
 
 interface OfferCardProps {
   id: string;
   title: string;
-  business: string;
-  description: string;
+  business?: string;
+  business_user_id?: string;
   location: string;
-  timeSlot: string;
-  date: string;
-  discount: string;
+  discount?: string;
   category: string;
-  image?: string;
-  video?: string;
   flames: number;
-  isLiked?: boolean;
-  hasGivenFlame?: boolean;
-  onLike?: (id: string) => void;
-  onBook?: (id: string) => void;
-  className?: string;
+  image?: string;
+  price?: string;
+  description?: string;
 }
 
-export function OfferCard({
-  id,
-  title,
-  business,
-  description,
-  location,
-  timeSlot,
-  date,
-  discount,
-  category,
-  image,
-  video,
-  flames,
-  isLiked = false,
-  hasGivenFlame = false,
-  onLike,
-  onBook,
-  className
+export function OfferCard({ 
+  id, 
+  title, 
+  business, 
+  business_user_id,
+  location, 
+  discount, 
+  category, 
+  flames, 
+  image, 
+  price, 
+  description 
 }: OfferCardProps) {
-  const [liked, setLiked] = useState(isLiked);
-  const [currentFlames, setCurrentFlames] = useState(flames);
+  const { giveFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const { createBooking } = useBookings();
+  const [isBooking, setIsBooking] = useState(false);
 
-  const handleLike = () => {
-    const wasLiked = liked;
-    setLiked(!liked);
+  const handleFlameClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await giveFlame(id);
+  };
+
+  const handleBooking = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!business_user_id) return;
     
-    if (!wasLiked) {
-      setCurrentFlames(prev => prev + 1);
-    } else {
-      setCurrentFlames(prev => prev - 1);
-    }
-    
-    onLike?.(id);
+    setIsBooking(true);
+    await createBooking(id, business_user_id);
+    setIsBooking(false);
   };
 
   return (
-    <div 
-      className={cn(
-        "relative overflow-hidden rounded-2xl bg-gradient-card",
-        "border border-border/50 shadow-lg",
-        "hover-lift hover-glow",
-        "animate-fade-in",
-        className
-      )}
-    >
-      {/* Media with overlay */}
-      <Link to={`/offer/${id}`} className="relative aspect-[4/3] overflow-hidden block group">
-        {video ? (
-          <>
-            <VideoPlayer 
-              src={video}
-              poster={image}
-              className="w-full h-full"
-              autoPlay={true}
-              muted={true}
-            />
-            <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm rounded-full p-1">
-              <Play size={12} className="text-white" />
-            </div>
-          </>
-        ) : (
+    <Link to={`/offer/${id}`}>
+      <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden">
+        <div className="relative aspect-[4/3]">
           <img 
-            src={image} 
+            src={image || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
           />
-        )}
-        
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        
-        {/* Category badge */}
-        <Badge 
-          variant="secondary" 
-          className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm"
-        >
-          {category}
-        </Badge>
-        
-        {/* Discount badge */}
-        <Badge 
-          className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow"
-        >
-          {discount}
-        </Badge>
-
-        {/* Flames counter */}
-        <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-          <Flame 
-            size={14} 
-            className={cn(
-              "transition-all duration-300",
-              liked ? "fill-flame text-flame animate-flame-flicker" : "text-white",
-              "hover:scale-110 hover:animate-flame-glow"
-            )} 
-          />
-          <span className="text-white text-sm font-medium">{currentFlames}</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          
+          <Badge 
+            variant="secondary" 
+            className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm"
+          >
+            {category}
+          </Badge>
+          
+          {discount && (
+            <Badge 
+              className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow"
+            >
+              {discount}
+            </Badge>
+          )}
         </div>
-      </Link>
+        
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-semibold text-lg text-foreground line-clamp-1">
+                {title}
+              </h3>
+              {business && (
+                <p className="text-sm text-muted-foreground">
+                  {business}
+                </p>
+              )}
+            </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <div className="space-y-3">
-          {/* Title and business */}
-          <div>
-            <h3 className="font-poppins font-semibold text-lg text-foreground line-clamp-1">
-              {title}
-            </h3>
-            <p className="text-sm text-muted-foreground font-medium">
-              {business}
-            </p>
-          </div>
+            {description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {description}
+              </p>
+            )}
 
-          {/* Description */}
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {description}
-          </p>
-
-          {/* Details */}
-          <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin size={14} className="text-primary" />
               <span className="line-clamp-1">{location}</span>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Calendar size={14} className="text-secondary" />
-                <span>{date}</span>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Clock size={14} className="text-secondary" />
-                <span>{timeSlot}</span>
-              </div>
-            </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLike}
-              className={cn(
-                "flex-1 transition-all duration-300",
-                liked 
-                  ? "bg-flame/10 border-flame text-flame" 
-                  : "hover:bg-flame/10 hover:border-flame hover:text-flame"
-              )}
-            >
-              <Flame 
-                size={16} 
-                className={cn(
-                  "mr-2 transition-all duration-300",
-                  liked && "fill-current animate-flame-flicker",
-                  "hover:scale-110 hover:animate-flame-glow"
-                )} 
-              />
-              {liked ? "Retirer" : "Flamme"}
-            </Button>
-            
-            <Link to={`/booking/${id}`} className="flex-1">
+          
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
               <Button
+                variant="ghost"
                 size="sm"
-                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity duration-300"
+                onClick={handleFlameClick}
+                disabled={!canGiveFlame()}
+                className={`flex items-center gap-1 ${
+                  hasGivenFlameToOffer(id) 
+                    ? 'text-flame hover:text-flame/80' 
+                    : 'text-muted-foreground hover:text-flame'
+                }`}
               >
-                Réserver
+                <Flame 
+                  size={16} 
+                  className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
+                />
+                <span className="text-sm">{flames}</span>
               </Button>
-            </Link>
+            </div>
+            
+            <Button 
+              size="sm" 
+              className="bg-gradient-primary hover:opacity-90"
+              onClick={handleBooking}
+              disabled={isBooking || !business_user_id}
+            >
+              <Calendar size={14} className="mr-1" />
+              {isBooking ? 'Réservation...' : 'Réserver'}
+            </Button>
           </div>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

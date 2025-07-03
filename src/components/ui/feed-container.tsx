@@ -79,10 +79,6 @@ export function FeedContainer({
           >
             <OfferCard
               {...offer}
-              isLiked={likedOffers.has(offer.id)}
-              hasGivenFlame={hasGivenFlame}
-              onLike={onLike}
-              onBook={onBook}
             />
           </div>
         ))}

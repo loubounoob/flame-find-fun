@@ -299,19 +299,13 @@ export default function Home() {
             key={offer.id}
             id={offer.id}
             title={offer.title}
-            business="Business Name" // TODO: Add business relation
-            description={offer.description}
+            business_user_id={offer.business_user_id}
             location={offer.location}
-            timeSlot="16h00 - 18h00" // TODO: Add time fields
-            date="Aujourd'hui" // TODO: Add date fields
-            discount="Offre spéciale" // TODO: Add discount field
             category={offer.category}
-            image={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"}
-            video={offer.video_url}
             flames={flamesCounts[offer.id] || 0}
-            isLiked={hasGivenFlameToOffer(offer.id)}
-            hasGivenFlame={hasGivenFlameToOffer(offer.id)}
-            onLike={handleLike}
+            image={offer.image_url}
+            price={offer.price}
+            description={offer.description}
           />
         ))}
       </section>

@@ -7,8 +7,8 @@ import { MapPin, Navigation } from 'lucide-react';
 import { Button } from './button';
 import { Badge } from './badge';
 
-// Clé publique Mapbox (remplacez par votre vraie clé)
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+// IMPORTANT: Remplacez par votre vraie clé Mapbox publique
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibGludXhpZXJlIiwiYSI6ImNrOXB1aWp1YjAzeW8zbm1neXVxaGt0aTAifQ.jGMJrEqGu9fOsrIc8w6-FQ';
 
 interface MapboxMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -42,9 +42,10 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [4.8357, 45.7640], // Lyon par défaut
       zoom: 13,
+      attributionControl: false
     });
 
     // Ajouter les contrôles de navigation
@@ -68,18 +69,28 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
           
           if (map.current) {
             map.current.setCenter([location.lng, location.lat]);
+            map.current.setZoom(14);
             
             // Ajouter un marqueur pour l'utilisateur
             const userMarker = new mapboxgl.Marker({
               color: '#3b82f6',
-              scale: 0.8
+              scale: 1.0
             })
               .setLngLat([location.lng, location.lat])
               .addTo(map.current);
+              
+            // Ajouter un popup pour indiquer la position de l'utilisateur
+            const userPopup = new mapboxgl.Popup({
+              offset: 25,
+              closeButton: false
+            }).setHTML('<div class="p-2"><strong>Votre position</strong></div>');
+            
+            userMarker.setPopup(userPopup);
           }
         },
         (error) => {
           console.error("Erreur de géolocalisation:", error);
+          // Garder Lyon par défaut si la géolocalisation échoue
         },
         {
           enableHighAccuracy: true,
