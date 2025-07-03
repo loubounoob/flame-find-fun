@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const mockOffer = {
   id: "1",
@@ -35,6 +37,22 @@ const mockOffer = {
 export default function Booking() {
   const { id } = useParams();
   const [step, setStep] = useState(1); // 1: Details, 2: Payment, 3: Confirmation
+
+  const { data: offer, isLoading } = useQuery({
+    queryKey: ["offer", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No offer ID");
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
   const [formData, setFormData] = useState({
     participants: 4,
     specialRequests: "",
@@ -65,7 +83,7 @@ export default function Booking() {
               Réservation confirmée ! 🎉
             </h2>
             <p className="text-muted-foreground mb-6">
-              Votre réservation pour "{mockOffer.title}" a été confirmée. Vous recevrez un email de confirmation.
+              Votre réservation pour "{offer?.title || 'cette offre'}" a été confirmée. Vous recevrez un email de confirmation.
             </p>
             <div className="space-y-3">
               <Link to="/">
@@ -83,6 +101,12 @@ export default function Booking() {
         </Card>
       </div>
     );
+  }
+
+  if (isLoading || !offer) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-muted-foreground">Chargement...</div>
+    </div>;
   }
 
   return (
@@ -129,19 +153,19 @@ export default function Booking() {
           <CardContent className="p-0">
             <div className="flex">
               <img 
-                src={mockOffer.image} 
-                alt={mockOffer.title}
+                src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=400&h=300&fit=crop"} 
+                alt={offer.title}
                 className="w-24 h-24 object-cover rounded-l-xl"
               />
               <div className="flex-1 p-4">
-                <h3 className="font-semibold text-foreground">{mockOffer.title}</h3>
-                <p className="text-sm text-muted-foreground">{mockOffer.business}</p>
+                <h3 className="font-semibold text-foreground">{offer.title}</h3>
+                <p className="text-sm text-muted-foreground">Business Name</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Star size={12} className="text-warning fill-current" />
-                  <span className="text-xs text-muted-foreground">{mockOffer.rating}</span>
+                  <span className="text-xs text-muted-foreground">4.8</span>
                 </div>
                 <Badge className="bg-gradient-flame text-white mt-2">
-                  {mockOffer.discount}
+                  Offre spéciale
                 </Badge>
               </div>
             </div>
@@ -159,17 +183,17 @@ export default function Booking() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar size={16} className="text-secondary" />
-                    <span className="text-sm text-foreground">{mockOffer.date}</span>
+                    <span className="text-sm text-foreground">Aujourd'hui</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-secondary" />
-                    <span className="text-sm text-foreground">{mockOffer.timeSlot}</span>
+                    <span className="text-sm text-foreground">16h00 - 18h00</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <MapPin size={16} className="text-primary" />
-                  <span className="text-sm text-foreground">{mockOffer.location}</span>
+                  <span className="text-sm text-foreground">{offer.location}</span>
                 </div>
 
                 <div className="space-y-2">
@@ -283,11 +307,13 @@ export default function Booking() {
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                   <span className="text-foreground">Total</span>
-                  <span className="text-gradient-primary">{mockOffer.discountedPrice * formData.participants}€</span>
+                  <span className="text-gradient-primary">{offer.price ? `${offer.price} x ${formData.participants}` : "Prix sur demande"}</span>
                 </div>
-                <div className="text-xs text-success text-center">
-                  Économie: {(mockOffer.originalPrice - mockOffer.discountedPrice) * formData.participants}€
-                </div>
+                {offer.price && (
+                  <div className="text-xs text-success text-center">
+                    Économie: 5€ x {formData.participants} = {5 * formData.participants}€
+                  </div>
+                )}
               </CardContent>
             </Card>
 

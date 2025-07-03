@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const mockOffer = {
   id: "1",
@@ -55,20 +58,97 @@ const mockOffer = {
 
 export default function OfferDetail() {
   const { id } = useParams();
-  const [isLiked, setIsLiked] = useState(false);
-  const [flames, setFlames] = useState(mockOffer.flames);
+  const { user } = useAuth();
   const [showBusiness, setShowBusiness] = useState(false);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setFlames(prev => isLiked ? prev - 1 : prev + 1);
+  const { data: offer, isLoading } = useQuery({
+    queryKey: ["offer", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No offer ID");
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: userFlame } = useQuery({
+    queryKey: ["userFlame", id, user?.id],
+    queryFn: async () => {
+      if (!user || !id) return null;
+      const { data, error } = await supabase
+        .from("flames")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("offer_id", id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!id,
+  });
+
+  const { data: flamesCount = 0 } = useQuery({
+    queryKey: ["flamesCount", id],
+    queryFn: async () => {
+      if (!id) return 0;
+      const { count, error } = await supabase
+        .from("flames")
+        .select("*", { count: "exact", head: true })
+        .eq("offer_id", id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
+  if (isLoading || !offer) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-muted-foreground">Chargement...</div>
+    </div>;
+  }
+
+  const handleLike = async () => {
+    if (!user) {
+      // Redirect to auth if not logged in
+      window.location.href = "/auth";
+      return;
+    }
+
+    try {
+      if (userFlame) {
+        // Remove flame
+        await supabase
+          .from("flames")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("offer_id", id!);
+      } else {
+        // Add flame
+        await supabase
+          .from("flames")
+          .insert({
+            user_id: user.id,
+            offer_id: id!,
+          });
+      }
+    } catch (error) {
+      console.error("Error toggling flame:", error);
+    }
   };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: mockOffer.title,
-        text: mockOffer.description,
+        title: offer.title,
+        text: offer.description,
         url: window.location.href,
       });
     }
@@ -96,16 +176,16 @@ export default function OfferDetail() {
       <div className="space-y-6">
         {/* Media */}
         <div className="relative aspect-[16/10]">
-          {mockOffer.video ? (
+          {offer.video_url ? (
             <VideoPlayer 
-              src={mockOffer.video}
-              poster={mockOffer.image}
+              src={offer.video_url}
+              poster={offer.image_url || undefined}
               className="w-full h-full"
             />
           ) : (
             <img 
-              src={mockOffer.image} 
-              alt={mockOffer.title}
+              src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+              alt={offer.title}
               className="w-full h-full object-cover"
             />
           )}
@@ -113,10 +193,10 @@ export default function OfferDetail() {
           {/* Floating badges */}
           <div className="absolute top-4 left-4 right-4 flex justify-between">
             <Badge variant="secondary" className="bg-secondary/90 backdrop-blur-sm">
-              {mockOffer.category}
+              {offer.category}
             </Badge>
             <Badge className="bg-gradient-flame text-white font-bold animate-pulse-glow">
-              {mockOffer.discount}
+              Offre spéciale
             </Badge>
           </div>
         </div>
@@ -125,7 +205,7 @@ export default function OfferDetail() {
           {/* Main Info */}
           <div>
             <h1 className="text-2xl font-poppins font-bold text-foreground mb-2">
-              {mockOffer.title}
+              {offer.title}
             </h1>
             
             {/* Business info with click handler */}
@@ -147,7 +227,7 @@ export default function OfferDetail() {
             </button>
 
             <p className="text-muted-foreground leading-relaxed">
-              {mockOffer.description}
+              {offer.description}
             </p>
           </div>
 
@@ -217,7 +297,7 @@ export default function OfferDetail() {
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-primary" />
-                <span className="text-foreground">{mockOffer.location}</span>
+                <span className="text-foreground">{offer.location}</span>
               </div>
               
               <div className="flex items-center gap-4">
@@ -243,13 +323,13 @@ export default function OfferDetail() {
             <Button
               variant="outline"
               onClick={handleLike}
-              className={`flex-1 ${isLiked ? 'bg-flame/10 border-flame text-flame' : ''}`}
+              className={`flex-1 ${userFlame ? 'bg-flame/10 border-flame text-flame' : ''}`}
             >
               <Heart 
                 size={18} 
-                className={`mr-2 ${isLiked ? 'fill-current' : ''}`} 
+                className={`mr-2 ${userFlame ? 'fill-current' : ''}`} 
               />
-              {flames} Flammes
+              {flamesCount} Flammes
             </Button>
             
             <Link to={`/booking/${id}`} className="flex-1">
