@@ -27,7 +27,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Settings() {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check if user has a preference saved or default to true (dark mode)
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme ? savedTheme === 'dark' : true;
+  });
   const [language, setLanguage] = useState("fr");
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
@@ -36,6 +40,14 @@ export default function Settings() {
   const [dataUsage, setDataUsage] = useState("wifi");
   const [user, setUser] = useState(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Apply theme class to document and save preference
+    const theme = darkMode ? 'dark' : 'light';
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [darkMode]);
 
   useEffect(() => {
     // Check authentication status

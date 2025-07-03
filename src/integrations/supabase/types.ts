@@ -95,6 +95,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_subscribed: boolean
           last_name: string | null
           location: string | null
           study_level: string | null
@@ -110,6 +111,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_subscribed?: boolean
           last_name?: string | null
           location?: string | null
           study_level?: string | null
@@ -125,10 +127,38 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_subscribed?: boolean
           last_name?: string | null
           location?: string | null
           study_level?: string | null
           university?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_flames_daily: {
+        Row: {
+          created_at: string
+          flame_date: string
+          id: string
+          offer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          flame_date?: string
+          id?: string
+          offer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          flame_date?: string
+          id?: string
+          offer_id?: string | null
           updated_at?: string
           user_id?: string
         }

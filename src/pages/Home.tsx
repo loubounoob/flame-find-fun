@@ -2,10 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { OfferCard } from "@/components/ui/offer-card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useFlames } from "@/hooks/useFlames";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,8 +97,7 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [hasGivenFlame, setHasGivenFlame] = useState(false);
-  const [likedOffers, setLikedOffers] = useState<Set<string>>(new Set());
+  const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["offers"],
@@ -113,97 +113,67 @@ export default function Home() {
     },
   });
 
-  const { data: userFlames = [] } = useQuery({
-    queryKey: ["userFlames", user?.id],
+  // Get subscription status
+  const { data: userProfile } = useQuery({
+    queryKey: ["userProfile", user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return null;
       const { data, error } = await supabase
-        .from("flames")
-        .select("offer_id")
-        .eq("user_id", user.id);
+        .from("profiles")
+        .select("is_subscribed")
+        .eq("user_id", user.id)
+        .single();
       
       if (error) throw error;
-      return data.map(flame => flame.offer_id);
+      return data;
     },
     enabled: !!user,
   });
+
+  useEffect(() => {
+    if (userProfile) {
+      setIsSubscribed(userProfile.is_subscribed);
+    }
+  }, [userProfile]);
 
   const { data: flamesCounts = {} } = useQuery({
     queryKey: ["flamesCounts"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("flames")
-        .select("offer_id");
+        .from("user_flames_daily")
+        .select("offer_id")
+        .not("offer_id", "is", null);
       
       if (error) throw error;
       
       const counts: Record<string, number> = {};
       data.forEach(flame => {
-        counts[flame.offer_id] = (counts[flame.offer_id] || 0) + 1;
+        if (flame.offer_id) {
+          counts[flame.offer_id] = (counts[flame.offer_id] || 0) + 1;
+        }
       });
       return counts;
     },
   });
 
-  const toggleFlameMutation = useMutation({
-    mutationFn: async ({ offerId, isLiked }: { offerId: string; isLiked: boolean }) => {
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+  const handleLike = async (offerId: string) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
 
-      if (isLiked) {
-        // Remove flame
-        const { error } = await supabase
-          .from("flames")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("offer_id", offerId);
-        
-        if (error) throw error;
-      } else {
-        // Add flame
-        const { error } = await supabase
-          .from("flames")
-          .insert({
-            user_id: user.id,
-            offer_id: offerId,
-          });
-        
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userFlames"] });
-      queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
-      toast({
-        title: "Flamme mise à jour !",
-        description: "Votre flamme a été enregistrée.",
-      });
-    },
-    onError: (error: any) => {
-      if (error.message?.includes("duplicate key")) {
-        toast({
-          title: "Déjà flammé !",
-          description: "Vous avez déjà donné une flamme à cette offre.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Une erreur est survenue lors de la mise à jour de la flamme.",
-          variant: "destructive",
-        });
-      }
-    },
-  });
-
-  const handleLike = (offerId: string) => {
-    toggleFlameMutation.mutate({ 
-      offerId, 
-      isLiked: userFlames.includes(offerId) 
-    });
+    const hasFlameOnThisOffer = hasGivenFlameToOffer(offerId);
+    
+    if (hasFlameOnThisOffer) {
+      await removeFlame();
+    } else {
+      await giveFlame(offerId);
+    }
+    
+    // Refresh flame counts
+    queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
   };
+
 
   const handleBook = (offerId: string) => {
     if (!isSubscribed) {
@@ -230,7 +200,7 @@ export default function Home() {
             <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
               <Flame size={14} className="text-white fill-current animate-pulse" />
               <span className="text-white text-sm font-semibold">
-                {hasGivenFlame ? 0 : 1} flamme{hasGivenFlame ? 's' : ''}
+                {dailyFlame?.offer_id ? 0 : 1} flamme{dailyFlame?.offer_id ? 's' : ''}
               </span>
             </div>
             
@@ -339,8 +309,8 @@ export default function Home() {
             image={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"}
             video={offer.video_url}
             flames={flamesCounts[offer.id] || 0}
-            isLiked={userFlames.includes(offer.id)}
-            hasGivenFlame={userFlames.includes(offer.id)}
+            isLiked={hasGivenFlameToOffer(offer.id)}
+            hasGivenFlame={hasGivenFlameToOffer(offer.id)}
             onLike={handleLike}
           />
         ))}

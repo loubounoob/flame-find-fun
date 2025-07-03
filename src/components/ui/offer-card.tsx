@@ -49,16 +49,16 @@ export function OfferCard({
   const [currentFlames, setCurrentFlames] = useState(flames);
 
   const handleLike = () => {
-    if (!hasGivenFlame) {
-      if (!liked) {
-        setLiked(true);
-        setCurrentFlames(prev => prev + 1);
-      } else {
-        setLiked(false);
-        setCurrentFlames(prev => prev - 1);
-      }
-      onLike?.(id);
+    const wasLiked = liked;
+    setLiked(!liked);
+    
+    if (!wasLiked) {
+      setCurrentFlames(prev => prev + 1);
+    } else {
+      setCurrentFlames(prev => prev - 1);
     }
+    
+    onLike?.(id);
   };
 
   return (
