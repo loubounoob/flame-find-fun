@@ -117,6 +117,14 @@
     animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
+  .animate-flame-flicker {
+    animation: flame-flicker 2s ease-in-out infinite;
+  }
+
+  .animate-flame-glow {
+    animation: flame-glow 1.5s ease-in-out infinite alternate;
+  }
+
   /* Interactive elements */
   .hover-lift {
     @apply transition-all duration-300 hover:scale-105 hover:-translate-y-1;
@@ -195,5 +203,35 @@
   100% {
     transform: scale(1) rotate(0deg);
     opacity: 1;
+  }
+}
+
+@keyframes flame-flicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  25% {
+    transform: scale(1.05) rotate(1deg);
+    filter: brightness(1.1);
+  }
+  50% {
+    transform: scale(0.98) rotate(-1deg);
+    filter: brightness(0.95);
+  }
+  75% {
+    transform: scale(1.02) rotate(0.5deg);
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes flame-glow {
+  0% {
+    box-shadow: 0 0 10px hsl(var(--flame) / 0.3), 0 0 20px hsl(var(--flame) / 0.2);
+    filter: brightness(1);
+  }
+  100% {
+    box-shadow: 0 0 20px hsl(var(--flame) / 0.6), 0 0 40px hsl(var(--flame) / 0.4);
+    filter: brightness(1.2);
   }
 }

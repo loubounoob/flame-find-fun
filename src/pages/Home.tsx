@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Search, Star, Zap } from "lucide-react";
+import { Bell, Search, Star, Zap, Flame } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
 
@@ -228,7 +228,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {/* Flames counter */}
             <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
-              <Zap size={14} className="text-white" />
+              <Flame size={14} className="text-white fill-current animate-pulse" />
               <span className="text-white text-sm font-semibold">
                 {hasGivenFlame ? 0 : 1} flamme{hasGivenFlame ? 's' : ''}
               </span>

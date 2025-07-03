@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Navigation, Filter, List, Heart } from "lucide-react";
+import { MapPin, Navigation, Filter, List, Heart, Flame } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 const nearbyOffers = [
   {
@@ -156,7 +157,7 @@ export default function Map() {
                               <span className="text-xs text-muted-foreground">{offer.distance}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Heart size={12} className="text-flame" />
+                              <Flame size={12} className="text-flame fill-current" />
                               <span className="text-xs text-muted-foreground">{offer.flames}</span>
                             </div>
                           </div>
@@ -173,6 +174,8 @@ export default function Map() {
           </div>
         )}
       </div>
+      
+      <BottomNav />
     </div>
   );
 }

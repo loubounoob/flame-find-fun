@@ -17,7 +17,8 @@ import {
   LogOut,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Flame
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function BusinessDashboard() {
   const [user, setUser] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingOffer, setEditingOffer] = useState(null);
   const [offers, setOffers] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -137,6 +139,110 @@ export default function BusinessDashboard() {
     }
   };
 
+  const updateOffer = async () => {
+    if (!user || !editingOffer) return;
+
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          price: formData.price,
+          location: formData.location,
+          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+          image_url: formData.image_url || null,
+          video_url: formData.video_url || null
+        })
+        .eq('id', editingOffer.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Offre modifiée",
+        description: "Votre offre a été modifiée avec succès !",
+      });
+      
+      setEditingOffer(null);
+      setShowCreateForm(false);
+      setFormData({
+        title: "",
+        description: "",
+        category: "",
+        price: "",
+        location: "",
+        max_participants: "",
+        image_url: "",
+        video_url: ""
+      });
+      
+      loadOffers();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'offre. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteOffer = async (offerId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette offre ?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .delete()
+        .eq('id', offerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Offre supprimée",
+        description: "L'offre a été supprimée avec succès.",
+      });
+      
+      loadOffers();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'offre.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const startEditing = (offer: any) => {
+    setEditingOffer(offer);
+    setFormData({
+      title: offer.title || "",
+      description: offer.description || "",
+      category: offer.category || "",
+      price: offer.price || "",
+      location: offer.location || "",
+      max_participants: offer.max_participants?.toString() || "",
+      image_url: offer.image_url || "",
+      video_url: offer.video_url || ""
+    });
+    setShowCreateForm(true);
+  };
+
+  const cancelEditing = () => {
+    setEditingOffer(null);
+    setShowCreateForm(false);
+    setFormData({
+      title: "",
+      description: "",
+      category: "",
+      price: "",
+      location: "",
+      max_participants: "",
+      image_url: "",
+      video_url: ""
+    });
+  };
+
   if (!user) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
@@ -180,7 +286,7 @@ export default function BusinessDashboard() {
                   <p className="text-sm opacity-90">Total Flammes</p>
                   <p className="text-2xl font-bold">68</p>
                 </div>
-                <Heart size={24} />
+                <Flame size={24} className="fill-current" />
               </div>
             </CardContent>
           </Card>
@@ -214,7 +320,7 @@ export default function BusinessDashboard() {
         <Card className="bg-gradient-card border-border/50">
           <CardContent className="p-6 text-center">
             <Button 
-              onClick={() => setShowCreateForm(!showCreateForm)}
+              onClick={() => showCreateForm ? cancelEditing() : setShowCreateForm(true)}
               className="bg-gradient-primary hover:opacity-90"
               size="lg"
             >
@@ -228,7 +334,7 @@ export default function BusinessDashboard() {
         {showCreateForm && (
           <Card className="bg-gradient-card border-border/50">
             <CardHeader>
-              <CardTitle>Créer une nouvelle offre</CardTitle>
+              <CardTitle>{editingOffer ? "Modifier l'offre" : "Créer une nouvelle offre"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -322,11 +428,11 @@ export default function BusinessDashboard() {
               </div>
 
               <Button 
-                onClick={createOffer}
+                onClick={editingOffer ? updateOffer : createOffer}
                 className="w-full bg-gradient-primary hover:opacity-90"
                 disabled={!formData.title || !formData.description || !formData.category}
               >
-                Créer l'offre
+                {editingOffer ? "Modifier l'offre" : "Créer l'offre"}
               </Button>
             </CardContent>
           </Card>
@@ -345,7 +451,7 @@ export default function BusinessDashboard() {
                     <p className="text-sm text-muted-foreground">{offer.category}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex items-center gap-1">
-                        <Heart size={14} className="text-flame" />
+                        <Flame size={14} className="text-flame fill-current" />
                         <span className="text-sm">{offer.flames}</span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -358,10 +464,18 @@ export default function BusinessDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => startEditing(offer)}
+                    >
                       <Edit size={16} />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => deleteOffer(offer.id)}
+                    >
                       <Trash2 size={16} />
                     </Button>
                   </div>

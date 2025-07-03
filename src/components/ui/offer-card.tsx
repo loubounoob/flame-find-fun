@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { VideoPlayer } from "./video-player";
-import { Heart, MapPin, Clock, Calendar, Star, Play } from "lucide-react";
+import { Heart, MapPin, Clock, Calendar, Star, Play, Flame } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -114,11 +114,12 @@ export function OfferCard({
 
         {/* Flames counter */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-          <Heart 
+          <Flame 
             size={14} 
             className={cn(
-              "transition-colors duration-300",
-              liked ? "fill-flame text-flame" : "text-white"
+              "transition-all duration-300",
+              liked ? "fill-flame text-flame animate-flame-flicker" : "text-white",
+              "hover:scale-110 hover:animate-flame-glow"
             )} 
           />
           <span className="text-white text-sm font-medium">{currentFlames}</span>
@@ -178,11 +179,12 @@ export function OfferCard({
                     : "hover:bg-flame/10 hover:border-flame hover:text-flame"
               )}
             >
-              <Heart 
+              <Flame 
                 size={16} 
                 className={cn(
                   "mr-2 transition-all duration-300",
-                  liked && "fill-current"
+                  liked && "fill-current animate-flame-flicker",
+                  "hover:scale-110 hover:animate-flame-glow"
                 )} 
               />
               {liked ? "Retirer" : hasGivenFlame ? "Déjà flammé" : "Flamme"}
