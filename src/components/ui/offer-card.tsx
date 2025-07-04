@@ -37,7 +37,11 @@ export function OfferCard({
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await giveFlame(id);
+    const success = await giveFlame(id);
+    if (success) {
+      // Trigger a re-render to update the flame count
+      window.location.reload();
+    }
   };
 
 
@@ -94,17 +98,18 @@ export function OfferCard({
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-1 p-2 h-10 ${
+                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium ${
                   hasGivenFlameToOffer(id) 
-                    ? 'text-flame hover:text-flame/80' 
-                    : 'text-muted-foreground hover:text-flame'
+                    ? 'opacity-80' 
+                    : ''
                 }`}
               >
                 <Flame 
                   size={16} 
-                  className={hasGivenFlameToOffer(id) ? 'fill-current animate-flame-flicker' : ''} 
+                  className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
-                <span className="text-sm font-medium">{flames}</span>
+                <span className="text-sm">Flamme</span>
+                <span className="text-sm font-medium">({flames})</span>
               </Button>
               
               <Link to={`/booking/${id}`}>

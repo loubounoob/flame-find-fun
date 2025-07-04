@@ -254,19 +254,19 @@ export default function Home() {
 
       {/* Quick Stats */}
       <section className="p-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-primary">{offers.length}</div>
-            <div className="text-xs text-muted-foreground">Offres actives</div>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
+            <div className="text-2xl font-bold text-gradient-primary mb-1">{offers.length}</div>
+            <div className="text-sm text-muted-foreground">Offres actives</div>
           </div>
-          <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-flame">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
-            <div className="text-xs text-muted-foreground">Flammes données</div>
+          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
+            <div className="text-2xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
+            <div className="text-sm text-muted-foreground">Flammes données</div>
           </div>
-          <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-secondary">{Math.ceil(offers.length / 3)}</div>
-            <div className="text-xs text-muted-foreground">Entreprises</div>
-          </div>
+        </div>
+        <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
+          <div className="text-2xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
+          <div className="text-sm text-muted-foreground">Entreprises partenaires</div>
         </div>
       </section>
 
