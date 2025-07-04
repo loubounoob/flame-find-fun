@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          archived_at: string | null
           booking_date: string
           business_user_id: string
           created_at: string
@@ -23,6 +24,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           booking_date?: string
           business_user_id: string
           created_at?: string
@@ -35,6 +37,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           booking_date?: string
           business_user_id?: string
           created_at?: string
@@ -78,6 +81,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "flames_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_views: {
+        Row: {
+          created_at: string
+          id: string
+          offer_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          offer_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          offer_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_views_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"

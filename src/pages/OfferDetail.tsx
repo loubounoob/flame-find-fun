@@ -72,6 +72,17 @@ export default function OfferDetail() {
         .single();
       
       if (error) throw error;
+
+      // Track view when offer is loaded
+      if (data) {
+        await supabase
+          .from("offer_views")
+          .insert({
+            offer_id: data.id,
+            user_id: user?.id || null
+          });
+      }
+      
       return data;
     },
     enabled: !!id,

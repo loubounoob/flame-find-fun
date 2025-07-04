@@ -1,11 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Flame, Calendar } from "lucide-react";
+import { MapPin, Flame, Calendar, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
-import { useBookings } from "@/hooks/useBookings";
-import { useState } from "react";
 
 interface OfferCardProps {
   id: string;
@@ -35,8 +33,6 @@ export function OfferCard({
   description 
 }: OfferCardProps) {
   const { giveFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
-  const { createBooking } = useBookings();
-  const [isBooking, setIsBooking] = useState(false);
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -44,20 +40,11 @@ export function OfferCard({
     await giveFlame(id);
   };
 
-  const handleBooking = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!business_user_id) return;
-    
-    setIsBooking(true);
-    await createBooking(id, business_user_id);
-    setIsBooking(false);
-  };
 
   return (
     <Link to={`/offer/${id}`}>
-      <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden">
-        <div className="relative aspect-[4/3]">
+      <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[280px]">
+        <div className="relative aspect-[3/2]">
           <img 
             src={image || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
             alt={title}
@@ -81,61 +68,54 @@ export function OfferCard({
           )}
         </div>
         
-        <CardContent className="p-4">
-          <div className="space-y-3">
+        <CardContent className="p-3">
+          <div className="space-y-2">
             <div>
-              <h3 className="font-semibold text-lg text-foreground line-clamp-1">
+              <h3 className="font-semibold text-base text-foreground line-clamp-1">
                 {title}
               </h3>
               {business && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {business}
                 </p>
               )}
             </div>
 
-            {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {description}
-              </p>
-            )}
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin size={14} className="text-primary" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MapPin size={12} className="text-primary" />
               <span className="line-clamp-1">{location}</span>
             </div>
           </div>
           
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleFlameClick}
-                disabled={!canGiveFlame()}
-                className={`flex items-center gap-1 ${
-                  hasGivenFlameToOffer(id) 
-                    ? 'text-flame hover:text-flame/80' 
-                    : 'text-muted-foreground hover:text-flame'
-                }`}
-              >
-                <Flame 
-                  size={16} 
-                  className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
-                />
-                <span className="text-sm">{flames}</span>
-              </Button>
-            </div>
-            
-            <Button 
-              size="sm" 
-              className="bg-gradient-primary hover:opacity-90"
-              onClick={handleBooking}
-              disabled={isBooking || !business_user_id}
+          <div className="flex items-center justify-between mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleFlameClick}
+              disabled={!canGiveFlame()}
+              className={`flex items-center gap-1 p-1 h-8 ${
+                hasGivenFlameToOffer(id) 
+                  ? 'text-flame hover:text-flame/80' 
+                  : 'text-muted-foreground hover:text-flame'
+              }`}
             >
-              <Calendar size={14} className="mr-1" />
-              {isBooking ? 'Réservation...' : 'Réserver'}
+              <Heart 
+                size={14} 
+                className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
+              />
+              <span className="text-xs">{flames}</span>
             </Button>
+            
+            <Link to={`/booking/${id}`}>
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary hover:opacity-90"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Calendar size={14} className="mr-1" />
+                Réserver
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

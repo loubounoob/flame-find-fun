@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Navigation } from 'lucide-react';
-import { Button } from './button';
-import { Badge } from './badge';
 
-// IMPORTANT: Remplacez par votre vraie clé Mapbox publique
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibGludXhpZXJlIiwiYSI6ImNrOXB1aWp1YjAzeW8zbm1neXVxaGt0aTAifQ.jGMJrEqGu9fOsrIc8w6-FQ';
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
 
 interface MapboxMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -16,9 +15,8 @@ interface MapboxMapProps {
 
 export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const markers = useRef<mapboxgl.Marker[]>([]);
 
   // Récupérer les offres depuis Supabase
   const { data: offers = [] } = useQuery({
@@ -34,63 +32,84 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
     },
   });
 
-  // Initialiser la carte
   useEffect(() => {
-    if (!mapContainer.current) return;
+    // Load Google Maps API
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&libraries=places&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      
+      window.initMap = () => {
+        initializeMap();
+      };
+      
+      document.head.appendChild(script);
+    } else {
+      initializeMap();
+    }
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [4.8357, 45.7640], // Lyon par défaut
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  const initializeMap = () => {
+    if (!mapContainer.current || !window.google) return;
+
+    // Default to Lyon, France
+    const defaultCenter = { lat: 45.7640, lng: 4.8357 };
+
+    map.current = new window.google.maps.Map(mapContainer.current, {
+      center: defaultCenter,
       zoom: 13,
-      attributionControl: false
+      styles: [
+        {
+          featureType: "poi",
+          elementType: "labels",
+          stylers: [{ visibility: "off" }]
+        }
+      ]
     });
 
-    // Ajouter les contrôles de navigation
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
-
-    // Obtenir la position de l'utilisateur
+    // Try to get user's current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const location = {
+          const userLoc = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
-          setUserLocation(location);
-          onLocationUpdate?.(location);
-          
-          if (map.current) {
-            map.current.setCenter([location.lng, location.lat]);
-            map.current.setZoom(14);
-            
-            // Ajouter un marqueur pour l'utilisateur
-            const userMarker = new mapboxgl.Marker({
-              color: '#3b82f6',
-              scale: 1.0
-            })
-              .setLngLat([location.lng, location.lat])
-              .addTo(map.current);
-              
-            // Ajouter un popup pour indiquer la position de l'utilisateur
-            const userPopup = new mapboxgl.Popup({
-              offset: 25,
-              closeButton: false
-            }).setHTML('<div class="p-2"><strong>Votre position</strong></div>');
-            
-            userMarker.setPopup(userPopup);
-          }
+
+          setUserLocation(userLoc);
+          map.current.setCenter(userLoc);
+          onLocationUpdate?.(userLoc);
+
+          // Add user location marker
+          new window.google.maps.Marker({
+            position: userLoc,
+            map: map.current,
+            title: 'Votre position',
+            icon: {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" fill="white"/>
+                </svg>
+              `),
+              scaledSize: new window.google.maps.Size(24, 24),
+              anchor: new window.google.maps.Point(12, 12)
+            }
+          });
+
+          // Add offer markers around user location
+          addOfferMarkers(userLoc);
         },
         (error) => {
-          console.error("Erreur de géolocalisation:", error);
-          // Garder Lyon par défaut si la géolocalisation échoue
+          console.error('Error getting location:', error);
+          // Fallback to Lyon if geolocation fails
+          onLocationUpdate?.(defaultCenter);
+          addOfferMarkers(defaultCenter);
         },
         {
           enableHighAccuracy: true,
@@ -98,91 +117,70 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
           maximumAge: 60000
         }
       );
+    } else {
+      addOfferMarkers(defaultCenter);
     }
+  };
 
-    return () => {
-      map.current?.remove();
-    };
-  }, [onLocationUpdate]);
-
-  // Ajouter les marqueurs des offres
-  useEffect(() => {
-    if (!map.current || !offers.length) return;
-
-    // Supprimer les anciens marqueurs
-    markers.current.forEach(marker => marker.remove());
-    markers.current = [];
-
-    // Ajouter les nouveaux marqueurs
-    offers.forEach((offer) => {
-      // Pour cet exemple, on utilise des coordonnées fictives autour de Lyon
-      // Dans un vrai projet, vous devriez avoir des champs lat/lng dans votre table offers
-      const coords = getOfferCoordinates(offer.id);
+  const addOfferMarkers = (userLoc: { lat: number; lng: number }) => {
+    offers.forEach((offer, index) => {
+      // Generate coordinates around user location
+      const coords = getOfferCoordinates(offer.id, userLoc);
       
-      if (coords && map.current) {
-        // Créer un élément HTML personnalisé pour le marqueur
-        const el = document.createElement('div');
-        el.className = 'custom-marker';
-        el.innerHTML = `
-          <div class="bg-gradient-flame text-white rounded-full p-2 shadow-lg cursor-pointer hover:scale-110 transition-transform">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
+      const marker = new window.google.maps.Marker({
+        position: coords,
+        map: map.current,
+        title: offer.title,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" fill="#FF6B6B" stroke="white" stroke-width="2"/>
+              <text x="16" y="20" text-anchor="middle" fill="white" font-size="16">🎯</text>
             </svg>
+          `),
+          scaledSize: new window.google.maps.Size(32, 32),
+          anchor: new window.google.maps.Point(16, 16)
+        }
+      });
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold;">${offer.title}</h3>
+            <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${offer.category}</p>
+            <p style="margin: 0 0 8px 0; color: #888; font-size: 12px;">${offer.location}</p>
+            <button onclick="window.location.href='/offer/${offer.id}'" 
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                           color: white; border: none; padding: 8px 16px; 
+                           border-radius: 6px; cursor: pointer; font-size: 14px;">
+              Voir l'offre
+            </button>
           </div>
-        `;
+        `
+      });
 
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([coords.lng, coords.lat])
-          .addTo(map.current);
-
-        // Ajouter un popup
-        const popup = new mapboxgl.Popup({
-          offset: 25,
-          closeButton: false,
-          closeOnClick: false
-        }).setHTML(`
-          <div class="p-3">
-            <h3 class="font-semibold text-sm">${offer.title}</h3>
-            <p class="text-xs text-gray-600 mt-1">${offer.category}</p>
-            <p class="text-xs text-gray-500 mt-1">${offer.location}</p>
-          </div>
-        `);
-
-        marker.setPopup(popup);
-        markers.current.push(marker);
-
-        // Afficher le popup au survol
-        el.addEventListener('mouseenter', () => {
-          popup.addTo(map.current!);
-        });
-        
-        el.addEventListener('mouseleave', () => {
-          popup.remove();
-        });
-      }
+      marker.addListener('click', () => {
+        infoWindow.open(map.current, marker);
+      });
     });
-  }, [offers]);
+  };
 
   return <div ref={mapContainer} className="w-full h-full rounded-lg" />;
 }
 
-// Fonction pour générer des coordonnées fictives autour de Lyon
-function getOfferCoordinates(offerId: string): { lat: number; lng: number } | null {
-  // Coordonnées de base de Lyon
-  const lyonLat = 45.7640;
-  const lyonLng = 4.8357;
-  
+// Fonction pour générer des coordonnées fictives autour de la position de l'utilisateur
+function getOfferCoordinates(offerId: string, userLocation: { lat: number; lng: number }): { lat: number; lng: number } {
   // Générer des coordonnées aléatoires mais consistantes basées sur l'ID
   const hash = offerId.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
   }, 0);
   
-  const latOffset = (hash % 200 - 100) / 10000; // ~±1km
-  const lngOffset = ((hash * 7) % 200 - 100) / 10000; // ~±1km
+  const latOffset = (hash % 200 - 100) / 5000; // ~±2km
+  const lngOffset = ((hash * 7) % 200 - 100) / 5000; // ~±2km
   
   return {
-    lat: lyonLat + latOffset,
-    lng: lyonLng + lngOffset
+    lat: userLocation.lat + latOffset,
+    lng: userLocation.lng + lngOffset
   };
 }

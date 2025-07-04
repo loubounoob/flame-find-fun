@@ -11,6 +11,7 @@ import Flames from "./pages/Flames";
 import Profile from "./pages/Profile";
 import OfferDetail from "./pages/OfferDetail";
 import Booking from "./pages/Booking";
+import BookingForm from "./pages/BookingForm";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProfileEdit from "./pages/ProfileEdit";
@@ -35,7 +36,8 @@ const App = () => (
           <Route path="/flames" element={<Flames />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/offer/:id" element={<OfferDetail />} />
-          <Route path="/booking/:id" element={<Booking />} />
+          <Route path="/booking" element={<Booking />} />
+          <Route path="/booking/:id" element={<BookingForm />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/subscription" element={<Subscription />} />

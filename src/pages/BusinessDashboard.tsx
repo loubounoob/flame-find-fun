@@ -63,20 +63,46 @@ export default function BusinessDashboard() {
     if (!user) return;
 
     try {
-      const { data: offersData, error } = await supabase
+      // Charger les offres avec les flammes et vues
+      const { data: offersData, error: offersError } = await supabase
         .from('offers')
-        .select(`
-          *,
-          flames_count:flames(count)
-        `)
+        .select('*')
         .eq('business_user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (offersError) throw offersError;
+
+      // Compter les flammes pour chaque offre
+      const { data: flamesData, error: flamesError } = await supabase
+        .from('flames')
+        .select('offer_id')
+        .in('offer_id', offersData?.map(o => o.id) || []);
+
+      if (flamesError) throw flamesError;
+
+      // Compter les vues pour chaque offre
+      const { data: viewsData, error: viewsError } = await supabase
+        .from('offer_views')
+        .select('offer_id')
+        .in('offer_id', offersData?.map(o => o.id) || []);
+
+      if (viewsError) throw viewsError;
+
+      // Construire les statistiques par offre
+      const flamesCounts = flamesData?.reduce((acc, flame) => {
+        acc[flame.offer_id] = (acc[flame.offer_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const viewsCounts = viewsData?.reduce((acc, view) => {
+        acc[view.offer_id] = (acc[view.offer_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
 
       const formattedOffers = offersData?.map(offer => ({
         ...offer,
-        flames: offer.flames_count?.[0]?.count || 0
+        flames: flamesCounts[offer.id] || 0,
+        views: viewsCounts[offer.id] || 0
       })) || [];
 
       setOffers(formattedOffers);
@@ -250,9 +276,11 @@ export default function BusinessDashboard() {
     </div>;
   }
 
-  const totalFlames = offers.reduce((sum, offer) => sum + offer.flames, 0);
+  const totalFlames = offers.reduce((sum, offer) => sum + (offer.flames || 0), 0);
+  const totalViews = offers.reduce((sum, offer) => sum + (offer.views || 0), 0);
   const totalBookings = bookings.length;
   const activeOffers = offers.filter(offer => offer.status === 'active').length;
+  const confirmedBookings = bookings.filter(booking => booking.status === 'confirmed').length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -280,15 +308,15 @@ export default function BusinessDashboard() {
 
       <div className="p-4 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-primary text-primary-foreground">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Total Flammes</p>
-                  <p className="text-2xl font-bold">{totalFlames}</p>
+                  <p className="text-xs opacity-90">Total Flammes</p>
+                  <p className="text-xl font-bold">{totalFlames}</p>
                 </div>
-                <Flame size={24} className="fill-current" />
+                <Flame size={20} className="fill-current" />
               </div>
             </CardContent>
           </Card>
@@ -297,10 +325,10 @@ export default function BusinessDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Réservations</p>
-                  <p className="text-2xl font-bold">{totalBookings}</p>
+                  <p className="text-xs opacity-90">Réservations</p>
+                  <p className="text-xl font-bold">{confirmedBookings}</p>
                 </div>
-                <Calendar size={24} />
+                <Calendar size={20} />
               </div>
             </CardContent>
           </Card>
@@ -309,10 +337,22 @@ export default function BusinessDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Offres Actives</p>
-                  <p className="text-2xl font-bold">{activeOffers}</p>
+                  <p className="text-xs opacity-90">Offres Actives</p>
+                  <p className="text-xl font-bold">{activeOffers}</p>
                 </div>
-                <Eye size={24} />
+                <BarChart3 size={20} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-secondary text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Total Vues</p>
+                  <p className="text-xl font-bold">{totalViews}</p>
+                </div>
+                <Eye size={20} />
               </div>
             </CardContent>
           </Card>
@@ -465,7 +505,11 @@ export default function BusinessDashboard() {
                           <div className="flex items-center gap-4 mt-2">
                             <div className="flex items-center gap-1">
                               <Flame size={14} className="text-flame fill-current" />
-                              <span className="text-sm">{offer.flames}</span>
+                              <span className="text-sm">{offer.flames || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Eye size={14} className="text-info" />
+                              <span className="text-sm">{offer.views || 0}</span>
                             </div>
                             <Badge variant={offer.status === "active" ? "default" : "secondary"}>
                               {offer.status === "active" ? "Actif" : "Inactif"}
