@@ -35,26 +35,11 @@ export function ProfilePhotoUpload({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
-      // First, ensure the avatars bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error("Error listing buckets:", bucketsError);
-      }
-
-      const avatarsBucket = buckets?.find(bucket => bucket.id === 'avatars');
-      
-      if (!avatarsBucket) {
-        // Create the bucket if it doesn't exist
-        const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
-          public: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-          fileSizeLimit: 1024 * 1024 * 5, // 5MB
-        });
-
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          throw createBucketError;
+      // Delete old avatar if exists
+      if (currentAvatarUrl && currentAvatarUrl.includes('supabase')) {
+        const oldFileName = currentAvatarUrl.split('/').pop();
+        if (oldFileName) {
+          await supabase.storage.from('avatars').remove([oldFileName]);
         }
       }
 

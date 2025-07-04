@@ -92,11 +92,19 @@ export default function Settings() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
-          <Link to="/profile">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft size={20} />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => {
+              if (user?.user_metadata?.account_type === "business") {
+                window.location.href = "/business-dashboard";
+              } else {
+                window.location.href = "/profile";
+              }
+            }}
+          >
+            <ArrowLeft size={20} />
+          </Button>
           <h1 className="text-xl font-poppins font-bold text-foreground">
             Paramètres
           </h1>

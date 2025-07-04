@@ -60,14 +60,15 @@ export default function BusinessDashboard() {
   };
 
   const loadOffers = async () => {
-    if (!user) return;
-
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
       // Charger les offres avec les flammes et vues
       const { data: offersData, error: offersError } = await supabase
         .from('offers')
         .select('*')
-        .eq('business_user_id', user.id)
+        .eq('business_user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (offersError) throw offersError;
@@ -112,16 +113,17 @@ export default function BusinessDashboard() {
   };
 
   const loadBookings = async () => {
-    if (!user) return;
-
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
       const { data: bookingsData, error } = await supabase
         .from('bookings')
         .select(`
           *,
           offer:offers(title, category)
         `)
-        .eq('business_user_id', user.id)
+        .eq('business_user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

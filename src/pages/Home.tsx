@@ -256,15 +256,15 @@ export default function Home() {
       <section className="p-4">
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-primary">247</div>
+            <div className="text-lg font-bold text-gradient-primary">{offers.length}</div>
             <div className="text-xs text-muted-foreground">Offres actives</div>
           </div>
           <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-flame">1.2k</div>
+            <div className="text-lg font-bold text-gradient-flame">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
             <div className="text-xs text-muted-foreground">Flammes données</div>
           </div>
           <div className="bg-gradient-card rounded-xl p-3 text-center border border-border/50">
-            <div className="text-lg font-bold text-gradient-secondary">89</div>
+            <div className="text-lg font-bold text-gradient-secondary">{Math.ceil(offers.length / 3)}</div>
             <div className="text-xs text-muted-foreground">Entreprises</div>
           </div>
         </div>
