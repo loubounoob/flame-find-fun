@@ -47,9 +47,11 @@ export function OfferCard({
       return;
     }
     
-    await giveFlame(id);
-    // Refresh flame counts to update UI without page reload
-    queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
+    const success = await giveFlame(id);
+    if (success) {
+      // Force re-render of all offer cards to sync flame states
+      window.dispatchEvent(new CustomEvent('flameUpdated'));
+    }
   };
 
 

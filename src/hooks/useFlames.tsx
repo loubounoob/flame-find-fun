@@ -27,6 +27,18 @@ export function useFlames() {
     }
   }, [user]);
 
+  // Listen for flame updates to sync across components
+  useEffect(() => {
+    const handleFlameUpdate = () => {
+      if (user) {
+        fetchDailyFlame();
+      }
+    };
+
+    window.addEventListener('flameUpdated', handleFlameUpdate);
+    return () => window.removeEventListener('flameUpdated', handleFlameUpdate);
+  }, [user]);
+
   const fetchDailyFlame = async () => {
     if (!user) return;
     
@@ -97,8 +109,8 @@ export function useFlames() {
 
       if (error) throw error;
 
-      // Force un refetch pour synchroniser tous les états
-      await fetchDailyFlame();
+      // Mise à jour immédiate de l'état local pour synchronisation
+      setDailyFlame(prev => prev ? { ...prev, offer_id: offerId } : null);
       
       toast({
         title: "Flamme donnée !",

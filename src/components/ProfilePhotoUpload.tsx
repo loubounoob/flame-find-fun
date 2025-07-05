@@ -26,19 +26,25 @@ export function ProfilePhotoUpload({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) {
+      console.log("No file selected or user not authenticated");
+      return;
+    }
 
+    console.log("Starting file upload for:", file.name);
     setIsUploading(true);
 
     try {
       // Create a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      console.log("Uploading file:", fileName);
 
       // Delete old avatar if exists
       if (currentAvatarUrl && currentAvatarUrl.includes('supabase')) {
         const oldFileName = currentAvatarUrl.split('/').pop();
         if (oldFileName) {
+          console.log("Removing old avatar:", oldFileName);
           await supabase.storage.from('avatars').remove([oldFileName]);
         }
       }
@@ -52,13 +58,18 @@ export function ProfilePhotoUpload({
         });
 
       if (uploadError) {
+        console.error("Upload error:", uploadError);
         throw uploadError;
       }
+
+      console.log("Upload successful:", data);
 
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
+
+      console.log("Public URL:", publicUrl);
 
       // Update the user's profile
       const { error: updateError } = await supabase
@@ -67,9 +78,11 @@ export function ProfilePhotoUpload({
         .eq('user_id', user.id);
 
       if (updateError) {
+        console.error("Profile update error:", updateError);
         throw updateError;
       }
 
+      console.log("Profile updated successfully");
       onPhotoUpdated?.(publicUrl);
       
       toast({
@@ -77,11 +90,14 @@ export function ProfilePhotoUpload({
         description: "Votre photo de profil a été mise à jour avec succès.",
       });
 
+      // Clear the input to allow selecting the same file again
+      event.target.value = '';
+
     } catch (error: any) {
       console.error("Error uploading file:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour de votre photo.",
+        description: `Une erreur est survenue : ${error.message || 'Erreur inconnue'}`,
         variant: "destructive",
       });
     } finally {
