@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Flame, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface OfferCardProps {
   id: string;
@@ -33,22 +34,21 @@ export function OfferCard({
   description 
 }: OfferCardProps) {
   const { giveFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const queryClient = useQueryClient();
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const success = await giveFlame(id);
-    if (success) {
-      // Trigger a re-render to update the flame count
-      window.location.reload();
-    }
+    await giveFlame(id);
+    // Refresh flame counts to update UI without page reload
+    queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
   };
 
 
   return (
     <div className="mb-4">
       <Link to={`/offer/${id}`}>
-        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[320px]">
+        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
           <div className="relative aspect-[3/2]">
             <img 
               src={image || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
@@ -63,6 +63,12 @@ export function OfferCard({
             >
               {category}
             </Badge>
+            
+            {/* Compteur de flammes en bas à droite de l'image */}
+            <div className="absolute bottom-3 right-3 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
+              <Flame size={12} className="fill-current" />
+              {flames}
+            </div>
             
             {discount && (
               <Badge 
@@ -98,18 +104,19 @@ export function OfferCard({
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium ${
+                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg ${
                   hasGivenFlameToOffer(id) 
-                    ? 'opacity-80' 
-                    : ''
+                    ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
+                    : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
                 }`}
               >
                 <Flame 
                   size={16} 
                   className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
-                <span className="text-sm">Flamme</span>
-                <span className="text-sm font-medium">({flames})</span>
+                <span className="text-sm">
+                  {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
+                </span>
               </Button>
               
               <Link to={`/booking/${id}`}>
