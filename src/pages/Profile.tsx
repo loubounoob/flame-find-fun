@@ -23,6 +23,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 
+// Function to calculate real user statistics
+const calculateUserStats = async (userId: string) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get today's flame
+    const { data: todayFlame } = await supabase
+      .from('user_flames_daily')
+      .select('offer_id')
+      .eq('user_id', userId)
+      .eq('flame_date', today)
+      .single();
+    
+    // Get total flames given (count of days with flames)
+    const { count: totalFlames } = await supabase
+      .from('user_flames_daily')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .not('offer_id', 'is', null);
+    
+    // Get bookings count
+    const { count: offersBooked } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    
+    return {
+      flamesToday: todayFlame?.offer_id ? 1 : 0,
+      totalFlames: totalFlames || 0,
+      offersBooked: offersBooked || 0,
+      rating: 4.8 // Static for now
+    };
+  } catch (error) {
+    console.error('Error calculating stats:', error);
+    return {
+      flamesToday: 0,
+      totalFlames: 0,
+      offersBooked: 0,
+      rating: 0
+    };
+  }
+};
+
 interface UserProfile {
   name: string;
   email: string;
@@ -70,6 +113,7 @@ export default function Profile() {
         .single();
 
       if (profileData) {
+        const userStats = await calculateUserStats(session.user.id);
         setUserProfile({
           name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim(),
           email: profileData.email || session.user.email || '',
@@ -80,12 +124,7 @@ export default function Profile() {
             year: 'numeric' 
           }),
           subscription: "Premium Étudiant",
-          stats: {
-            flamesToday: 12,
-            totalFlames: 247,
-            offersBooked: 18,
-            rating: 4.8
-          }
+          stats: userStats
         });
       } else {
         // Default profile if no data exists

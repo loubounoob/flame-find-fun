@@ -43,13 +43,15 @@ export function useFlames() {
       if (error) throw error;
 
       if (!data) {
-        // Create today's flame entry
+        // Create today's flame entry with ON CONFLICT handling
         const { data: newFlame, error: createError } = await supabase
           .from('user_flames_daily')
-          .insert({
+          .upsert({
             user_id: user.id,
             flame_date: today,
             offer_id: null
+          }, {
+            onConflict: 'user_id,flame_date'
           })
           .select()
           .single();

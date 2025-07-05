@@ -39,6 +39,14 @@ export function OfferCard({
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is authenticated
+    if (!canGiveFlame()) {
+      // Navigate to auth page if not logged in
+      window.location.href = '/auth';
+      return;
+    }
+    
     await giveFlame(id);
     // Refresh flame counts to update UI without page reload
     queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
@@ -119,7 +127,15 @@ export function OfferCard({
                 </span>
               </Button>
               
-              <Link to={`/booking/${id}`}>
+              <Link 
+                to={canGiveFlame() ? `/booking/${id}` : '/auth'}
+                onClick={(e) => {
+                  if (!canGiveFlame()) {
+                    e.preventDefault();
+                    window.location.href = '/auth';
+                  }
+                }}
+              >
                 <Button 
                   size="sm" 
                   className="bg-gradient-primary hover:opacity-90 px-4 py-2"
