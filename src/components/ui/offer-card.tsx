@@ -127,24 +127,22 @@ export function OfferCard({
                 </span>
               </Button>
               
-              <Link 
-                to={canGiveFlame() ? `/booking/${id}` : '/auth'}
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary hover:opacity-90 px-4 py-2"
                 onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   if (!canGiveFlame()) {
-                    e.preventDefault();
                     window.location.href = '/auth';
+                  } else {
+                    window.location.href = `/booking/${id}`;
                   }
                 }}
               >
-                <Button 
-                  size="sm" 
-                  className="bg-gradient-primary hover:opacity-90 px-4 py-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Calendar size={14} className="mr-1" />
-                  Réserver
-                </Button>
-              </Link>
+                <Calendar size={14} className="mr-1" />
+                Réserver
+              </Button>
             </div>
           </CardContent>
         </Card>

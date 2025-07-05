@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { MapPin, Navigation, Crosshair, Zap, Target } from "lucide-react";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapboxMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -10,8 +13,11 @@ interface MapboxMapProps {
 
 export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [showTokenInput, setShowTokenInput] = useState(true);
   const [nearbyOffers, setNearbyOffers] = useState([
     { id: 1, title: "Bowling Party", distance: "250m", type: "bowling" },
     { id: 2, title: "Laser Game", distance: "450m", type: "laser" },
@@ -51,55 +57,84 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
     }
   };
 
+  // Initialize Mapbox
   useEffect(() => {
+    if (!mapboxToken || !mapContainer.current) return;
+
+    mapboxgl.accessToken = mapboxToken;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [4.8357, 45.7640], // Lyon center
+      zoom: 13
+    });
+
+    // Add navigation controls
+    map.current.addControl(
+      new mapboxgl.NavigationControl({
+        visualizePitch: true,
+      }),
+      'top-right'
+    );
+
+    // Add user location marker
     getCurrentLocation();
-  }, []);
 
-  return (
-    <div className="relative w-full h-full bg-gradient-to-br from-primary/10 via-background to-secondary/10 rounded-lg overflow-hidden">
-      {/* Interface style Snapchat Map avec cercles concentriques */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        {/* Cercles concentriques animés */}
-        <div className="absolute w-80 h-80 border-2 border-primary/30 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
-        <div className="absolute w-60 h-60 border-2 border-secondary/40 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
-        <div className="absolute w-40 h-40 border-2 border-flame/50 rounded-full animate-ping" style={{ animationDuration: '1s' }} />
-        
-        {/* Centre utilisateur */}
-        <div className="relative w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center z-10 animate-pulse-glow">
-          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-gradient-primary rounded-full" />
-          </div>
+    return () => {
+      map.current?.remove();
+    };
+  }, [mapboxToken]);
+
+  const initializeMap = (token: string) => {
+    setMapboxToken(token);
+    setShowTokenInput(false);
+  };
+
+  if (showTokenInput) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4 p-6">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-semibold">Configuration Mapbox</h3>
+          <p className="text-sm text-muted-foreground">
+            Entrez votre token Mapbox pour activer la carte.
+            <br />
+            Obtenez-le sur{" "}
+            <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              mapbox.com
+            </a>
+          </p>
         </div>
-
-        {/* Offres positionnées autour */}
-        <div className="absolute top-20 left-20">
-          <div className="w-12 h-12 bg-gradient-flame rounded-full flex items-center justify-center animate-bounce">
-            <Zap size={20} className="text-white" />
-          </div>
-          <div className="text-xs text-center mt-1 font-semibold">250m</div>
-        </div>
-
-        <div className="absolute bottom-20 right-20">
-          <div className="w-12 h-12 bg-gradient-secondary rounded-full flex items-center justify-center animate-bounce" style={{ animationDelay: '0.5s' }}>
-            <Target size={20} className="text-white" />
-          </div>
-          <div className="text-xs text-center mt-1 font-semibold">450m</div>
-        </div>
-
-        <div className="absolute top-32 right-16">
-          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-bounce" style={{ animationDelay: '1s' }}>
-            <MapPin size={20} className="text-white" />
-          </div>
-          <div className="text-xs text-center mt-1 font-semibold">800m</div>
+        <div className="w-full max-w-md space-y-3">
+          <Input
+            placeholder="Votre token Mapbox public"
+            value={mapboxToken}
+            onChange={(e) => setMapboxToken(e.target.value)}
+            className="w-full"
+          />
+          <Button
+            onClick={() => initializeMap(mapboxToken)}
+            disabled={!mapboxToken.trim()}
+            className="w-full"
+          >
+            Activer la carte
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      {/* Panneau d'informations style Snapchat */}
+  return (
+    <div className="relative w-full h-full">
+      {/* Vraie carte Mapbox */}
+      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
+      
+      {/* Panneau d'informations */}
       <div className="absolute bottom-4 left-4 right-4">
         <Card className="bg-background/90 backdrop-blur-md border-border/50">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-poppins font-bold text-foreground">Découverte en cours...</h4>
+              <h4 className="font-poppins font-bold text-foreground">Offres à proximité</h4>
               <Badge className="bg-gradient-flame text-white">
                 {nearbyOffers.length} offres
               </Badge>
@@ -116,7 +151,7 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
         </Card>
       </div>
 
-      {/* Bouton de géolocalisation style Snapchat */}
+      {/* Bouton de géolocalisation */}
       <div className="absolute top-4 right-4">
         <Button
           onClick={getCurrentLocation}
@@ -134,8 +169,8 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
 
       {/* Indicateur de statut */}
       <div className="absolute top-4 left-4">
-        <Badge className="bg-gradient-flame text-white animate-pulse">
-          {userLocation ? "🔥 Connecté" : "📍 Localisation..."}
+        <Badge className="bg-gradient-flame text-white">
+          {userLocation ? "🔥 Position active" : "📍 Localisation..."}
         </Badge>
       </div>
     </div>

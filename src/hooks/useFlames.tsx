@@ -97,7 +97,8 @@ export function useFlames() {
 
       if (error) throw error;
 
-      setDailyFlame(prev => prev ? { ...prev, offer_id: offerId } : null);
+      // Force un refetch pour synchroniser tous les états
+      await fetchDailyFlame();
       
       toast({
         title: "Flamme donnée !",
