@@ -19,6 +19,7 @@ import Subscription from "./pages/Subscription";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 const queryClient = new QueryClient();
 
@@ -29,26 +30,29 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/flames" element={<Flames />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/offer/:id" element={<OfferDetail />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/booking/:id" element={<BookingForm />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile/edit" element={<ProfileEdit />} />
-          <Route path="/subscription" element={<Subscription />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-        <Route path="/business-dashboard" element={<BusinessDashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/flames" element={<Flames />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/offer/:id" element={<OfferDetail />} />
+              <Route path="/booking" element={<Booking />} />
+              <Route path="/booking/:id" element={<BookingForm />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/profile/edit" element={<ProfileEdit />} />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/business-dashboard" element={<BusinessDashboard />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNav />
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

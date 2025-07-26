@@ -1,11 +1,9 @@
 import Home from "./Home";
-import { BottomNav } from "@/components/ui/bottom-nav";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
       <Home />
-      <BottomNav />
     </div>
   );
 };

@@ -184,30 +184,30 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 lg:px-8 lg:py-6 max-w-7xl mx-auto">
           <div>
-            <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
+            <h1 className="text-2xl lg:text-3xl font-poppins font-bold text-gradient-primary">
               FlameUp
             </h1>
-            <p className="text-xs text-muted-foreground">Lyon • Étudiant</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Lyon • Étudiant</p>
           </div>
           
           <div className="flex items-center gap-3">
             {/* Flames counter */}
-            <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
-              <Flame size={14} className="text-white fill-current animate-pulse" />
-              <span className="text-white text-sm font-semibold">
+            <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1 lg:px-4 lg:py-2">
+              <Flame size={14} className="text-white fill-current animate-pulse lg:w-4 lg:h-4" />
+              <span className="text-white text-sm lg:text-base font-semibold">
                 {dailyFlame?.offer_id ? 0 : 1} flamme{dailyFlame?.offer_id ? 's' : ''}
               </span>
             </div>
             
             <Link to="/notifications">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell size={20} />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-flame text-white text-xs p-0 flex items-center justify-center">
+              <Button variant="ghost" size="icon" className="relative lg:w-12 lg:h-12">
+                <Bell size={20} className="lg:w-6 lg:h-6" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-flame text-white text-xs p-0 flex items-center justify-center lg:h-6 lg:w-6 lg:text-sm">
                   3
                 </Badge>
               </Button>
@@ -218,7 +218,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="relative aspect-[16/9] md:aspect-[21/9]">
+        <div className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
           <img 
             src={heroImage} 
             alt="FlameUp Hero" 
@@ -226,12 +226,12 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           
-          <div className="absolute inset-0 flex items-center justify-center text-center p-6">
-            <div className="max-w-md space-y-4">
-              <h2 className="text-3xl md:text-4xl font-poppins font-bold text-white">
+          <div className="absolute inset-0 flex items-center justify-center text-center p-6 lg:p-12">
+            <div className="max-w-md lg:max-w-2xl space-y-4 lg:space-y-6">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-poppins font-bold text-white">
                 Découvre les offres les plus 🔥
               </h2>
-              <p className="text-white/90 text-sm">
+              <p className="text-white/90 text-sm lg:text-lg">
                 Bowling, laser game, escape game... Des activités folles à prix mini !
               </p>
               
@@ -240,9 +240,9 @@ export default function Home() {
                   <Button 
                     variant="premium" 
                     size="lg"
-                    className="animate-bounce-in"
+                    className="animate-bounce-in lg:text-lg lg:px-8 lg:py-4"
                   >
-                    <Star className="mr-2" size={18} />
+                    <Star className="mr-2 lg:w-5 lg:h-5" size={18} />
                     S'abonner - 20€/mois
                   </Button>
                 </Link>
@@ -253,37 +253,38 @@ export default function Home() {
       </section>
 
       {/* Quick Stats */}
-      <section className="p-4">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-primary mb-1">{offers.length}</div>
-            <div className="text-sm text-muted-foreground">Offres actives</div>
+      <section className="p-4 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-4 lg:mb-6">
+          <div className="bg-gradient-card rounded-xl p-4 lg:p-6 text-center border border-border/50">
+            <div className="text-2xl lg:text-3xl font-bold text-gradient-primary mb-1">{offers.length}</div>
+            <div className="text-sm lg:text-base text-muted-foreground">Offres actives</div>
           </div>
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
-            <div className="text-sm text-muted-foreground">Flammes données</div>
+          <div className="bg-gradient-card rounded-xl p-4 lg:p-6 text-center border border-border/50">
+            <div className="text-2xl lg:text-3xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
+            <div className="text-sm lg:text-base text-muted-foreground">Flammes données</div>
           </div>
-        </div>
-        <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-          <div className="text-2xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
-          <div className="text-sm text-muted-foreground">Entreprises partenaires</div>
+          <div className="bg-gradient-card rounded-xl p-4 lg:p-6 text-center border border-border/50 lg:col-span-1 col-span-2">
+            <div className="text-2xl lg:text-3xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
+            <div className="text-sm lg:text-base text-muted-foreground">Entreprises partenaires</div>
+          </div>
         </div>
       </section>
 
       {/* Subscription Status */}
       {!isSubscribed && (
-        <section className="mx-4 mb-4">
-          <div className="bg-gradient-primary rounded-xl p-4 text-center">
-            <h3 className="text-white font-semibold mb-2">
+        <section className="mx-4 lg:mx-8 mb-4 lg:mb-8 max-w-7xl mx-auto">
+          <div className="bg-gradient-primary rounded-xl p-4 lg:p-6 text-center">
+            <h3 className="text-white font-semibold mb-2 lg:text-lg">
               🔒 Mode Découverte
             </h3>
-            <p className="text-white/90 text-sm mb-3">
+            <p className="text-white/90 text-sm lg:text-base mb-3">
               Tu peux voir les offres mais pas les réserver. Abonne-toi pour débloquer toutes les activités !
             </p>
             <Link to="/subscription">
               <Button 
                 variant="secondary" 
                 size="sm"
+                className="lg:text-base lg:px-6 lg:py-2"
               >
                 Découvrir l'abonnement
               </Button>
@@ -293,21 +294,23 @@ export default function Home() {
       )}
 
       {/* Main Feed */}
-      <section className="p-4 space-y-4">
-        {offers.map((offer) => (
-          <OfferCard
-            key={offer.id}
-            id={offer.id}
-            title={offer.title}
-            business_user_id={offer.business_user_id}
-            location={offer.location}
-            category={offer.category}
-            flames={flamesCounts[offer.id] || 0}
-            image={offer.image_url}
-            price={offer.price}
-            description={offer.description}
-          />
-        ))}
+      <section className="p-4 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              id={offer.id}
+              title={offer.title}
+              business_user_id={offer.business_user_id}
+              location={offer.location}
+              category={offer.category}
+              flames={flamesCounts[offer.id] || 0}
+              image={offer.image_url}
+              price={offer.price}
+              description={offer.description}
+            />
+          ))}
+        </div>
       </section>
     </div>
   );
