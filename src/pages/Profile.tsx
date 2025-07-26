@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BottomNav } from "@/components/ui/bottom-nav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
@@ -178,51 +177,53 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-          Profil
-        </h1>
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4 lg:px-8 lg:py-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl lg:text-3xl font-poppins font-bold text-gradient-primary">
+            Profil
+          </h1>
+        </div>
       </header>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 lg:px-8 lg:py-8 max-w-7xl mx-auto space-y-6 lg:space-y-8">
         {/* Profile Info */}
         <Card className="bg-gradient-card border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="w-16 h-16 border-2 border-primary">
+          <CardContent className="p-6 lg:p-8">
+            <div className="flex items-center gap-4 lg:gap-6 mb-4 lg:mb-6">
+              <Avatar className="w-16 h-16 lg:w-20 lg:h-20 border-2 border-primary">
                 <AvatarImage src={userProfile.avatar} alt={userProfile.name} />
-                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg font-bold">
+                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg lg:text-xl font-bold">
                   {userProfile.name.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
-                <h2 className="text-xl font-poppins font-bold text-foreground">
+                <h2 className="text-xl lg:text-2xl font-poppins font-bold text-foreground">
                   {userProfile.name}
                 </h2>
-                <p className="text-sm text-muted-foreground">{userProfile.email}</p>
-                <div className="flex items-center gap-4 mt-2">
+                <p className="text-sm lg:text-base text-muted-foreground">{userProfile.email}</p>
+                <div className="flex items-center gap-4 mt-2 lg:mt-3">
                   <div className="flex items-center gap-1">
-                    <MapPin size={14} className="text-primary" />
-                    <span className="text-sm text-muted-foreground">{userProfile.location}</span>
+                    <MapPin size={14} className="text-primary lg:w-4 lg:h-4" />
+                    <span className="text-sm lg:text-base text-muted-foreground">{userProfile.location}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Calendar size={14} className="text-secondary" />
-                    <span className="text-sm text-muted-foreground">Depuis {userProfile.joinDate}</span>
+                    <Calendar size={14} className="text-secondary lg:w-4 lg:h-4" />
+                    <span className="text-sm lg:text-base text-muted-foreground">Depuis {userProfile.joinDate}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Subscription Status */}
-            <div className="flex items-center justify-between p-3 bg-gradient-primary rounded-xl">
+            <div className="flex items-center justify-between p-3 lg:p-4 bg-gradient-primary rounded-xl">
               <div>
-                <p className="text-primary-foreground font-semibold">{userProfile.subscription}</p>
-                <p className="text-primary-foreground/80 text-sm">Accès illimité aux offres</p>
+                <p className="text-primary-foreground font-semibold lg:text-lg">{userProfile.subscription}</p>
+                <p className="text-primary-foreground/80 text-sm lg:text-base">Accès illimité aux offres</p>
               </div>
-              <Badge className="bg-white/20 text-primary-foreground border-0">
+              <Badge className="bg-white/20 text-primary-foreground border-0 lg:text-sm lg:px-3 lg:py-1">
                 Actif
               </Badge>
             </div>
@@ -231,33 +232,33 @@ export default function Profile() {
 
         {/* Stats */}
         <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Mes statistiques</CardTitle>
+          <CardHeader className="lg:px-8 lg:py-6">
+            <CardTitle className="text-lg lg:text-xl">Mes statistiques</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-gradient-flame rounded-xl">
-                <Heart size={20} className="mx-auto mb-2 text-white" />
-                <div className="text-lg font-bold text-white">{userProfile.stats.flamesToday}</div>
-                <div className="text-xs text-white/80">Aujourd'hui</div>
+          <CardContent className="lg:px-8 lg:pb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <div className="text-center p-3 lg:p-4 bg-gradient-flame rounded-xl">
+                <Heart size={20} className="mx-auto mb-2 text-white lg:w-6 lg:h-6" />
+                <div className="text-lg lg:text-xl font-bold text-white">{userProfile.stats.flamesToday}</div>
+                <div className="text-xs lg:text-sm text-white/80">Aujourd'hui</div>
               </div>
               
-              <div className="text-center p-3 bg-gradient-secondary rounded-xl">
-                <Trophy size={20} className="mx-auto mb-2 text-secondary-foreground" />
-                <div className="text-lg font-bold text-secondary-foreground">{userProfile.stats.totalFlames}</div>
-                <div className="text-xs text-secondary-foreground/80">Total flammes</div>
+              <div className="text-center p-3 lg:p-4 bg-gradient-secondary rounded-xl">
+                <Trophy size={20} className="mx-auto mb-2 text-secondary-foreground lg:w-6 lg:h-6" />
+                <div className="text-lg lg:text-xl font-bold text-secondary-foreground">{userProfile.stats.totalFlames}</div>
+                <div className="text-xs lg:text-sm text-secondary-foreground/80">Total flammes</div>
               </div>
               
-              <div className="text-center p-3 bg-gradient-primary rounded-xl">
-                <Calendar size={20} className="mx-auto mb-2 text-primary-foreground" />
-                <div className="text-lg font-bold text-primary-foreground">{userProfile.stats.offersBooked}</div>
-                <div className="text-xs text-primary-foreground/80">Réservations</div>
+              <div className="text-center p-3 lg:p-4 bg-gradient-primary rounded-xl">
+                <Calendar size={20} className="mx-auto mb-2 text-primary-foreground lg:w-6 lg:h-6" />
+                <div className="text-lg lg:text-xl font-bold text-primary-foreground">{userProfile.stats.offersBooked}</div>
+                <div className="text-xs lg:text-sm text-primary-foreground/80">Réservations</div>
               </div>
               
-              <div className="text-center p-3 bg-gradient-card border border-border/50 rounded-xl">
-                <Star size={20} className="mx-auto mb-2 text-warning" />
-                <div className="text-lg font-bold text-foreground">{userProfile.stats.rating}</div>
-                <div className="text-xs text-muted-foreground">Note moyenne</div>
+              <div className="text-center p-3 lg:p-4 bg-gradient-card border border-border/50 rounded-xl">
+                <Star size={20} className="mx-auto mb-2 text-warning lg:w-6 lg:h-6" />
+                <div className="text-lg lg:text-xl font-bold text-foreground">{userProfile.stats.rating}</div>
+                <div className="text-xs lg:text-sm text-muted-foreground">Note moyenne</div>
               </div>
             </div>
           </CardContent>
@@ -265,17 +266,17 @@ export default function Profile() {
 
         {/* Menu Options */}
         <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Paramètres</CardTitle>
+          <CardHeader className="lg:px-8 lg:py-6">
+            <CardTitle className="text-lg lg:text-xl">Paramètres</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 lg:px-8 lg:pb-8">
             {menuItems.map((item, index) => (
               <div key={item.label}>
                 <Link to={item.href}>
-                  <div className="flex items-center gap-3 p-4 hover:bg-muted/20 transition-colors">
-                    <item.icon size={20} className="text-muted-foreground" />
-                    <span className="flex-1 text-foreground">{item.label}</span>
-                    <span className="text-muted-foreground">›</span>
+                  <div className="flex items-center gap-3 p-4 lg:p-5 hover:bg-muted/20 transition-colors">
+                    <item.icon size={20} className="text-muted-foreground lg:w-5 lg:h-5" />
+                    <span className="flex-1 text-foreground lg:text-lg">{item.label}</span>
+                    <span className="text-muted-foreground lg:text-lg">›</span>
                   </div>
                 </Link>
                 {index < menuItems.length - 1 && <Separator />}
@@ -286,25 +287,23 @@ export default function Profile() {
 
         {/* Logout */}
         <Card className="bg-gradient-card border-border/50">
-          <CardContent className="p-4">
+          <CardContent className="p-4 lg:p-8">
             <Button 
               variant="destructive" 
-              className="w-full" 
+              className="w-full lg:h-12 lg:text-lg" 
               onClick={handleLogout}
             >
-              <LogOut size={20} className="mr-2" />
+              <LogOut size={20} className="mr-2 lg:w-5 lg:h-5" />
               Se déconnecter
             </Button>
           </CardContent>
         </Card>
 
         {/* Version info */}
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-center text-xs lg:text-sm text-muted-foreground">
           FlameUp v1.0.0 • Made with 🔥 for students
         </div>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

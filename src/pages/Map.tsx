@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Navigation, Filter, List, Heart, Flame } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BottomNav } from "@/components/ui/bottom-nav";
 import { MapboxMap } from "@/components/ui/mapbox-map";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,62 +67,114 @@ export default function Map() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-            Carte
-          </h1>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={() => setShowList(!showList)}>
-              <List size={20} />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Filter size={20} />
-            </Button>
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4 lg:px-8 lg:py-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl lg:text-3xl font-poppins font-bold text-gradient-primary">
+              Carte
+            </h1>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={() => setShowList(!showList)} className="lg:w-12 lg:h-12">
+                <List size={20} className="lg:w-6 lg:h-6" />
+              </Button>
+              <Button variant="outline" size="icon" className="lg:w-12 lg:h-12">
+                <Filter size={20} className="lg:w-6 lg:h-6" />
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-3 flex gap-2">
-          <Badge variant="secondary" className="px-3 py-1 flex-1 justify-center">
-            {offers.length} offres disponibles
-          </Badge>
-          {userLocation && (
-            <Badge variant="outline" className="px-3 py-1">
-              Position active
+          
+          <div className="mt-3 lg:mt-4 flex gap-2">
+            <Badge variant="secondary" className="px-3 py-1 flex-1 justify-center lg:text-sm">
+              {offers.length} offres disponibles
             </Badge>
-          )}
+            {userLocation && (
+              <Badge variant="outline" className="px-3 py-1 lg:text-sm">
+                Position active
+              </Badge>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="relative h-[calc(100vh-180px)]">
-        {/* Vraie carte Mapbox */}
-        <MapboxMap onLocationUpdate={handleLocationUpdate} />
+      <div className="relative h-[calc(100vh-180px)] lg:h-[calc(100vh-200px)]">
+        <MapboxMap 
+          offers={offers}
+          onLocationUpdate={handleLocationUpdate}
+          className="w-full h-full"
+        />
+        
+        {/* Floating action button */}
+        <div className="absolute bottom-4 right-4">
+          <Button 
+            size="icon" 
+            className="w-12 h-12 lg:w-14 lg:h-14 bg-gradient-primary shadow-lg"
+            onClick={() => {
+              // Get user location
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    setUserLocation({
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude
+                    });
+                  },
+                  (error) => {
+                    console.error('Error getting location:', error);
+                  }
+                );
+              }
+            }}
+          >
+            <Navigation size={20} className="lg:w-6 lg:h-6" />
+          </Button>
+        </div>
+      </div>
 
-        {/* Floating List Toggle */}
-        {showList && (
-          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-80 overflow-y-auto">
-            <div className="p-4 space-y-3">
-              <h3 className="font-semibold text-foreground mb-3">Offres disponibles</h3>
-              {offers.map((offer) => (
+      {/* List overlay */}
+      {showList && (
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-md z-30 lg:relative lg:bg-transparent lg:backdrop-blur-none">
+          <div className="p-4 lg:p-8 max-h-full overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h2 className="text-lg lg:text-xl font-poppins font-semibold">Offres à proximité</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowList(false)} className="lg:hidden">
+                <span className="text-2xl">×</span>
+              </Button>
+            </div>
+            
+            <div className="space-y-3 lg:space-y-4">
+              {nearbyOffers.map((offer) => (
                 <Link key={offer.id} to={`/offer/${offer.id}`}>
                   <Card className="bg-gradient-card border-border/50 hover-lift">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
+                    <CardContent className="p-4 lg:p-6">
+                      <div className="flex items-start gap-3 lg:gap-4">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">{offer.title}</h4>
-                          <p className="text-sm text-muted-foreground">{offer.category}</p>
-                          <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center gap-2 mb-1 lg:mb-2">
+                            <h3 className="font-semibold text-foreground lg:text-lg">{offer.title}</h3>
+                            <Badge variant="secondary" className="text-xs lg:text-sm">
+                              {offer.category}
+                            </Badge>
+                          </div>
+                          <p className="text-sm lg:text-base text-muted-foreground mb-2 lg:mb-3">{offer.business}</p>
+                          <div className="flex items-center gap-4 text-xs lg:text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
-                              <MapPin size={12} className="text-primary" />
-                              <span className="text-xs text-muted-foreground">{offer.location}</span>
+                              <MapPin size={12} className="lg:w-4 lg:h-4" />
+                              <span>{offer.location}</span>
                             </div>
+                            <span>{offer.distance}</span>
                           </div>
                         </div>
-                        <Badge className="bg-gradient-flame text-white">
-                          Voir détails
-                        </Badge>
+                        
+                        <div className="flex flex-col items-end gap-2 lg:gap-3">
+                          <div className="flex items-center gap-1 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold lg:px-3 lg:py-1.5 lg:text-sm">
+                            <Flame size={12} className="fill-current lg:w-4 lg:h-4" />
+                            {offer.flames}
+                          </div>
+                          <Badge className="bg-gradient-flame text-white text-xs lg:text-sm">
+                            {offer.discount}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -131,10 +182,8 @@ export default function Map() {
               ))}
             </div>
           </div>
-        )}
-      </div>
-      
-      <BottomNav />
+        </div>
+      )}
     </div>
   );
 }

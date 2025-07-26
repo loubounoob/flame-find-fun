@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { Heart, Trophy, Zap, Star, TrendingUp, Award, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { BottomNav } from "@/components/ui/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 
 const stats = {
@@ -72,96 +71,125 @@ export default function Flames() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <h1 className="text-2xl font-poppins font-bold text-gradient-flame">
-          Mes Flammes 🔥
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ton activité et tes découvertes
-        </p>
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4 lg:px-8 lg:py-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl lg:text-3xl font-poppins font-bold text-gradient-flame">
+            Mes Flammes 🔥
+          </h1>
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
+            Ton activité et tes découvertes
+          </p>
+        </div>
       </header>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 lg:px-8 lg:py-8 max-w-7xl mx-auto space-y-6 lg:space-y-8">
         {/* Stats Overview */}
         <section>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
             <Card className="bg-gradient-flame text-white border-0">
-              <CardContent className="p-4 text-center">
-                <Zap size={24} className="mx-auto mb-2" />
-                <div className="text-2xl font-bold">{stats.flamesToday}</div>
-                <div className="text-xs opacity-90">Aujourd'hui</div>
+              <CardContent className="p-4 lg:p-6 text-center">
+                <Zap size={24} className="mx-auto mb-2 lg:w-8 lg:h-8" />
+                <div className="text-2xl lg:text-3xl font-bold">{stats.flamesToday}</div>
+                <div className="text-xs lg:text-sm opacity-90">Aujourd'hui</div>
               </CardContent>
             </Card>
             
             <Card className="bg-gradient-primary text-primary-foreground border-0">
-              <CardContent className="p-4 text-center">
-                <Trophy size={24} className="mx-auto mb-2" />
-                <div className="text-2xl font-bold">#{stats.rank}</div>
-                <div className="text-xs opacity-90">Classement</div>
+              <CardContent className="p-4 lg:p-6 text-center">
+                <Trophy size={24} className="mx-auto mb-2 lg:w-8 lg:h-8" />
+                <div className="text-2xl lg:text-3xl font-bold">{stats.totalFlames}</div>
+                <div className="text-xs lg:text-sm opacity-90">Total</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-secondary text-secondary-foreground border-0">
+              <CardContent className="p-4 lg:p-6 text-center">
+                <TrendingUp size={24} className="mx-auto mb-2 lg:w-8 lg:h-8" />
+                <div className="text-2xl lg:text-3xl font-bold">#{stats.rank}</div>
+                <div className="text-xs lg:text-sm opacity-90">Classement</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-card border-border/50">
+              <CardContent className="p-4 lg:p-6 text-center">
+                <Award size={24} className="mx-auto mb-2 lg:w-8 lg:h-8 text-warning" />
+                <div className="text-2xl lg:text-3xl font-bold">{stats.weeklyProgress}/{stats.weeklyGoal}</div>
+                <div className="text-xs lg:text-sm text-muted-foreground">Objectif hebdo</div>
               </CardContent>
             </Card>
           </div>
-
+          
+          {/* Weekly Progress */}
           <Card className="bg-gradient-card border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp size={20} className="text-success" />
-                Objectif hebdomadaire
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Progression</span>
-                  <span className="font-medium">{stats.weeklyProgress}/{stats.weeklyGoal}</span>
-                </div>
-                <Progress 
-                  value={(stats.weeklyProgress / stats.weeklyGoal) * 100} 
-                  className="h-2"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Plus que {stats.weeklyGoal - stats.weeklyProgress} flammes pour atteindre ton objectif !
-                </p>
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center justify-between mb-3 lg:mb-4">
+                <h3 className="font-semibold text-foreground lg:text-lg">Progression hebdomadaire</h3>
+                <span className="text-sm lg:text-base text-muted-foreground">
+                  {Math.round((stats.weeklyProgress / stats.weeklyGoal) * 100)}%
+                </span>
               </div>
+              <Progress value={(stats.weeklyProgress / stats.weeklyGoal) * 100} className="h-2 lg:h-3" />
             </CardContent>
           </Card>
         </section>
 
-        {/* Achievements */}
+        {/* Liked Offers */}
         <section>
-          <h2 className="text-lg font-poppins font-semibold mb-3">Accomplissements</h2>
-          <div className="space-y-3">
-            {achievements.map((achievement, index) => (
-              <Card key={index} className="bg-gradient-card border-border/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">{achievement.title}</h3>
-                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                      {achievement.progress && (
-                        <div className="mt-2">
-                          <Progress 
-                            value={(achievement.progress / achievement.target!) * 100} 
-                            className="h-1"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {achievement.progress}/{achievement.target}
-                          </p>
-                        </div>
-                      )}
+          <div className="flex items-center justify-between mb-4 lg:mb-6">
+            <h2 className="text-lg lg:text-xl font-poppins font-semibold">Mes offres likées</h2>
+            <Badge variant="secondary" className="lg:text-sm">
+              {likedOffers.length} offres
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {likedOffers.map((offer) => (
+              <Card key={offer.id} className="bg-gradient-card border-border/50 hover-lift overflow-hidden">
+                <div className="relative aspect-[4/3]">
+                  <img 
+                    src={offer.image} 
+                    alt={offer.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  
+                  <div className="absolute bottom-3 right-3 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1 lg:px-3 lg:py-1.5 lg:text-sm">
+                    <Heart size={12} className="fill-current lg:w-4 lg:h-4" />
+                    {offer.flames}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white lg:w-10 lg:h-10"
+                    onClick={() => removeFlame(offer.id)}
+                  >
+                    <Minus size={16} className="lg:w-5 lg:h-5" />
+                  </Button>
+                </div>
+                
+                <CardContent className="p-4 lg:p-6">
+                  <div className="space-y-2 lg:space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-base lg:text-lg text-foreground line-clamp-1">
+                        {offer.title}
+                      </h3>
+                      <p className="text-xs lg:text-sm text-muted-foreground">
+                        {offer.business}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant={achievement.completed ? "default" : "secondary"}
-                        className={achievement.completed ? "bg-success" : ""}
-                      >
-                        +{achievement.points}
-                      </Badge>
-                      {achievement.completed && (
-                        <Award size={20} className="text-success" />
-                      )}
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs lg:text-sm text-muted-foreground">
+                        {offer.myFlameDate}
+                      </span>
+                      <Link to={`/offer/${offer.id}`}>
+                        <Button size="sm" variant="outline" className="lg:text-sm">
+                          Voir détails
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </CardContent>
@@ -170,77 +198,56 @@ export default function Flames() {
           </div>
         </section>
 
-        {/* Liked Offers */}
+        {/* Achievements */}
         <section>
-          <h2 className="text-lg font-poppins font-semibold mb-3">Mes offres flammées</h2>
-          {likedOffers.length > 0 ? (
-            <div className="space-y-3">
-              {likedOffers.map((offer) => (
-                <Link key={offer.id} to={`/offer/${offer.id}`}>
-                  <Card className="bg-gradient-card border-border/50 hover-lift hover-glow">
-                    <CardContent className="p-0">
-                      <div className="flex">
-                        <img 
-                          src={offer.image} 
-                          alt={offer.title}
-                          className="w-20 h-20 object-cover rounded-l-xl"
-                        />
-                        <div className="flex-1 p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-foreground">{offer.title}</h3>
-                              <p className="text-sm text-muted-foreground">{offer.business}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Flammé {offer.myFlameDate}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Heart size={14} className="text-flame fill-current" />
-                                <span className="text-sm font-medium">{offer.flames}</span>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  removeFlame(offer.id);
-                                }}
-                                className="h-7 px-2 text-xs"
-                              >
-                                <Minus size={12} className="mr-1" />
-                                Retirer
-                              </Button>
-                            </div>
+          <h2 className="text-lg lg:text-xl font-poppins font-semibold mb-4 lg:mb-6">Succès</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {achievements.map((achievement, index) => (
+              <Card key={index} className="bg-gradient-card border-border/50">
+                <CardContent className="p-4 lg:p-6">
+                  <div className="flex items-start gap-3 lg:gap-4">
+                    <div className={`w-12 h-12 lg:w-16 lg:h-16 rounded-full flex items-center justify-center text-2xl lg:text-3xl ${
+                      achievement.completed 
+                        ? 'bg-gradient-flame text-white' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {achievement.completed ? '🏆' : '🎯'}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground lg:text-lg mb-1 lg:mb-2">
+                        {achievement.title}
+                      </h3>
+                      <p className="text-sm lg:text-base text-muted-foreground mb-2 lg:mb-3">
+                        {achievement.description}
+                      </p>
+                      
+                      {achievement.completed ? (
+                        <Badge className="bg-gradient-flame text-white lg:text-sm">
+                          +{achievement.points} points
+                        </Badge>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs lg:text-sm">
+                            <span className="text-muted-foreground">Progression</span>
+                            <span className="text-foreground">
+                              {achievement.progress}/{achievement.target}
+                            </span>
                           </div>
+                          <Progress 
+                            value={(achievement.progress / achievement.target) * 100} 
+                            className="h-2 lg:h-3" 
+                          />
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Card className="bg-gradient-card border-border/50">
-              <CardContent className="p-8 text-center">
-                <Heart size={48} className="mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="font-semibold text-foreground mb-2">Aucune flamme donnée</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Commence à explorer et donne des flammes aux offres qui t'intéressent !
-                </p>
-                <Link to="/explore">
-                  <Button variant="default">
-                    Explorer les offres
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )}
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </section>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

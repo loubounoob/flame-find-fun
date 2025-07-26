@@ -58,7 +58,7 @@ export function OfferCard({
   return (
     <div className="mb-4">
       <Link to={`/offer/${id}`}>
-        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
+        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px] lg:h-[420px] xl:h-[450px]">
           <div className="relative aspect-[3/2]">
             <img 
               src={image || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
@@ -69,52 +69,52 @@ export function OfferCard({
             
             <Badge 
               variant="secondary" 
-              className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm"
+              className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm lg:text-sm lg:px-3 lg:py-1"
             >
               {category}
             </Badge>
             
             {/* Compteur de flammes en bas à droite de l'image */}
-            <div className="absolute bottom-3 right-3 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
-              <Flame size={12} className="fill-current" />
+            <div className="absolute bottom-3 right-3 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1 lg:px-3 lg:py-1.5 lg:text-sm">
+              <Flame size={12} className="fill-current lg:w-4 lg:h-4" />
               {flames}
             </div>
             
             {discount && (
               <Badge 
-                className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow"
+                className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow lg:text-sm lg:px-3 lg:py-1"
               >
                 {discount}
               </Badge>
             )}
           </div>
           
-          <CardContent className="p-4">
-            <div className="space-y-3">
+          <CardContent className="p-4 lg:p-6">
+            <div className="space-y-3 lg:space-y-4">
               <div>
-                <h3 className="font-semibold text-base text-foreground line-clamp-1">
+                <h3 className="font-semibold text-base lg:text-lg text-foreground line-clamp-1">
                   {title}
                 </h3>
                 {business && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
                     {business}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin size={12} className="text-primary" />
+              <div className="flex items-center gap-2 text-xs lg:text-sm text-muted-foreground">
+                <MapPin size={12} className="text-primary lg:w-4 lg:h-4" />
                 <span className="line-clamp-1">{location}</span>
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-2">
+            <div className="flex items-center justify-between mt-4 pt-2 lg:mt-6 lg:pt-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg ${
+                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg lg:h-12 lg:px-6 lg:text-sm ${
                   hasGivenFlameToOffer(id) 
                     ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
                     : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
@@ -122,16 +122,16 @@ export function OfferCard({
               >
                 <Flame 
                   size={16} 
-                  className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
+                  className={`${hasGivenFlameToOffer(id) ? 'fill-current' : ''} lg:w-5 lg:h-5`} 
                 />
-                <span className="text-sm">
+                <span className="text-sm lg:text-base">
                   {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
                 </span>
               </Button>
               
               <Button 
                 size="sm" 
-                className="bg-gradient-primary hover:opacity-90 px-4 py-2"
+                className="bg-gradient-primary hover:opacity-90 px-4 py-2 lg:h-12 lg:px-6 lg:text-sm"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -142,7 +142,7 @@ export function OfferCard({
                   }
                 }}
               >
-                <Calendar size={14} className="mr-1" />
+                <Calendar size={14} className="mr-1 lg:w-4 lg:h-4" />
                 Réserver
               </Button>
             </div>
