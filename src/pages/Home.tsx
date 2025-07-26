@@ -184,9 +184,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50">
+    <div className="min-h-screen bg-background pb-20 md:pb-4">
+      {/* Header - Mobile only since desktop has sidebar */}
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 mobile-only">
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
@@ -216,8 +216,45 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      {/* Desktop Header */}
+      <header className="desktop-only mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-poppins font-bold text-gradient-primary mb-2">
+              Découvre les offres les plus 🔥
+            </h1>
+            <p className="text-muted-foreground">
+              Bowling, laser game, escape game... Des activités folles à prix mini !
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Flames counter */}
+            <div className="flex items-center gap-2 bg-gradient-flame rounded-full px-4 py-2">
+              <Flame size={16} className="text-white fill-current animate-pulse" />
+              <span className="text-white font-semibold">
+                {dailyFlame?.offer_id ? 0 : 1} flamme{dailyFlame?.offer_id ? 's' : ''} disponible{dailyFlame?.offer_id ? 's' : ''}
+              </span>
+            </div>
+            
+            {!isSubscribed && (
+              <Link to="/subscription">
+                <Button 
+                  variant="premium" 
+                  size="lg"
+                  className="animate-bounce-in"
+                >
+                  <Star className="mr-2" size={18} />
+                  S'abonner - 20€/mois
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section - Mobile only */}
+      <section className="relative overflow-hidden mobile-only">
         <div className="relative aspect-[16/9] md:aspect-[21/9]">
           <img 
             src={heroImage} 
@@ -253,37 +290,38 @@ export default function Home() {
       </section>
 
       {/* Quick Stats */}
-      <section className="p-4">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-primary mb-1">{offers.length}</div>
-            <div className="text-sm text-muted-foreground">Offres actives</div>
+      <section className="p-4 md:p-6">
+        <div className="responsive-grid-3 mb-4 md:mb-6">
+          <div className="bg-gradient-card rounded-xl p-4 md:p-6 text-center border border-border/50">
+            <div className="text-2xl md:text-3xl font-bold text-gradient-primary mb-1">{offers.length}</div>
+            <div className="text-sm md:text-base text-muted-foreground">Offres actives</div>
           </div>
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
-            <div className="text-sm text-muted-foreground">Flammes données</div>
+          <div className="bg-gradient-card rounded-xl p-4 md:p-6 text-center border border-border/50">
+            <div className="text-2xl md:text-3xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
+            <div className="text-sm md:text-base text-muted-foreground">Flammes données</div>
           </div>
-        </div>
-        <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-          <div className="text-2xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
-          <div className="text-sm text-muted-foreground">Entreprises partenaires</div>
+          <div className="bg-gradient-card rounded-xl p-4 md:p-6 text-center border border-border/50 md:col-span-1">
+            <div className="text-2xl md:text-3xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
+            <div className="text-sm md:text-base text-muted-foreground">Entreprises partenaires</div>
+          </div>
         </div>
       </section>
 
       {/* Subscription Status */}
       {!isSubscribed && (
-        <section className="mx-4 mb-4">
-          <div className="bg-gradient-primary rounded-xl p-4 text-center">
-            <h3 className="text-white font-semibold mb-2">
+        <section className="mx-4 mb-4 md:mx-6 md:mb-6">
+          <div className="bg-gradient-primary rounded-xl p-4 md:p-6 text-center">
+            <h3 className="text-white font-semibold mb-2 md:text-lg">
               🔒 Mode Découverte
             </h3>
-            <p className="text-white/90 text-sm mb-3">
+            <p className="text-white/90 text-sm md:text-base mb-3">
               Tu peux voir les offres mais pas les réserver. Abonne-toi pour débloquer toutes les activités !
             </p>
             <Link to="/subscription">
               <Button 
                 variant="secondary" 
                 size="sm"
+                className="md:size-default"
               >
                 Découvrir l'abonnement
               </Button>
@@ -293,21 +331,42 @@ export default function Home() {
       )}
 
       {/* Main Feed */}
-      <section className="p-4 space-y-4">
-        {offers.map((offer) => (
-          <OfferCard
-            key={offer.id}
-            id={offer.id}
-            title={offer.title}
-            business_user_id={offer.business_user_id}
-            location={offer.location}
-            category={offer.category}
-            flames={flamesCounts[offer.id] || 0}
-            image={offer.image_url}
-            price={offer.price}
-            description={offer.description}
-          />
-        ))}
+      <section className="p-4 md:p-6 space-y-4 md:space-y-0">
+        {/* Desktop Grid Layout */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              id={offer.id}
+              title={offer.title}
+              business_user_id={offer.business_user_id}
+              location={offer.location}
+              category={offer.category}
+              flames={flamesCounts[offer.id] || 0}
+              image={offer.image_url}
+              price={offer.price}
+              description={offer.description}
+            />
+          ))}
+        </div>
+        
+        {/* Mobile Vertical Layout */}
+        <div className="md:hidden space-y-4">
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              id={offer.id}
+              title={offer.title}
+              business_user_id={offer.business_user_id}
+              location={offer.location}
+              category={offer.category}
+              flames={flamesCounts[offer.id] || 0}
+              image={offer.image_url}
+              price={offer.price}
+              description={offer.description}
+            />
+          ))}
+        </div>
       </section>
     </div>
   );

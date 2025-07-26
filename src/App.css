@@ -1,8 +1,24 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  text-align: left;
+}
+
+/* Desktop layout container */
+@media (min-width: 768px) {
+  #root {
+    max-width: 1200px;
+    padding: 0 2rem;
+  }
+}
+
+/* Large desktop layout */
+@media (min-width: 1024px) {
+  #root {
+    max-width: 1400px;
+    padding: 0 3rem;
+  }
 }
 
 .logo {

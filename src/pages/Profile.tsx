@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BottomNav } from "@/components/ui/bottom-nav";
+import { ResponsiveLayout } from "@/components/ui/responsive-layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
@@ -178,15 +178,26 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-          Profil
-        </h1>
-      </header>
+    <ResponsiveLayout>
+      <div className="min-h-screen bg-background pb-20 md:pb-4">
+        {/* Header - Mobile only */}
+        <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4 mobile-only">
+          <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
+            Profil
+          </h1>
+        </header>
 
-      <div className="p-4 space-y-6">
+        {/* Desktop Header */}
+        <header className="desktop-only mb-6">
+          <h1 className="text-3xl font-poppins font-bold text-gradient-primary mb-2">
+            Mon Profil
+          </h1>
+          <p className="text-muted-foreground">
+            Gérez vos informations personnelles et vos préférences
+          </p>
+        </header>
+
+              <div className="p-4 md:p-6 space-y-6">
         {/* Profile Info */}
         <Card className="bg-gradient-card border-border/50">
           <CardContent className="p-6">
@@ -299,12 +310,11 @@ export default function Profile() {
         </Card>
 
         {/* Version info */}
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-center text-xs md:text-sm text-muted-foreground">
           FlameUp v1.0.0 • Made with 🔥 for students
         </div>
       </div>
-
-      <BottomNav />
-    </div>
+      </div>
+    </ResponsiveLayout>
   );
 }
