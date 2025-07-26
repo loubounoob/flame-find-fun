@@ -184,7 +184,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    {/* Center content and limit max width for large screens */}
+    <div className="min-h-screen bg-background pb-20 max-w-7xl mx-auto">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="flex items-center justify-between p-4">
@@ -293,7 +294,8 @@ export default function Home() {
       )}
 
       {/* Main Feed */}
-      <section className="p-4 space-y-4">
+      {/* Use a responsive grid: 1 column on mobile, 2 on tablets, 3+ on large screens */}
+      <section className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {offers.map((offer) => (
           <OfferCard
             key={offer.id}
