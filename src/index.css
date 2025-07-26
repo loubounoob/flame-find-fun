@@ -169,6 +169,50 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Responsive layout utilities */
+  .desktop-layout {
+    @apply md:flex md:gap-6 md:max-w-none;
+  }
+
+  .desktop-sidebar {
+    @apply md:w-80 md:flex-shrink-0;
+  }
+
+  .desktop-main {
+    @apply md:flex-1;
+  }
+
+  .mobile-only {
+    @apply md:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden md:block;
+  }
+
+  /* Desktop navigation */
+  .desktop-nav {
+    @apply hidden md:flex md:flex-col md:space-y-2 md:w-64 md:fixed md:left-4 md:top-4 md:bottom-4 md:bg-gradient-card md:rounded-xl md:p-4 md:border md:border-border/50;
+  }
+
+  /* Desktop content wrapper */
+  .desktop-content {
+    @apply md:ml-72 md:mr-4;
+  }
+
+  /* Grid responsive utilities */
+  .responsive-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  .responsive-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+  }
+
+  .responsive-grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
 }
 
 @keyframes float {

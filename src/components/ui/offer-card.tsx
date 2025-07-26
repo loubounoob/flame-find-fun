@@ -56,20 +56,20 @@ export function OfferCard({
 
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 md:mb-0">
       <Link to={`/offer/${id}`}>
-        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
-          <div className="relative aspect-[3/2]">
+        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px] md:h-[420px] group">
+          <div className="relative aspect-[3/2] md:aspect-[4/3]">
             <img 
               src={image || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
               alt={title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             
             <Badge 
               variant="secondary" 
-              className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm"
+              className="absolute top-3 left-3 bg-secondary/90 backdrop-blur-sm text-xs md:text-sm"
             >
               {category}
             </Badge>
@@ -82,56 +82,62 @@ export function OfferCard({
             
             {discount && (
               <Badge 
-                className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow"
+                className="absolute top-3 right-3 bg-gradient-flame text-white font-bold animate-pulse-glow text-xs md:text-sm"
               >
                 {discount}
               </Badge>
             )}
           </div>
           
-          <CardContent className="p-4">
+          <CardContent className="p-4 md:p-5 flex flex-col justify-between flex-1">
             <div className="space-y-3">
               <div>
-                <h3 className="font-semibold text-base text-foreground line-clamp-1">
+                <h3 className="font-semibold text-base md:text-lg text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                   {title}
                 </h3>
                 {business && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     {business}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin size={12} className="text-primary" />
+              <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                <MapPin size={12} className="text-primary flex-shrink-0" />
                 <span className="line-clamp-1">{location}</span>
               </div>
+
+              {description && (
+                <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 hidden md:block">
+                  {description}
+                </p>
+              )}
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-2">
+            <div className="flex items-center justify-between mt-4 pt-2 gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg ${
+                className={`flex items-center gap-2 px-3 py-2 h-9 md:h-10 rounded-lg text-xs md:text-sm flex-1 max-w-[120px] ${
                   hasGivenFlameToOffer(id) 
                     ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
                     : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
                 }`}
               >
                 <Flame 
-                  size={16} 
+                  size={14} 
                   className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
-                <span className="text-sm">
+                <span className="truncate">
                   {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
                 </span>
               </Button>
               
               <Button 
                 size="sm" 
-                className="bg-gradient-primary hover:opacity-90 px-4 py-2"
+                className="bg-gradient-primary hover:opacity-90 px-3 py-2 h-9 md:h-10 text-xs md:text-sm flex-1"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -142,8 +148,8 @@ export function OfferCard({
                   }
                 }}
               >
-                <Calendar size={14} className="mr-1" />
-                Réserver
+                <Calendar size={14} className="mr-1 flex-shrink-0" />
+                <span className="truncate">Réserver</span>
               </Button>
             </div>
           </CardContent>
