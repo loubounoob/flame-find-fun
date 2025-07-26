@@ -56,7 +56,7 @@ export function OfferCard({
 
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 sm:mb-0">
       <Link to={`/offer/${id}`}>
         <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
           <div className="relative aspect-[3/2]">
