@@ -22,6 +22,7 @@ import { BottomNav } from "@/components/ui/bottom-nav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Function to calculate real user statistics
 const calculateUserStats = async (userId: string) => {
@@ -94,6 +95,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -178,15 +180,15 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-          Profil
-        </h1>
-      </header>
+    <div className={isMobile ? "min-h-screen bg-background pb-20" : "min-h-screen bg-background pb-20 flex justify-center"}>
+      <div className={isMobile ? "p-4 space-y-6 w-full" : "p-8 space-y-8 max-w-3xl w-full"}>
+        {/* Header */}
+        <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
+          <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
+            Profil
+          </h1>
+        </header>
 
-      <div className="p-4 space-y-6">
         {/* Profile Info */}
         <Card className="bg-gradient-card border-border/50">
           <CardContent className="p-6">
