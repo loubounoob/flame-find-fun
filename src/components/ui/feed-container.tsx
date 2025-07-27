@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { OfferCard } from "./offer-card";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Offer {
   id: string;
@@ -37,6 +38,7 @@ export function FeedContainer({
 }: FeedContainerProps) {
   const [visibleOffers, setVisibleOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Simulate loading initial offers
@@ -58,7 +60,7 @@ export function FeedContainer({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn(isMobile ? "space-y-4" : "space-y-8 max-w-5xl mx-auto", className)}>
       {/* Feed header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md p-4 border-b border-border/50">
         <h2 className="text-xl font-poppins font-bold text-gradient-primary">
@@ -70,7 +72,7 @@ export function FeedContainer({
       </div>
 
       {/* Offers feed */}
-      <div className="px-4 space-y-6">
+      <div className={isMobile ? "px-4 space-y-6" : "grid grid-cols-2 gap-8 p-8"}>
         {visibleOffers.map((offer, index) => (
           <div 
             key={offer.id}

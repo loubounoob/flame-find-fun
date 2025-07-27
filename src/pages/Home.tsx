@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Star, Zap, Flame } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -98,6 +99,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const isMobile = useIsMobile();
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["offers"],
@@ -155,6 +157,14 @@ export default function Home() {
       return counts;
     },
   });
+
+  useEffect(() => {
+    const handleFlameUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
+    };
+    window.addEventListener("flameUpdated", handleFlameUpdate);
+    return () => window.removeEventListener("flameUpdated", handleFlameUpdate);
+  }, [queryClient]);
 
   const handleLike = async (offerId: string) => {
     if (!user) {
@@ -293,7 +303,7 @@ export default function Home() {
       )}
 
       {/* Main Feed */}
-      <section className="p-4 space-y-4">
+      <section className={isMobile ? "p-4 space-y-4" : "p-8 max-w-5xl mx-auto grid grid-cols-2 gap-8"}>
         {offers.map((offer) => (
           <OfferCard
             key={offer.id}
