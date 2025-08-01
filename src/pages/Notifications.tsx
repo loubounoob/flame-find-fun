@@ -51,7 +51,7 @@ const notifications = [
   {
     id: 5,
     type: "system",
-    title: "Mise à jour FlameUp",
+    title: "Mise à jour Ludigo",
     message: "Découvre les nouvelles fonctionnalités dans la version 2.1 !",
     time: "Il y a 2 jours",
     read: true,

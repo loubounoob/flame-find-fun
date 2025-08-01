@@ -13,19 +13,9 @@ const navItems = [
     path: "/" 
   },
   { 
-    icon: Search, 
-    label: "Explorer", 
-    path: "/explore" 
-  },
-  { 
     icon: MapPin, 
     label: "Carte", 
     path: "/map" 
-  },
-  { 
-    icon: Heart, 
-    label: "Flammes", 
-    path: "/flames" 
   },
   { 
     icon: User, 

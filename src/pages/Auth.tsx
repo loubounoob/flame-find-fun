@@ -81,7 +81,7 @@ export default function Auth() {
       } else {
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue sur FlameUp !",
+          description: "Bienvenue sur Ludigo !",
         });
       }
     } catch (error) {
@@ -153,7 +153,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-poppins font-bold text-gradient-primary mb-2">
-            FlameUp
+            Ludigo
           </h1>
           <p className="text-muted-foreground">
             Découvre les meilleures offres étudiantes

@@ -190,9 +190,8 @@ export default function Home() {
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-              FlameUp
+              Ludigo
             </h1>
-            <p className="text-xs text-muted-foreground">Lyon • Étudiant</p>
           </div>
           
           <div className="flex items-center gap-3">

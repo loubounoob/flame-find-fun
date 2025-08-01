@@ -158,7 +158,7 @@ export default function Profile() {
       await supabase.auth.signOut();
       toast({
         title: "Déconnexion réussie",
-        description: "À bientôt sur FlameUp!",
+        description: "À bientôt sur Ludigo!",
       });
       navigate('/auth');
     } catch (error) {
@@ -300,7 +300,7 @@ export default function Profile() {
 
         {/* Version info */}
         <div className="text-center text-xs text-muted-foreground">
-          FlameUp v1.0.0 • Made with 🔥 for students
+          Ludigo v1.0.0 • Made with 🔥 for students
         </div>
       </div>
 

@@ -12,7 +12,7 @@ const plans = [
     name: "Découverte",
     price: "0€",
     period: "gratuit",
-    description: "Pour découvrir FlameUp",
+    description: "Pour découvrir Ludigo",
     features: [
       "Voir toutes les offres",
       "1 flamme par jour",

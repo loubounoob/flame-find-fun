@@ -301,7 +301,7 @@ export default function Settings() {
             
             <div className="pt-2 border-t border-border/50">
               <div className="text-center text-sm text-muted-foreground">
-                <p>FlameUp v2.1.0</p>
+                <p>Ludigo v2.1.0</p>
                 <p className="mt-1">Développé avec 🔥 pour les étudiants</p>
               </div>
             </div>

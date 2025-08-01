@@ -16,8 +16,8 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showTokenInput, setShowTokenInput] = useState(true);
+  const [mapboxToken, setMapboxToken] = useState<string>('pk.eyJ1IjoibG91Ym91bm9vYiIsImEiOiJjbWNyY3h2dnYwbmdrMm1zYjFwdmRoa2JuIn0.H2zEBpzTBY0cjy1_kKBERA');
+  const [showTokenInput, setShowTokenInput] = useState(false);
   const [nearbyOffers, setNearbyOffers] = useState([
     { id: 1, title: "Bowling Party", distance: "250m", type: "bowling" },
     { id: 2, title: "Laser Game", distance: "450m", type: "laser" },
