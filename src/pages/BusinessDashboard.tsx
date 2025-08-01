@@ -37,6 +37,7 @@ export default function BusinessDashboard() {
     category: "",
     price: "",
     location: "",
+    address: "",
     max_participants: "",
     image_url: "",
     video_url: ""
@@ -151,6 +152,7 @@ export default function BusinessDashboard() {
           category: formData.category,
           price: formData.price,
           location: formData.location,
+          address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: formData.image_url || null,
           video_url: formData.video_url || null
@@ -187,6 +189,7 @@ export default function BusinessDashboard() {
           category: formData.category,
           price: formData.price,
           location: formData.location,
+          address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: formData.image_url || null,
           video_url: formData.video_url || null
@@ -247,6 +250,7 @@ export default function BusinessDashboard() {
       category: offer.category || "",
       price: offer.price || "",
       location: offer.location || "",
+      address: offer.address || "",
       max_participants: offer.max_participants?.toString() || "",
       image_url: offer.image_url || "",
       video_url: offer.video_url || ""
@@ -263,6 +267,7 @@ export default function BusinessDashboard() {
       category: "",
       price: "",
       location: "",
+      address: "",
       max_participants: "",
       image_url: "",
       video_url: ""
@@ -446,6 +451,19 @@ export default function BusinessDashboard() {
                         placeholder="Lyon, France"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Adresse exacte</Label>
+                    <Input
+                      id="address"
+                      value={formData.address || ""}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      placeholder="123 rue de la République, 69002 Lyon"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="max_participants">Participants max</Label>
                       <Input

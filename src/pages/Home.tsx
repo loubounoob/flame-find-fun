@@ -96,7 +96,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  
   const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
 
   const { data: offers = [], isLoading } = useQuery({
@@ -114,27 +114,6 @@ export default function Home() {
   });
 
   // Get subscription status
-  const { data: userProfile } = useQuery({
-    queryKey: ["userProfile", user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("is_subscribed")
-        .eq("user_id", user.id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (userProfile) {
-      setIsSubscribed(userProfile.is_subscribed);
-    }
-  }, [userProfile]);
 
   const { data: flamesCounts = {} } = useQuery({
     queryKey: ["flamesCounts"],
@@ -176,10 +155,6 @@ export default function Home() {
 
 
   const handleBook = (offerId: string) => {
-    if (!isSubscribed) {
-      alert("Abonne-toi pour réserver cette offre ! 🔥");
-      return;
-    }
     console.log(`Booking offer: ${offerId}`);
   };
 
@@ -234,18 +209,6 @@ export default function Home() {
                 Bowling, laser game, escape game... Des activités folles à prix mini !
               </p>
               
-              {!isSubscribed && (
-                <Link to="/subscription">
-                  <Button 
-                    variant="premium" 
-                    size="lg"
-                    className="animate-bounce-in"
-                  >
-                    <Star className="mr-2" size={18} />
-                    S'abonner - 20€/mois
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>
@@ -269,27 +232,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Subscription Status */}
-      {!isSubscribed && (
-        <section className="mx-4 mb-4">
-          <div className="bg-gradient-primary rounded-xl p-4 text-center">
-            <h3 className="text-white font-semibold mb-2">
-              🔒 Mode Découverte
-            </h3>
-            <p className="text-white/90 text-sm mb-3">
-              Tu peux voir les offres mais pas les réserver. Abonne-toi pour débloquer toutes les activités !
-            </p>
-            <Link to="/subscription">
-              <Button 
-                variant="secondary" 
-                size="sm"
-              >
-                Découvrir l'abonnement
-              </Button>
-            </Link>
-          </div>
-        </section>
-      )}
 
       {/* Main Feed */}
       <section className="p-4 space-y-4">

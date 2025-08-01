@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Navigation, Crosshair, Zap, Target } from "lucide-react";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface MapboxMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -14,48 +15,21 @@ interface MapboxMapProps {
 export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string>('pk.eyJ1IjoibG91Ym91bm9vYiIsImEiOiJjbWNyY3h2dnYwbmdrMm1zYjFwdmRoa2JuIn0.H2zEBpzTBY0cjy1_kKBERA');
   const [showTokenInput, setShowTokenInput] = useState(false);
+  const { position: userLocation, isLoading, getCurrentPosition } = useGeolocation();
   const [nearbyOffers, setNearbyOffers] = useState([
     { id: 1, title: "Bowling Party", distance: "250m", type: "bowling" },
     { id: 2, title: "Laser Game", distance: "450m", type: "laser" },
     { id: 3, title: "Karaoké VIP", distance: "800m", type: "karaoke" }
   ]);
 
-  // Fonction pour obtenir la géolocalisation
-  const getCurrentLocation = () => {
-    setIsLoading(true);
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(location);
-          onLocationUpdate?.(location);
-          setIsLoading(false);
-        },
-        (error) => {
-          console.error('Erreur de géolocalisation:', error);
-          // Position par défaut (Lyon)
-          const defaultLocation = { lat: 45.7640, lng: 4.8357 };
-          setUserLocation(defaultLocation);
-          onLocationUpdate?.(defaultLocation);
-          setIsLoading(false);
-        }
-      );
-    } else {
-      console.error('Géolocalisation non supportée');
-      const defaultLocation = { lat: 45.7640, lng: 4.8357 };
-      setUserLocation(defaultLocation);
-      onLocationUpdate?.(defaultLocation);
-      setIsLoading(false);
+  // Notifier parent du changement de position
+  useEffect(() => {
+    if (userLocation) {
+      onLocationUpdate?.(userLocation);
     }
-  };
+  }, [userLocation, onLocationUpdate]);
 
   // Initialize Mapbox
   useEffect(() => {
@@ -78,13 +52,34 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
       'top-right'
     );
 
-    // Add user location marker
-    getCurrentLocation();
+    // Add user location control automatically
+    map.current.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true,
+        showUserHeading: true
+      }),
+      'top-right'
+    );
+
+
+    // Add markers for nearby offers
+    if (userLocation) {
+      // User location marker
+      new mapboxgl.Marker({ color: '#ef4444' })
+        .setLngLat([userLocation.lng, userLocation.lat])
+        .addTo(map.current);
+
+      // Center map on user location
+      map.current.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 14 });
+    }
 
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, userLocation]);
 
   const initializeMap = (token: string) => {
     setMapboxToken(token);
@@ -154,7 +149,7 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
       {/* Bouton de géolocalisation */}
       <div className="absolute top-4 right-4">
         <Button
-          onClick={getCurrentLocation}
+          onClick={getCurrentPosition}
           disabled={isLoading}
           size="lg"
           className="bg-gradient-primary hover:opacity-90 rounded-full w-14 h-14 p-0 shadow-lg"
