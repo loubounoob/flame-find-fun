@@ -10,6 +10,7 @@ interface Booking {
   business_user_id: string;
   booking_date: string;
   booking_time?: string;
+  is_archived?: boolean;
   status: string;
   participant_count: number;
   notes?: string;

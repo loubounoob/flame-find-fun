@@ -10,8 +10,6 @@ export function useBookingArchive() {
 
     const archiveOldBookings = async () => {
       try {
-        const now = new Date();
-        
         // Marquer comme archivées les réservations dont la date/heure + 3h est dépassée
         const { error } = await supabase.rpc('archive_old_bookings');
         

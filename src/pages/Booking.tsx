@@ -5,33 +5,20 @@ import { Calendar, MapPin, Users, Clock, Star, X } from "lucide-react";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { useBookings } from "@/hooks/useBookings";
 import { useAuth } from "@/hooks/useAuth";
+import { useBookingArchive } from "@/hooks/useBookingArchive";
 import { useEffect, useState } from "react";
 
 export default function Booking() {
   const { user } = useAuth();
   const { bookings, isLoading, cancelBooking } = useBookings();
   const [filter, setFilter] = useState<'all' | 'current' | 'archived'>('current');
+  
+  // Active le système d'archivage automatique
+  useBookingArchive();
 
   // Séparer les réservations actuelles et archivées
-  const currentBookings = bookings.filter(booking => {
-    if (!booking.booking_date || !booking.booking_time) return true;
-    
-    const bookingDateTime = new Date(booking.booking_date + 'T' + booking.booking_time);
-    const now = new Date();
-    const threeHoursLater = new Date(bookingDateTime.getTime() + (3 * 60 * 60 * 1000));
-    
-    return now < threeHoursLater && booking.status !== 'cancelled';
-  });
-
-  const archivedBookings = bookings.filter(booking => {
-    if (!booking.booking_date || !booking.booking_time) return false;
-    
-    const bookingDateTime = new Date(booking.booking_date + 'T' + booking.booking_time);
-    const now = new Date();
-    const threeHoursLater = new Date(bookingDateTime.getTime() + (3 * 60 * 60 * 1000));
-    
-    return now >= threeHoursLater || booking.status === 'cancelled';
-  });
+  const currentBookings = bookings.filter(booking => !booking.is_archived && booking.status !== 'cancelled');
+  const archivedBookings = bookings.filter(booking => booking.is_archived || booking.status === 'cancelled');
 
   const displayedBookings = filter === 'current' ? currentBookings : 
                            filter === 'archived' ? archivedBookings : 
