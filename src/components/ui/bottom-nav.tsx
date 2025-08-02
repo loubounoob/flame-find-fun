@@ -18,6 +18,11 @@ const navItems = [
     path: "/map" 
   },
   { 
+    icon: Heart, 
+    label: "Réservations", 
+    path: "/booking" 
+  },
+  { 
     icon: User, 
     label: "Profil", 
     path: "/profile" 

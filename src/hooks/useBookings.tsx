@@ -9,6 +9,7 @@ interface Booking {
   offer_id: string;
   business_user_id: string;
   booking_date: string;
+  booking_time?: string;
   status: string;
   participant_count: number;
   notes?: string;
@@ -64,7 +65,7 @@ export function useBookings() {
     }
   };
 
-  const createBooking = async (offerId: string, businessUserId: string, participantCount: number = 1, notes?: string) => {
+  const createBooking = async (offerId: string, businessUserId: string, participantCount: number = 1, notes?: string, bookingDate?: string, bookingTime?: string) => {
     if (!user) {
       toast({
         title: "Connexion requise",
@@ -75,15 +76,19 @@ export function useBookings() {
     }
 
     try {
+      const bookingData = {
+        user_id: user.id,
+        offer_id: offerId,
+        business_user_id: businessUserId,
+        participant_count: participantCount,
+        notes: notes,
+        ...(bookingDate && { booking_date: bookingDate }),
+        ...(bookingTime && { booking_time: bookingTime })
+      };
+
       const { error } = await supabase
         .from('bookings')
-        .insert({
-          user_id: user.id,
-          offer_id: offerId,
-          business_user_id: businessUserId,
-          participant_count: participantCount,
-          notes: notes
-        });
+        .insert(bookingData);
 
       if (error) throw error;
 

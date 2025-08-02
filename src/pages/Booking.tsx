@@ -5,11 +5,37 @@ import { Calendar, MapPin, Users, Clock, Star, X } from "lucide-react";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { useBookings } from "@/hooks/useBookings";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Booking() {
   const { user } = useAuth();
   const { bookings, isLoading, cancelBooking } = useBookings();
+  const [filter, setFilter] = useState<'all' | 'current' | 'archived'>('current');
+
+  // Séparer les réservations actuelles et archivées
+  const currentBookings = bookings.filter(booking => {
+    if (!booking.booking_date || !booking.booking_time) return true;
+    
+    const bookingDateTime = new Date(booking.booking_date + 'T' + booking.booking_time);
+    const now = new Date();
+    const threeHoursLater = new Date(bookingDateTime.getTime() + (3 * 60 * 60 * 1000));
+    
+    return now < threeHoursLater && booking.status !== 'cancelled';
+  });
+
+  const archivedBookings = bookings.filter(booking => {
+    if (!booking.booking_date || !booking.booking_time) return false;
+    
+    const bookingDateTime = new Date(booking.booking_date + 'T' + booking.booking_time);
+    const now = new Date();
+    const threeHoursLater = new Date(bookingDateTime.getTime() + (3 * 60 * 60 * 1000));
+    
+    return now >= threeHoursLater || booking.status === 'cancelled';
+  });
+
+  const displayedBookings = filter === 'current' ? currentBookings : 
+                           filter === 'archived' ? archivedBookings : 
+                           bookings;
 
   if (!user) {
     return (
@@ -34,17 +60,41 @@ export default function Booking() {
       </header>
 
       <div className="p-4 space-y-6">
+        {/* Filter tabs */}
+        <div className="flex bg-muted rounded-lg p-1">
+          <button
+            onClick={() => setFilter('current')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              filter === 'current' 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Actuelles ({currentBookings.length})
+          </button>
+          <button
+            onClick={() => setFilter('archived')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              filter === 'archived' 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Archivées ({archivedBookings.length})
+          </button>
+        </div>
+
         <div className="space-y-4">
           {isLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Chargement de vos réservations...</p>
             </div>
-          ) : bookings.length === 0 ? (
+          ) : displayedBookings.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Aucune réservation pour le moment.</p>
             </div>
           ) : (
-            bookings.map((booking) => (
+            displayedBookings.map((booking) => (
               <Card key={booking.id} className="bg-gradient-card border-border/50">
                 <CardContent className="p-4">
                   <div className="flex gap-4">
@@ -68,7 +118,10 @@ export default function Booking() {
                       <div className="space-y-1 text-sm text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
                           <Calendar size={14} />
-                          <span>{new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>
+                            {new Date(booking.booking_date).toLocaleDateString('fr-FR')}
+                            {booking.booking_time && ` à ${booking.booking_time}`}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin size={14} />
@@ -84,7 +137,7 @@ export default function Booking() {
                         <span className="text-sm text-muted-foreground">
                           Réservé le {new Date(booking.created_at).toLocaleDateString('fr-FR')}
                         </span>
-                        {booking.status === "confirmed" && (
+                        {booking.status === "confirmed" && filter === 'current' && (
                           <Button 
                             variant="outline" 
                             size="sm" 

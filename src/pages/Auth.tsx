@@ -156,7 +156,7 @@ export default function Auth() {
             Ludigo
           </h1>
           <p className="text-muted-foreground">
-            Découvre les meilleures offres étudiantes
+            Découvre les meilleures offres de loisirs
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export default function Auth() {
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="votre.email@etudiant.univ-lyon1.fr"
+                      placeholder="votre.email@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -232,7 +232,7 @@ export default function Auth() {
                         <SelectItem value="student">
                           <div className="flex items-center gap-2">
                             <User size={16} />
-                            Étudiant
+                            Particulier
                           </div>
                         </SelectItem>
                         <SelectItem value="business">
@@ -306,13 +306,13 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">{accountType === "business" ? "Email professionnel" : "Email étudiant"}</Label>
+                  <Label htmlFor="signup-email">{accountType === "business" ? "Email professionnel" : "Email"}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder={accountType === "business" ? "contact@entreprise.com" : "votre.email@etudiant.univ-lyon1.fr"}
+                      placeholder={accountType === "business" ? "contact@entreprise.com" : "votre.email@exemple.com"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"

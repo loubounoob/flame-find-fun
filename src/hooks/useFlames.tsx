@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DailyFlame {
   id: string;
@@ -15,6 +16,7 @@ interface DailyFlame {
 export function useFlames() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [dailyFlame, setDailyFlame] = useState<DailyFlame | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -112,6 +114,12 @@ export function useFlames() {
       // Mise à jour immédiate de l'état local pour synchronisation
       setDailyFlame(prev => prev ? { ...prev, offer_id: offerId } : null);
       
+      // Refresh flame counts
+      queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
+      
+      // Dispatch event to update flame counter
+      window.dispatchEvent(new CustomEvent('flameUpdated'));
+      
       toast({
         title: "Flamme donnée !",
         description: "Votre flamme quotidienne a été donnée à cette offre.",
@@ -140,6 +148,12 @@ export function useFlames() {
       if (error) throw error;
 
       setDailyFlame(prev => prev ? { ...prev, offer_id: null } : null);
+      
+      // Refresh flame counts
+      queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
+      
+      // Dispatch event to update flame counter
+      window.dispatchEvent(new CustomEvent('flameUpdated'));
       
       toast({
         title: "Flamme retirée",

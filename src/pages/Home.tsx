@@ -113,8 +113,6 @@ export default function Home() {
     },
   });
 
-  // Get subscription status
-
   const { data: flamesCounts = {} } = useQuery({
     queryKey: ["flamesCounts"],
     queryFn: async () => {
@@ -190,51 +188,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="relative aspect-[16/9] md:aspect-[21/9]">
-          <img 
-            src={heroImage} 
-            alt="FlameUp Hero" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          
-          <div className="absolute inset-0 flex items-center justify-center text-center p-6">
-            <div className="max-w-md space-y-4">
-              <h2 className="text-3xl md:text-4xl font-poppins font-bold text-white">
-                Découvre les offres les plus 🔥
-              </h2>
-              <p className="text-white/90 text-sm">
-                Bowling, laser game, escape game... Des activités folles à prix mini !
-              </p>
-              
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Stats */}
-      <section className="p-4">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-primary mb-1">{offers.length}</div>
-            <div className="text-sm text-muted-foreground">Offres actives</div>
-          </div>
-          <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-            <div className="text-2xl font-bold text-gradient-flame mb-1">{Object.values(flamesCounts).reduce((sum, count) => sum + count, 0)}</div>
-            <div className="text-sm text-muted-foreground">Flammes données</div>
-          </div>
-        </div>
-        <div className="bg-gradient-card rounded-xl p-4 text-center border border-border/50">
-          <div className="text-2xl font-bold text-gradient-secondary mb-1">{Math.ceil(offers.length / 3)}</div>
-          <div className="text-sm text-muted-foreground">Entreprises partenaires</div>
-        </div>
-      </section>
 
 
       {/* Main Feed */}
-      <section className="p-4 space-y-4">
+      <section className="p-4 space-y-4 mt-4">
         {offers.map((offer) => (
           <OfferCard
             key={offer.id}

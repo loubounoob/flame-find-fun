@@ -19,6 +19,8 @@ export default function BookingForm() {
   const { createBooking } = useBookings();
   const [participantCount, setParticipantCount] = useState(1);
   const [notes, setNotes] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: offer, isLoading } = useQuery({
@@ -96,7 +98,7 @@ export default function BookingForm() {
     if (!offer) return;
 
     setIsSubmitting(true);
-    const success = await createBooking(offer.id, offer.business_user_id, participantCount, notes);
+    const success = await createBooking(offer.id, offer.business_user_id, participantCount, notes, bookingDate, bookingTime);
     
     if (success) {
       navigate("/booking");
@@ -168,8 +170,38 @@ export default function BookingForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="flex items-center gap-2">
+                <Label htmlFor="bookingDate" className="flex items-center gap-2">
                   <Calendar size={16} />
+                  Date de la réservation
+                </Label>
+                <Input
+                  id="bookingDate"
+                  type="date"
+                  value={bookingDate}
+                  onChange={(e) => setBookingDate(e.target.value)}
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bookingTime" className="flex items-center gap-2">
+                  <Clock size={16} />
+                  Heure de la réservation
+                </Label>
+                <Input
+                  id="bookingTime"
+                  type="time"
+                  value={bookingTime}
+                  onChange={(e) => setBookingTime(e.target.value)}
+                  required
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="flex items-center gap-2">
                   Notes ou demandes spéciales
                 </Label>
                 <Textarea
@@ -196,7 +228,7 @@ export default function BookingForm() {
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-primary hover:opacity-90"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !bookingDate || !bookingTime}
                 >
                   {isSubmitting ? "Réservation en cours..." : "Confirmer la réservation"}
                 </Button>
