@@ -83,7 +83,6 @@ interface UserProfile {
 
 const menuItems = [
   { icon: Edit3, label: "Modifier le profil", href: "/profile/edit" },
-  { icon: CreditCard, label: "Abonnement", href: "/subscription" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
   { icon: Settings, label: "Paramètres", href: "/settings" },
 ];
@@ -123,7 +122,7 @@ export default function Profile() {
             month: 'long', 
             year: 'numeric' 
           }),
-          subscription: "Premium Étudiant",
+          subscription: "Premium",
           stats: userStats
         });
       } else {
@@ -137,7 +136,7 @@ export default function Profile() {
             month: 'long', 
             year: 'numeric' 
           }),
-          subscription: "Premium Étudiant",
+          subscription: "Premium",
           stats: {
             flamesToday: 0,
             totalFlames: 0,
@@ -253,12 +252,6 @@ export default function Profile() {
                 <div className="text-lg font-bold text-primary-foreground">{userProfile.stats.offersBooked}</div>
                 <div className="text-xs text-primary-foreground/80">Réservations</div>
               </div>
-              
-              <div className="text-center p-3 bg-gradient-card border border-border/50 rounded-xl">
-                <Star size={20} className="mx-auto mb-2 text-warning" />
-                <div className="text-lg font-bold text-foreground">{userProfile.stats.rating}</div>
-                <div className="text-xs text-muted-foreground">Note moyenne</div>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -300,7 +293,7 @@ export default function Profile() {
 
         {/* Version info */}
         <div className="text-center text-xs text-muted-foreground">
-          Ludigo v1.0.0 • Made with 🔥 for students
+          Ludigo v1.0.0 • Made with 🔥
         </div>
       </div>
 

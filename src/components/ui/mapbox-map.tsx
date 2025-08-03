@@ -7,6 +7,8 @@ import { MapPin, Navigation, Crosshair, Zap, Target } from "lucide-react";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect as useReactEffect } from 'react';
 
 interface MapboxMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -18,16 +20,63 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
   const [mapboxToken, setMapboxToken] = useState<string>('pk.eyJ1IjoibG91Ym91bm9vYiIsImEiOiJjbWNyY3h2dnYwbmdrMm1zYjFwdmRoa2JuIn0.H2zEBpzTBY0cjy1_kKBERA');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const { position: userLocation, isLoading, getCurrentPosition } = useGeolocation();
-  const [nearbyOffers, setNearbyOffers] = useState([
-    { id: 1, title: "Bowling Party", distance: "250m", type: "bowling" },
-    { id: 2, title: "Laser Game", distance: "450m", type: "laser" },
-    { id: 3, title: "Karaoké VIP", distance: "800m", type: "karaoke" }
-  ]);
+  const [nearbyOffers, setNearbyOffers] = useState([]);
 
-  // Notifier parent du changement de position
-  useEffect(() => {
+  // Fonction pour calculer la distance entre deux points
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const d = R * c; // Distance en km
+    return d;
+  };
+
+  // Charger les offres à proximité basées sur la géolocalisation
+  const loadNearbyOffers = async (lat: number, lng: number) => {
+    try {
+      const { data: offers, error } = await supabase
+        .from('offers')
+        .select('*')
+        .eq('status', 'active')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (error) throw error;
+
+      // Calculer les distances et filtrer les offres dans un rayon de 5km
+      const offersWithDistance = offers
+        ?.map(offer => ({
+          ...offer,
+          distance: calculateDistance(lat, lng, Number(offer.latitude), Number(offer.longitude))
+        }))
+        .filter(offer => offer.distance <= 5) // Rayon de 5km
+        .sort((a, b) => a.distance - b.distance) // Trier par distance
+        .slice(0, 5) // Limiter à 5 offres
+        .map(offer => ({
+          id: offer.id,
+          title: offer.title,
+          distance: offer.distance < 1 ? `${Math.round(offer.distance * 1000)}m` : `${offer.distance.toFixed(1)}km`,
+          type: offer.category,
+          latitude: offer.latitude,
+          longitude: offer.longitude
+        })) || [];
+
+      setNearbyOffers(offersWithDistance);
+    } catch (error) {
+      console.error('Erreur lors du chargement des offres:', error);
+    }
+  };
+
+  // Notifier parent du changement de position et charger les offres
+  useReactEffect(() => {
     if (userLocation) {
       onLocationUpdate?.(userLocation);
+      loadNearbyOffers(userLocation.lat, userLocation.lng);
     }
   }, [userLocation, onLocationUpdate]);
 
@@ -65,7 +114,7 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
     );
 
 
-    // Add markers for nearby offers
+    // Add markers for user and nearby offers
     if (userLocation) {
       // User location marker
       new mapboxgl.Marker({ color: '#ef4444' })
@@ -76,10 +125,23 @@ export function MapboxMap({ onLocationUpdate }: MapboxMapProps) {
       map.current.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 14 });
     }
 
+    // Add markers for nearby offers
+    nearbyOffers.forEach(offer => {
+      if (offer.latitude && offer.longitude) {
+        new mapboxgl.Marker({ color: '#3b82f6' })
+          .setLngLat([Number(offer.longitude), Number(offer.latitude)])
+          .setPopup(
+            new mapboxgl.Popup({ offset: 25 })
+              .setHTML(`<div><strong>${offer.title}</strong><br/>${offer.distance}</div>`)
+          )
+          .addTo(map.current);
+      }
+    });
+
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, userLocation]);
+  }, [mapboxToken, userLocation, nearbyOffers]);
 
   const initializeMap = (token: string) => {
     setMapboxToken(token);

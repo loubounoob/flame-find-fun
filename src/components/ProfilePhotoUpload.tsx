@@ -31,6 +31,16 @@ export function ProfilePhotoUpload({
       return;
     }
 
+    // Vérifier que c'est une image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fichier image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log("Starting file upload for:", file.name);
     setIsUploading(true);
 
