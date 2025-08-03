@@ -48,6 +48,8 @@ export default function BookingForm() {
         .select("*")
         .eq("user_id", user.id)
         .eq("offer_id", id)
+        .eq("is_archived", false)
+        .eq("status", "confirmed")
         .maybeSingle();
       
       if (error) throw error;

@@ -92,19 +92,13 @@ export default function Settings() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => {
-              if (user?.user_metadata?.account_type === "business") {
-                window.location.href = "/business-dashboard";
-              } else {
-                window.location.href = "/profile";
-              }
-            }}
+          <Link 
+            to={user?.user_metadata?.account_type === "business" ? "/business-dashboard" : "/profile"}
           >
-            <ArrowLeft size={20} />
-          </Button>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft size={20} />
+            </Button>
+          </Link>
           <h1 className="text-xl font-poppins font-bold text-foreground">
             Paramètres
           </h1>
@@ -112,8 +106,8 @@ export default function Settings() {
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Profile Section - Only if logged in */}
-        {user && (
+        {/* Profile Section - Only if logged in and not business account */}
+        {user && user.user_metadata?.account_type !== "business" && (
           <Card className="bg-gradient-card border-border/50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -302,37 +296,39 @@ export default function Settings() {
             <div className="pt-2 border-t border-border/50">
               <div className="text-center text-sm text-muted-foreground">
                 <p>Ludigo v2.1.0</p>
-                <p className="mt-1">Développé avec 🔥 pour les étudiants</p>
+                <p className="mt-1">Développé avec 🔥</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Danger Zone */}
-        <Card className="bg-gradient-card border-destructive/20">
-          <CardHeader>
-            <CardTitle className="text-lg text-destructive flex items-center gap-2">
-              <Trash2 size={20} />
-              Zone de danger
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              onClick={handleDeleteAccount}
-            >
-              <Trash2 className="mr-2" size={16} />
-              Supprimer mon compte
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Cette action est irréversible
-            </p>
-          </CardContent>
-        </Card>
+        {user && (
+          <Card className="bg-gradient-card border-destructive/20">
+            <CardHeader>
+              <CardTitle className="text-lg text-destructive flex items-center gap-2">
+                <Trash2 size={20} />
+                Zone de danger
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="destructive" 
+                className="w-full"
+                onClick={handleDeleteAccount}
+              >
+                <Trash2 className="mr-2" size={16} />
+                Supprimer mon compte
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Cette action est irréversible
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      <BottomNav />
+      {user?.user_metadata?.account_type !== "business" && <BottomNav />}
     </div>
   );
 }

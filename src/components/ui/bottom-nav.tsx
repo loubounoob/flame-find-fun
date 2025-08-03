@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Home, MapPin, User, Search, Heart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BottomNavProps {
   className?: string;
@@ -31,6 +32,12 @@ const navItems = [
 
 export function BottomNav({ className }: BottomNavProps) {
   const location = useLocation();
+  const { user } = useAuth();
+  
+  // Cacher la bottom nav pour les comptes entreprise
+  if (user?.user_metadata?.account_type === "business") {
+    return null;
+  }
 
   return (
     <nav 

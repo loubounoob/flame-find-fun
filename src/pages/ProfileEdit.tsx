@@ -237,44 +237,15 @@ export default function ProfileEdit() {
           </CardContent>
         </Card>
 
-        {/* Academic Info */}
+        {/* Location Info */}
         <Card className="bg-gradient-card border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <GraduationCap size={20} className="text-secondary" />
-              Informations académiques
+              <MapPin size={20} className="text-secondary" />
+              Localisation
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="university" className="flex items-center gap-2">
-                <Building2 size={16} />
-                Université
-              </Label>
-              <Input
-                value={formData.university}
-                onChange={(e) => handleInputChange('university', e.target.value)}
-                placeholder="Nom de votre établissement"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="studyLevel">Niveau d'études</Label>
-              <Select value={formData.studyLevel} onValueChange={(value) => handleInputChange('studyLevel', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner votre niveau" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Licence 1">Licence 1</SelectItem>
-                  <SelectItem value="Licence 2">Licence 2</SelectItem>
-                  <SelectItem value="Licence 3">Licence 3</SelectItem>
-                  <SelectItem value="Master 1">Master 1</SelectItem>
-                  <SelectItem value="Master 2">Master 2</SelectItem>
-                  <SelectItem value="Doctorat">Doctorat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="location" className="flex items-center gap-2">
                 <MapPin size={16} />
