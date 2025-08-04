@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Lock, User, Building, Camera } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building, Camera, MapPin } from "lucide-react";
 import { generateInitialsAvatar } from "@/utils/avatarUtils";
 
 export default function Auth() {
@@ -133,9 +133,17 @@ export default function Auth() {
         }
       } else {
         toast({
-          title: "Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte.",
+          title: "Inscription réussie !",
+          description: "📧 Vérifiez votre boîte email pour confirmer votre compte et terminer l'inscription.",
         });
+        
+        // Show additional popup for email confirmation
+        setTimeout(() => {
+          toast({
+            title: "Confirmation requise",
+            description: "Cliquez sur le lien dans l'email que vous venez de recevoir pour activer votre compte.",
+          });
+        }, 2000);
       }
     } catch (error) {
       toast({
@@ -246,19 +254,37 @@ export default function Auth() {
                   </div>
 
                   {accountType === "business" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="company-name">Nom de l'entreprise</Label>
-                      <div className="relative">
-                        <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="company-name"
-                          placeholder="Mon Entreprise"
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          className="pl-10"
-                        />
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="company-name">Nom de l'entreprise</Label>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="company-name"
+                            placeholder="Mon Entreprise"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
                       </div>
-                    </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="business-address">Adresse de l'activité *</Label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="business-address"
+                            placeholder="123 rue de la République, 69002 Lyon"
+                            required
+                            className="pl-10"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Adresse exacte pour apparaître sur la carte des utilisateurs
+                        </p>
+                      </div>
+                    </>
                   )}
 
                   <div className="grid grid-cols-2 gap-4">
@@ -288,18 +314,23 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="avatar-url">Photo de profil (optionnel)</Label>
-                  <div className="relative">
-                    <Camera className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="avatar-url"
-                      type="url"
-                      placeholder="https://..."
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                  <Label htmlFor="avatar-upload">Photo de profil (optionnel)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                    className="w-full justify-start pl-10"
+                  >
+                    <Camera className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                    Choisir une photo
+                  </Button>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                  />
                   <p className="text-xs text-muted-foreground">
                     Si aucune photo n'est fournie, un avatar avec tes initiales sera créé automatiquement.
                   </p>

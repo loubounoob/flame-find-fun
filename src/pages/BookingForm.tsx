@@ -59,14 +59,9 @@ export default function BookingForm() {
   });
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Connexion requise</h2>
-          <p className="text-muted-foreground">Connectez-vous pour réserver cette offre.</p>
-        </div>
-      </div>
-    );
+    // Redirect to auth page instead of showing message
+    navigate("/auth");
+    return null;
   }
 
   if (isLoading || !offer) {

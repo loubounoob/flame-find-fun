@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoPlayer } from "@/components/ui/video-player";
+import { ShareButton } from "@/components/ShareButton";
 import { 
   ArrowLeft, 
   Heart, 
@@ -13,8 +14,7 @@ import {
   Users, 
   Phone,
   Globe,
-  Instagram,
-  Share
+  Instagram
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -155,15 +155,6 @@ export default function OfferDetail() {
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: offer.title,
-        text: offer.description,
-        url: window.location.href,
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -178,9 +169,12 @@ export default function OfferDetail() {
           <h1 className="text-lg font-poppins font-bold text-gradient-primary">
             Détails de l'offre
           </h1>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
-            <Share size={20} />
-          </Button>
+          <ShareButton 
+            title={offer.title}
+            description={offer.description}
+            variant="ghost"
+            size="icon"
+          />
         </div>
       </header>
 

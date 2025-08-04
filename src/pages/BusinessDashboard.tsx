@@ -20,7 +20,8 @@ import {
   Trash2,
   Eye,
   Flame,
-  Bell
+  Bell,
+  Camera
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -410,12 +411,15 @@ export default function BusinessDashboard() {
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionne une catégorie" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="divertissement">Divertissement</SelectItem>
-                          <SelectItem value="sport">Sport</SelectItem>
-                          <SelectItem value="culture">Culture</SelectItem>
-                          <SelectItem value="formation">Formation</SelectItem>
-                          <SelectItem value="restauration">Restauration</SelectItem>
+                        <SelectContent className="bg-background border border-border shadow-lg z-50">
+                          <SelectItem value="divertissement">🎮 Divertissement</SelectItem>
+                          <SelectItem value="sport">⚽ Sport</SelectItem>
+                          <SelectItem value="culture">🎭 Culture</SelectItem>
+                          <SelectItem value="formation">📚 Formation</SelectItem>
+                          <SelectItem value="restauration">🍽️ Restauration</SelectItem>
+                          <SelectItem value="wellness">🧘 Bien-être</SelectItem>
+                          <SelectItem value="aventure">🏔️ Aventure</SelectItem>
+                          <SelectItem value="tech">💻 Tech</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -476,25 +480,24 @@ export default function BusinessDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="image_url">URL Image</Label>
-                      <Input
-                        id="image_url"
-                        value={formData.image_url}
-                        onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="video_url">URL Vidéo (optionnel)</Label>
-                      <Input
-                        id="video_url"
-                        value={formData.video_url}
-                        onChange={(e) => setFormData({...formData, video_url: e.target.value})}
-                        placeholder="https://..."
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image-upload">Photo de l'offre</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                      className="w-full justify-start"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Choisir une photo
+                    </Button>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                    />
                   </div>
 
                   <Button 
@@ -590,9 +593,9 @@ export default function BusinessDashboard() {
                             </Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Bell size={16} className="text-primary" />
-                          <span className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Bell size={14} className="text-primary flex-shrink-0" />
+                          <span className="text-xs text-muted-foreground truncate">
                             {new Date(booking.created_at).toLocaleDateString('fr-FR')}
                           </span>
                         </div>

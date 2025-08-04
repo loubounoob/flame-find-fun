@@ -215,16 +215,7 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Subscription Status */}
-            <div className="flex items-center justify-between p-3 bg-gradient-primary rounded-xl">
-              <div>
-                <p className="text-primary-foreground font-semibold">{userProfile.subscription}</p>
-                <p className="text-primary-foreground/80 text-sm">Accès illimité aux offres</p>
-              </div>
-              <Badge className="bg-white/20 text-primary-foreground border-0">
-                Actif
-              </Badge>
-            </div>
+            {/* Removed subscription status section */}
           </CardContent>
         </Card>
 
@@ -235,12 +226,6 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-gradient-flame rounded-xl">
-                <Heart size={20} className="mx-auto mb-2 text-white" />
-                <div className="text-lg font-bold text-white">{userProfile.stats.flamesToday}</div>
-                <div className="text-xs text-white/80">Aujourd'hui</div>
-              </div>
-              
               <div className="text-center p-3 bg-gradient-secondary rounded-xl">
                 <Trophy size={20} className="mx-auto mb-2 text-secondary-foreground" />
                 <div className="text-lg font-bold text-secondary-foreground">{userProfile.stats.totalFlames}</div>
