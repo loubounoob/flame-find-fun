@@ -111,10 +111,10 @@ export default function BusinessProfile() {
         company_name: profile.first_name || "",
         description: profile.bio || "",
         address: profile.location || "",
-        phone: profile.phone || "",
+        phone: (profile as any).phone || "",
         email: profile.email || "",
-        website: profile.website || "",
-        opening_hours: profile.opening_hours || "",
+        website: (profile as any).website || "",
+        opening_hours: (profile as any).opening_hours || "",
         avatar_url: profile.avatar_url || ""
       });
     }

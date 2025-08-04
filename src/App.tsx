@@ -13,10 +13,10 @@ import BookingForm from "./pages/BookingForm";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProfileEdit from "./pages/ProfileEdit";
-
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
+import BusinessProfile from "./pages/BusinessProfile";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +39,8 @@ const App = () => (
           
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
-        <Route path="/business-dashboard" element={<BusinessDashboard />} />
+          <Route path="/business-dashboard" element={<BusinessDashboard />} />
+          <Route path="/business-profile" element={<BusinessProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
