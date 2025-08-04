@@ -44,8 +44,8 @@ export function BottomNav({ className }: BottomNavProps) {
       },
       { 
         icon: User, 
-        label: "Profil", 
-        path: "/business-profile" 
+        label: "Business", 
+        path: "/business-dashboard" 
       },
     ];
 
