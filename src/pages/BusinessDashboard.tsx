@@ -21,7 +21,8 @@ import {
   Eye,
   Flame,
   Bell,
-  Camera
+  Camera,
+  MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,9 @@ export default function BusinessDashboard() {
   const [editingOffer, setEditingOffer] = useState(null);
   const [offers, setOffers] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({ name: "", address: "" });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -40,14 +44,14 @@ export default function BusinessDashboard() {
     location: "",
     address: "",
     max_participants: "",
-    image_url: "",
-    video_url: ""
+    image_file: null
   });
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     checkAuth();
+    loadSavedAddresses();
   }, []);
 
   const checkAuth = async () => {
@@ -135,6 +139,84 @@ export default function BusinessDashboard() {
     }
   };
 
+  const loadSavedAddresses = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data: addressesData, error } = await supabase
+        .from('business_addresses')
+        .select('*')
+        .eq('business_user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSavedAddresses(addressesData || []);
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+    }
+  };
+
+  const saveNewAddress = async () => {
+    if (!user || !newAddress.name || !newAddress.address) return;
+
+    try {
+      const { error } = await supabase
+        .from('business_addresses')
+        .insert({
+          business_user_id: user.id,
+          address_name: newAddress.name,
+          full_address: newAddress.address
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Adresse sauvegardée",
+        description: "L'adresse a été ajoutée à vos favoris !",
+      });
+
+      setNewAddress({ name: "", address: "" });
+      setIsAddingNewAddress(false);
+      loadSavedAddresses();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder l'adresse.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file || !user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Erreur d'upload",
+        description: "Impossible d'uploader l'image.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -144,6 +226,11 @@ export default function BusinessDashboard() {
     if (!user) return;
 
     try {
+      let imageUrl = null;
+      if (formData.image_file) {
+        imageUrl = await handleImageUpload(formData.image_file);
+      }
+
       const { error } = await supabase
         .from('offers')
         .insert({
@@ -155,8 +242,7 @@ export default function BusinessDashboard() {
           location: formData.location,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-          image_url: formData.image_url || null,
-          video_url: formData.video_url || null
+          image_url: imageUrl
         });
 
       if (error) throw error;
@@ -182,6 +268,11 @@ export default function BusinessDashboard() {
     if (!user || !editingOffer) return;
 
     try {
+      let imageUrl = editingOffer.image_url;
+      if (formData.image_file) {
+        imageUrl = await handleImageUpload(formData.image_file);
+      }
+
       const { error } = await supabase
         .from('offers')
         .update({
@@ -192,8 +283,7 @@ export default function BusinessDashboard() {
           location: formData.location,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-          image_url: formData.image_url || null,
-          video_url: formData.video_url || null
+          image_url: imageUrl
         })
         .eq('id', editingOffer.id);
 
@@ -253,8 +343,7 @@ export default function BusinessDashboard() {
       location: offer.location || "",
       address: offer.address || "",
       max_participants: offer.max_participants?.toString() || "",
-      image_url: offer.image_url || "",
-      video_url: offer.video_url || ""
+      image_file: null
     });
     setShowCreateForm(true);
   };
@@ -270,8 +359,7 @@ export default function BusinessDashboard() {
       location: "",
       address: "",
       max_participants: "",
-      image_url: "",
-      video_url: ""
+      image_file: null
     });
   };
 
@@ -406,20 +494,24 @@ export default function BusinessDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="category">Catégorie</Label>
+                      <Label htmlFor="category">Activité</Label>
                       <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionne une catégorie" />
+                          <SelectValue placeholder="Sélectionne une activité" />
                         </SelectTrigger>
                         <SelectContent className="bg-background border border-border shadow-lg z-50">
-                          <SelectItem value="divertissement">🎮 Divertissement</SelectItem>
+                          <SelectItem value="bowling">🎳 Bowling</SelectItem>
+                          <SelectItem value="escape-game">🔍 Escape Game</SelectItem>
+                          <SelectItem value="laser-game">🔫 Laser Game</SelectItem>
+                          <SelectItem value="karting">🏎️ Karting</SelectItem>
+                          <SelectItem value="paintball">🎨 Paintball</SelectItem>
+                          <SelectItem value="cinema">🎬 Cinéma</SelectItem>
+                          <SelectItem value="restaurant">🍽️ Restaurant</SelectItem>
+                          <SelectItem value="bar">🍺 Bar</SelectItem>
+                          <SelectItem value="spa">🧘 Spa</SelectItem>
                           <SelectItem value="sport">⚽ Sport</SelectItem>
-                          <SelectItem value="culture">🎭 Culture</SelectItem>
-                          <SelectItem value="formation">📚 Formation</SelectItem>
-                          <SelectItem value="restauration">🍽️ Restauration</SelectItem>
-                          <SelectItem value="wellness">🧘 Bien-être</SelectItem>
-                          <SelectItem value="aventure">🏔️ Aventure</SelectItem>
-                          <SelectItem value="tech">💻 Tech</SelectItem>
+                          <SelectItem value="musee">🏛️ Musée</SelectItem>
+                          <SelectItem value="concert">🎵 Concert</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -436,7 +528,7 @@ export default function BusinessDashboard() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="price">Prix</Label>
                       <Input
@@ -447,7 +539,7 @@ export default function BusinessDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Lieu</Label>
+                      <Label htmlFor="location">Ville</Label>
                       <Input
                         id="location"
                         value={formData.location}
@@ -458,13 +550,72 @@ export default function BusinessDashboard() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Adresse exacte</Label>
-                    <Input
-                      id="address"
-                      value={formData.address || ""}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      placeholder="123 rue de la République, 69002 Lyon"
-                    />
+                    <Label htmlFor="address">Adresse</Label>
+                    <div className="flex gap-2">
+                      <Select value={formData.address} onValueChange={(value) => setFormData({...formData, address: value})}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Sélectionner une adresse" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border shadow-lg z-50">
+                          {savedAddresses.map((addr) => (
+                            <SelectItem key={addr.id} value={addr.full_address}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{addr.address_name}</span>
+                                <span className="text-xs text-muted-foreground">{addr.full_address}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsAddingNewAddress(true)}
+                      >
+                        <Plus size={16} />
+                      </Button>
+                    </div>
+                    
+                    {isAddingNewAddress && (
+                      <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                        <div className="space-y-2">
+                          <Label htmlFor="address-name">Nom de l'adresse</Label>
+                          <Input
+                            id="address-name"
+                            value={newAddress.name}
+                            onChange={(e) => setNewAddress({...newAddress, name: e.target.value})}
+                            placeholder="Mon restaurant"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="full-address">Adresse complète</Label>
+                          <Input
+                            id="full-address"
+                            value={newAddress.address}
+                            onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
+                            placeholder="123 rue de la République, 69002 Lyon"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={saveNewAddress}
+                          >
+                            Sauvegarder
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsAddingNewAddress(false)}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -489,7 +640,7 @@ export default function BusinessDashboard() {
                       className="w-full justify-start"
                     >
                       <Camera className="mr-2 h-4 w-4" />
-                      Choisir une photo
+                      {formData.image_file ? formData.image_file.name : "Choisir une photo"}
                     </Button>
                     <input
                       id="image-upload"
@@ -497,6 +648,12 @@ export default function BusinessDashboard() {
                       accept="image/*"
                       capture="environment"
                       className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setFormData({...formData, image_file: file});
+                        }
+                      }}
                     />
                   </div>
 
@@ -593,9 +750,9 @@ export default function BusinessDashboard() {
                             </Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Bell size={14} className="text-primary flex-shrink-0" />
-                          <span className="text-xs text-muted-foreground truncate">
+                        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                          <Bell size={12} className="text-primary flex-shrink-0" />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(booking.created_at).toLocaleDateString('fr-FR')}
                           </span>
                         </div>

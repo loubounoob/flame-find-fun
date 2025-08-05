@@ -6,119 +6,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
-import { BottomNav } from "@/components/ui/bottom-nav";
 import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Globe, 
-  Clock,
-  Star,
-  Heart,
+  Settings,
+  LogOut,
+  Edit,
+  Flame,
   Calendar,
-  Users,
-  Edit3,
-  Camera
+  BarChart3,
+  Eye,
+  MapPin,
+  Phone,
+  Globe,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 export default function BusinessProfile() {
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState({
+    activeOffers: 0,
+    totalBookings: 0,
+    totalFlames: 0,
+    averageRating: 0
+  });
   const [formData, setFormData] = useState({
     company_name: "",
-    description: "",
-    address: "",
+    bio: "",
     phone: "",
-    email: "",
     website: "",
-    opening_hours: "",
-    avatar_url: ""
+    location: "",
+    opening_hours: ""
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Charger le profil business
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["business-profile", user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error("No user");
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  // Charger les statistiques business
-  const { data: stats } = useQuery({
-    queryKey: ["business-stats", user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error("No user");
-      
-      // Nombre d'offres actives
-      const { count: activeOffers } = await supabase
-        .from('offers')
-        .select('*', { count: 'exact', head: true })
-        .eq('business_user_id', user.id)
-        .eq('status', 'active');
-
-      // Nombre total de réservations
-      const { count: totalBookings } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('business_user_id', user.id);
-
-      // Nombre total de flammes reçues
-      const { data: offers } = await supabase
-        .from('offers')
-        .select('id')
-        .eq('business_user_id', user.id);
-
-      const offerIds = offers?.map(o => o.id) || [];
-      const { count: totalFlames } = await supabase
-        .from('flames')
-        .select('*', { count: 'exact', head: true })
-        .in('offer_id', offerIds);
-
-      return {
-        activeOffers: activeOffers || 0,
-        totalBookings: totalBookings || 0,
-        totalFlames: totalFlames || 0,
-        rating: 4.8 // Static pour maintenant
-      };
-    },
-    enabled: !!user,
-  });
 
   useEffect(() => {
     checkAuth();
   }, []);
-
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        company_name: profile.first_name || "",
-        description: profile.bio || "",
-        address: profile.location || "",
-        phone: (profile as any).phone || "",
-        email: profile.email || "",
-        website: (profile as any).website || "",
-        opening_hours: (profile as any).opening_hours || "",
-        avatar_url: profile.avatar_url || ""
-      });
-    }
-  }, [profile]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -127,75 +56,154 @@ export default function BusinessProfile() {
       return;
     }
     setUser(session.user);
+    loadProfile();
+    loadStats();
   };
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!user) throw new Error("No user");
-      
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user.id,
-          first_name: data.company_name,
-          bio: data.description,
-          location: data.address,
-          phone: data.phone,
-          email: data.email,
-          website: data.website,
-          opening_hours: data.opening_hours,
-          avatar_url: data.avatar_url,
-        }, {
-          onConflict: 'user_id'
+  const loadProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (profileData) {
+        setProfile(profileData);
+        setFormData({
+          company_name: session.user.user_metadata?.company_name || "",
+          bio: profileData.bio || "",
+          phone: profileData.phone || "",
+          website: profileData.website || "",
+          location: profileData.location || "",
+          opening_hours: profileData.opening_hours || ""
         });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["business-profile"] });
-      toast({
-        title: "Profil mis à jour !",
-        description: "Vos informations ont été sauvegardées avec succès.",
+      } else {
+        // Create profile if it doesn't exist
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: session.user.id,
+            first_name: session.user.user_metadata?.first_name,
+            last_name: session.user.user_metadata?.last_name,
+            email: session.user.email
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        setProfile(newProfile);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      // Load offers
+      const { data: offers, error: offersError } = await supabase
+        .from('offers')
+        .select('id')
+        .eq('business_user_id', session.user.id)
+        .eq('status', 'active');
+
+      if (offersError) throw offersError;
+
+      // Load bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('business_user_id', session.user.id);
+
+      if (bookingsError) throw bookingsError;
+
+      // Load flames
+      const { data: flames, error: flamesError } = await supabase
+        .from('flames')
+        .select('id')
+        .in('offer_id', offers?.map(o => o.id) || []);
+
+      if (flamesError) throw flamesError;
+
+      setStats({
+        activeOffers: offers?.length || 0,
+        totalBookings: bookings?.length || 0,
+        totalFlames: flames?.length || 0,
+        averageRating: 4.5 // Mock data for now
       });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !profile) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          bio: formData.bio,
+          phone: formData.phone,
+          website: formData.website,
+          location: formData.location,
+          opening_hours: formData.opening_hours
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update user metadata for company name
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          company_name: formData.company_name
+        }
+      });
+
+      if (authError) throw authError;
+
+      toast({
+        title: "Profil mis à jour",
+        description: "Vos informations ont été sauvegardées avec succès !",
+      });
+
       setIsEditing(false);
-    },
-    onError: () => {
+      loadProfile();
+    } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour.",
-        variant: "destructive",
+        description: "Impossible de mettre à jour le profil.",
+        variant: "destructive"
       });
-    },
-  });
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    updateProfileMutation.mutate(formData);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Chargement...</div>
+  if (!user || !profile) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2">Chargement...</h2>
+        <p className="text-muted-foreground">Redirection...</p>
       </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement du profil...</p>
-        </div>
-      </div>
-    );
+    </div>;
   }
 
   return (
@@ -203,269 +211,191 @@ export default function BusinessProfile() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-            Profil Entreprise
-          </h1>
-          <Button
-            onClick={() => setIsEditing(!isEditing)}
-            variant="outline"
-            size="sm"
-          >
-            <Edit3 size={16} className="mr-2" />
-            {isEditing ? "Annuler" : "Modifier"}
-          </Button>
+          <div>
+            <h1 className="text-2xl font-poppins font-bold text-foreground">
+              Profil Entreprise
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
+              <Settings size={20} />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleLogout}>
+              <LogOut size={20} />
+            </Button>
+          </div>
         </div>
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Photo et infos principales */}
+        {/* Profile Header */}
         <Card className="bg-gradient-card border-border/50">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-4">
-              {isEditing ? (
-                <div className="flex flex-col items-center gap-2">
-                  <ProfilePhotoUpload
-                    currentAvatarUrl={profile?.avatar_url}
-                    firstName={formData.company_name}
-                    onPhotoUpdated={(newUrl) => {
-                      setFormData(prev => ({ ...prev, avatar_url: newUrl }));
-                      queryClient.invalidateQueries({ queryKey: ["business-profile"] });
-                    }}
-                  />
-                </div>
-              ) : (
-                <Avatar className="w-20 h-20 border-2 border-primary">
-                  <AvatarImage src={profile?.avatar_url} alt={formData.company_name} />
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl font-bold">
-                    {formData.company_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )}
+            <div className="flex flex-col items-center text-center space-y-4">
+              <ProfilePhotoUpload
+                currentAvatarUrl={profile.avatar_url}
+                firstName={user.user_metadata?.first_name}
+                lastName={user.user_metadata?.last_name}
+                onPhotoUpdated={loadProfile}
+              />
               
-              <div className="flex-1">
-                {isEditing ? (
-                  <div className="space-y-2">
-                    <div>
-                      <Label htmlFor="company_name">Nom de l'entreprise</Label>
-                      <Input
-                        id="company_name"
-                        value={formData.company_name}
-                        onChange={(e) => handleInputChange('company_name', e.target.value)}
-                        placeholder="Nom de votre entreprise"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <h2 className="text-2xl font-poppins font-bold text-foreground">
-                      {formData.company_name || "Nom de l'entreprise"}
-                    </h2>
-                    <div className="flex items-center gap-4 mt-2">
-                      <div className="flex items-center gap-1">
-                        <Star size={16} className="text-warning fill-current" />
-                        <span className="text-sm font-medium">{stats?.rating || 0}</span>
-                      </div>
-                      <Badge className="bg-gradient-primary text-primary-foreground">
-                        Vérifié
-                      </Badge>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            {isEditing ? (
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Décrivez votre entreprise..."
-                  rows={3}
-                />
-              </div>
-            ) : (
-              formData.description && (
-                <p className="text-muted-foreground mt-3">
-                  {formData.description}
-                </p>
-              )
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Statistiques */}
-        <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Nos performances</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-gradient-primary rounded-xl">
-                <Calendar size={20} className="mx-auto mb-2 text-primary-foreground" />
-                <div className="text-lg font-bold text-primary-foreground">{stats?.activeOffers || 0}</div>
-                <div className="text-xs text-primary-foreground/80">Offres actives</div>
-              </div>
-              
-              <div className="text-center p-3 bg-gradient-success rounded-xl">
-                <Users size={20} className="mx-auto mb-2 text-white" />
-                <div className="text-lg font-bold text-white">{stats?.totalBookings || 0}</div>
-                <div className="text-xs text-white/80">Réservations</div>
-              </div>
-              
-              <div className="text-center p-3 bg-gradient-flame rounded-xl">
-                <Heart size={20} className="mx-auto mb-2 text-white" />
-                <div className="text-lg font-bold text-white">{stats?.totalFlames || 0}</div>
-                <div className="text-xs text-white/80">Flammes reçues</div>
-              </div>
-              
-              <div className="text-center p-3 bg-gradient-secondary rounded-xl">
-                <Star size={20} className="mx-auto mb-2 text-secondary-foreground" />
-                <div className="text-lg font-bold text-secondary-foreground">{stats?.rating || 0}</div>
-                <div className="text-xs text-secondary-foreground/80">Note moyenne</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Informations de contact */}
-        <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Informations de contact</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isEditing ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="flex items-center gap-2">
-                    <MapPin size={16} />
-                    Adresse exacte
-                  </Label>
+                {isEditing ? (
                   <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    placeholder="123 rue de la République, 69002 Lyon"
+                    value={formData.company_name}
+                    onChange={(e) => handleInputChange('company_name', e.target.value)}
+                    placeholder="Nom de l'entreprise"
+                    className="text-center text-xl font-bold"
                   />
-                </div>
+                ) : (
+                  <h2 className="text-xl font-bold">
+                    {user.user_metadata?.company_name || "Nom de l'entreprise"}
+                  </h2>
+                )}
                 
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="flex items-center gap-2">
-                    <Phone size={16} />
-                    Téléphone
-                  </Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="04 00 00 00 00"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    <Mail size={16} />
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="contact@entreprise.com"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="website" className="flex items-center gap-2">
-                    <Globe size={16} />
-                    Site web
-                  </Label>
-                  <Input
-                    id="website"
-                    value={formData.website}
-                    onChange={(e) => handleInputChange('website', e.target.value)}
-                    placeholder="https://www.entreprise.com"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="opening_hours" className="flex items-center gap-2">
-                    <Clock size={16} />
-                    Horaires d'ouverture
-                  </Label>
+                {isEditing ? (
                   <Textarea
-                    id="opening_hours"
-                    value={formData.opening_hours}
-                    onChange={(e) => handleInputChange('opening_hours', e.target.value)}
-                    placeholder="Lun-Ven: 9h-18h&#10;Sam: 10h-16h&#10;Dim: Fermé"
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    placeholder="Décrivez votre entreprise..."
                     rows={3}
                   />
-                </div>
-              </>
-            ) : (
-              <>
-                {formData.address && (
-                  <div className="flex items-start gap-3">
-                    <MapPin size={16} className="text-primary mt-1" />
-                    <span className="text-sm text-foreground">{formData.address}</span>
-                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {profile.bio || "Aucune description disponible"}
+                  </p>
                 )}
-                
-                {formData.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone size={16} className="text-primary" />
-                    <span className="text-sm text-foreground">{formData.phone}</span>
-                  </div>
-                )}
-                
-                {formData.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail size={16} className="text-primary" />
-                    <span className="text-sm text-foreground">{formData.email}</span>
-                  </div>
-                )}
-                
-                {formData.website && (
-                  <div className="flex items-center gap-3">
-                    <Globe size={16} className="text-primary" />
-                    <a 
-                      href={formData.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      {formData.website}
-                    </a>
-                  </div>
-                )}
-                
-                {formData.opening_hours && (
-                  <div className="flex items-start gap-3">
-                    <Clock size={16} className="text-primary mt-1" />
-                    <div className="text-sm text-foreground whitespace-pre-line">
-                      {formData.opening_hours}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+              </div>
+
+              <Button
+                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                variant={isEditing ? "default" : "outline"}
+              >
+                <Edit className="mr-2" size={16} />
+                {isEditing ? "Sauvegarder" : "Modifier le profil"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Bouton de sauvegarde */}
-        {isEditing && (
-          <Button 
-            onClick={handleSave}
-            className="w-full bg-gradient-primary"
-            size="lg"
-            disabled={updateProfileMutation.isPending}
-          >
-            {updateProfileMutation.isPending ? "Sauvegarde..." : "Sauvegarder les modifications"}
-          </Button>
-        )}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="bg-gradient-primary text-primary-foreground">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Total Flammes</p>
+                  <p className="text-xl font-bold">{stats.totalFlames}</p>
+                </div>
+                <Flame size={20} className="fill-current" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-success text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Réservations</p>
+                  <p className="text-xl font-bold">{stats.totalBookings}</p>
+                </div>
+                <Calendar size={20} />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-info text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Offres Actives</p>
+                  <p className="text-xl font-bold">{stats.activeOffers}</p>
+                </div>
+                <BarChart3 size={20} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-secondary text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Note Moyenne</p>
+                  <p className="text-xl font-bold">{stats.averageRating.toFixed(1)}</p>
+                </div>
+                <Eye size={20} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact Information */}
+        <Card className="bg-gradient-card border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone size={20} />
+              Informations de contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Téléphone</Label>
+              {isEditing ? (
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+33 1 23 45 67 89"
+                />
+              ) : (
+                <p className="text-muted-foreground">{profile.phone || "Non renseigné"}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Site web</Label>
+              {isEditing ? (
+                <Input
+                  id="website"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="https://monentreprise.com"
+                />
+              ) : (
+                <p className="text-muted-foreground">{profile.website || "Non renseigné"}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Adresse</Label>
+              {isEditing ? (
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  placeholder="123 rue de la République, 69002 Lyon"
+                />
+              ) : (
+                <p className="text-muted-foreground">{profile.location || "Non renseigné"}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="opening_hours">Horaires d'ouverture</Label>
+              {isEditing ? (
+                <Textarea
+                  id="opening_hours"
+                  value={formData.opening_hours}
+                  onChange={(e) => handleInputChange('opening_hours', e.target.value)}
+                  placeholder="Lun-Ven: 9h-18h, Sam: 10h-16h"
+                  rows={2}
+                />
+              ) : (
+                <p className="text-muted-foreground">{profile.opening_hours || "Non renseigné"}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <BottomNav />

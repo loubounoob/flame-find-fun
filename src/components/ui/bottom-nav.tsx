@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Home, MapPin, User, Search, Heart } from "lucide-react";
+import { Home, MapPin, User, Search, Heart, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -43,9 +43,14 @@ export function BottomNav({ className }: BottomNavProps) {
         path: "/" 
       },
       { 
-        icon: User, 
-        label: "Business", 
+        icon: BarChart3, 
+        label: "Dashboard", 
         path: "/business-dashboard" 
+      },
+      { 
+        icon: User, 
+        label: "Profil", 
+        path: "/business-profile" 
       },
     ];
 

@@ -70,6 +70,39 @@ export type Database = {
           },
         ]
       }
+      business_addresses: {
+        Row: {
+          address_name: string
+          business_user_id: string
+          created_at: string
+          full_address: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          updated_at: string
+        }
+        Insert: {
+          address_name: string
+          business_user_id: string
+          created_at?: string
+          full_address: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address_name?: string
+          business_user_id?: string
+          created_at?: string
+          full_address?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flames: {
         Row: {
           created_at: string
