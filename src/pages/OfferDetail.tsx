@@ -22,39 +22,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-const mockOffer = {
-  id: "1",
-  title: "Bowling Party 🎳",
-  business: "Strike Zone",
-  description: "2 heures de bowling + chaussures incluses. Parfait pour s'amuser entre amis après les cours ! Venez découvrir notre nouveau bowling avec 12 pistes modernes, système de score automatique et éclairage LED.",
-  location: "15 Rue de la République, Lyon",
-  timeSlot: "16h00 - 18h00",
-  date: "Aujourd'hui",
-  discount: "Une partie gratuite",
-  category: "Bowling",
-  image: "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop",
-  video: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-  flames: 247,
-  rating: 4.8,
-  reviewCount: 124,
-  capacity: "2-8 personnes",
-  business_profile: {
-    name: "Strike Zone",
-    description: "Le meilleur bowling de Lyon ! Ouvert depuis 2015, nous proposons une expérience unique avec nos 12 pistes modernes.",
-    address: "15 Rue de la République, 69002 Lyon",
-    phone: "04 78 42 33 21",
-    website: "www.strikezone-lyon.fr",
-    instagram: "@strikezone_lyon",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop",
-    rating: 4.8,
-    reviewCount: 324,
-    openingHours: {
-      "Lundi - Jeudi": "14h00 - 23h00",
-      "Vendredi - Samedi": "14h00 - 01h00",
-      "Dimanche": "14h00 - 22h00"
-    }
-  }
-};
 
 export default function OfferDetail() {
   const { id } = useParams();
@@ -86,6 +53,22 @@ export default function OfferDetail() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: businessProfile } = useQuery({
+    queryKey: ["businessProfile", offer?.business_user_id],
+    queryFn: async () => {
+      if (!offer?.business_user_id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, email, phone, website, bio, avatar_url, opening_hours")
+        .eq("user_id", offer.business_user_id)
+        .single();
+      
+      if (error) return null;
+      return data;
+    },
+    enabled: !!offer?.business_user_id,
   });
 
   const { data: userFlame } = useQuery({
@@ -214,22 +197,26 @@ export default function OfferDetail() {
             </h1>
             
             {/* Business info with click handler */}
-            <button 
-              onClick={() => setShowBusiness(!showBusiness)}
-              className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={mockOffer.business_profile.logo} />
-                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
-                  {mockOffer.business.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-medium text-foreground">{mockOffer.business}</span>
-              <div className="flex items-center gap-1">
-                <Star size={14} className="text-warning fill-current" />
-                <span className="text-sm text-muted-foreground">{mockOffer.rating} ({mockOffer.reviewCount})</span>
-              </div>
-            </button>
+            {businessProfile && (
+              <button 
+                onClick={() => setShowBusiness(!showBusiness)}
+                className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={businessProfile.avatar_url || undefined} />
+                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
+                    {businessProfile.first_name?.charAt(0)}{businessProfile.last_name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-medium text-foreground">
+                  {businessProfile.first_name} {businessProfile.last_name}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Star size={14} className="text-warning fill-current" />
+                  <span className="text-sm text-muted-foreground">4.8 (24 avis)</span>
+                </div>
+              </button>
+            )}
 
             <p className="text-muted-foreground leading-relaxed">
               {offer.description}
@@ -237,62 +224,62 @@ export default function OfferDetail() {
           </div>
 
           {/* Business Profile Modal/Card */}
-          {showBusiness && (
+          {showBusiness && businessProfile && (
             <Card className="bg-gradient-card border-border/50 animate-fade-in">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage src={mockOffer.business_profile.logo} />
+                    <AvatarImage src={businessProfile.avatar_url || undefined} />
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {mockOffer.business.slice(0, 2)}
+                      {businessProfile.first_name?.charAt(0)}{businessProfile.last_name?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-poppins font-bold text-foreground">{mockOffer.business_profile.name}</h3>
+                    <h3 className="font-poppins font-bold text-foreground">
+                      {businessProfile.first_name} {businessProfile.last_name}
+                    </h3>
                     <div className="flex items-center gap-1">
                       <Star size={14} className="text-warning fill-current" />
-                      <span className="text-sm text-muted-foreground">
-                        {mockOffer.business_profile.rating} ({mockOffer.business_profile.reviewCount} avis)
-                      </span>
+                      <span className="text-sm text-muted-foreground">4.8 (24 avis)</span>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground mb-4">
-                  {mockOffer.business_profile.description}
-                </p>
+                {businessProfile.bio && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {businessProfile.bio}
+                  </p>
+                )}
 
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-primary" />
-                    <span className="text-sm text-foreground">{mockOffer.business_profile.address}</span>
-                  </div>
+                  {offer.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin size={16} className="text-primary" />
+                      <span className="text-sm text-foreground">{offer.location}</span>
+                    </div>
+                  )}
                   
-                  <div className="flex items-center gap-2">
-                    <Phone size={16} className="text-secondary" />
-                    <span className="text-sm text-foreground">{mockOffer.business_profile.phone}</span>
-                  </div>
+                  {businessProfile.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone size={16} className="text-secondary" />
+                      <span className="text-sm text-foreground">{businessProfile.phone}</span>
+                    </div>
+                  )}
                   
-                  <div className="flex items-center gap-2">
-                    <Globe size={16} className="text-info" />
-                    <span className="text-sm text-foreground">{mockOffer.business_profile.website}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Instagram size={16} className="text-destructive" />
-                    <span className="text-sm text-foreground">{mockOffer.business_profile.instagram}</span>
-                  </div>
+                  {businessProfile.website && (
+                    <div className="flex items-center gap-2">
+                      <Globe size={16} className="text-info" />
+                      <span className="text-sm text-foreground">{businessProfile.website}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-border/50">
-                  <h4 className="font-semibold text-foreground mb-2">Horaires d'ouverture</h4>
-                  {Object.entries(mockOffer.business_profile.openingHours).map(([day, hours]) => (
-                    <div key={day} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{day}</span>
-                      <span className="text-foreground">{hours}</span>
-                    </div>
-                  ))}
-                </div>
+                {businessProfile.opening_hours && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <h4 className="font-semibold text-foreground mb-2">Horaires d'ouverture</h4>
+                    <p className="text-sm text-foreground">{businessProfile.opening_hours}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -305,21 +292,18 @@ export default function OfferDetail() {
                 <span className="text-foreground">{offer.location}</span>
               </div>
               
-              <div className="flex items-center gap-4">
+              {offer.price && (
                 <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-secondary" />
-                  <span className="text-foreground">{mockOffer.date}</span>
+                  <span className="text-lg font-bold text-primary">{offer.price}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock size={18} className="text-secondary" />
-                  <span className="text-foreground">{mockOffer.timeSlot}</span>
-                </div>
-              </div>
+              )}
               
-              <div className="flex items-center gap-2">
-                <Users size={18} className="text-info" />
-                <span className="text-foreground">{mockOffer.capacity}</span>
-              </div>
+              {offer.max_participants && (
+                <div className="flex items-center gap-2">
+                  <Users size={18} className="text-info" />
+                  <span className="text-foreground">Jusqu'à {offer.max_participants} personnes</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 

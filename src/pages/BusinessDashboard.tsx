@@ -379,7 +379,7 @@ export default function BusinessDashboard() {
   const confirmedBookings = bookings.filter(booking => booking.status === 'confirmed').length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">

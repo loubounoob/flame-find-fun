@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Map from "./pages/Map";
 import Profile from "./pages/Profile";
@@ -29,18 +30,18 @@ const App = () => (
         <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/offer/:id" element={<OfferDetail />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/booking/:id" element={<BookingForm />} />
+          <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+          <Route path="/booking/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/profile/edit" element={<ProfileEdit />} />
+          <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/business-dashboard" element={<BusinessDashboard />} />
-          <Route path="/business-profile" element={<BusinessProfile />} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
+          <Route path="/business-profile" element={<ProtectedRoute businessOnly><BusinessProfile /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
