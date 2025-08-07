@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 export default function BusinessDashboard() {
   const [user, setUser] = useState(null);
@@ -35,7 +36,7 @@ export default function BusinessDashboard() {
   const [bookings, setBookings] = useState([]);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
-  const [newAddress, setNewAddress] = useState({ name: "", address: "" });
+  const [newAddress, setNewAddress] = useState({ name: "", address: "", city: "" });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -158,7 +159,7 @@ export default function BusinessDashboard() {
   };
 
   const saveNewAddress = async () => {
-    if (!user || !newAddress.name || !newAddress.address) return;
+    if (!user || !newAddress.name || !newAddress.address || !newAddress.city) return;
 
     try {
       const { error } = await supabase
@@ -166,7 +167,7 @@ export default function BusinessDashboard() {
         .insert({
           business_user_id: user.id,
           address_name: newAddress.name,
-          full_address: newAddress.address
+          full_address: `${newAddress.address}, ${newAddress.city}`
         });
 
       if (error) throw error;
@@ -176,7 +177,7 @@ export default function BusinessDashboard() {
         description: "L'adresse a été ajoutée à vos favoris !",
       });
 
-      setNewAddress({ name: "", address: "" });
+      setNewAddress({ name: "", address: "", city: "" });
       setIsAddingNewAddress(false);
       loadSavedAddresses();
     } catch (error) {
@@ -589,12 +590,21 @@ export default function BusinessDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="full-address">Adresse complète</Label>
+                          <Label htmlFor="full-address">Adresse</Label>
                           <Input
                             id="full-address"
                             value={newAddress.address}
                             onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
-                            placeholder="123 rue de la République, 69002 Lyon"
+                            placeholder="123 rue de la République"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="city">Ville</Label>
+                          <Input
+                            id="city"
+                            value={newAddress.city}
+                            onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                            placeholder="Lyon"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -736,23 +746,23 @@ export default function BusinessDashboard() {
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground">{booking.offer?.title}</h3>
                           <p className="text-sm text-muted-foreground">{booking.offer?.category}</p>
-                          <div className="flex items-center gap-4 mt-2">
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
                             <div className="flex items-center gap-1">
-                              <Calendar size={14} className="text-primary" />
-                              <span className="text-sm">{new Date(booking.booking_date).toLocaleDateString('fr-FR')}</span>
+                              <Calendar size={12} className="text-primary" />
+                              <span className="text-xs">{new Date(booking.booking_date).toLocaleDateString('fr-FR')}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Users size={14} className="text-success" />
-                              <span className="text-sm">{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
+                              <Users size={12} className="text-success" />
+                              <span className="text-xs">{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
                             </div>
-                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className="text-xs">
                               {booking.status === "confirmed" ? "Confirmé" : booking.status}
                             </Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                          <Bell size={12} className="text-primary flex-shrink-0" />
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <Bell size={12} className="text-primary" />
+                          <span className="text-xs text-muted-foreground text-right">
                             {new Date(booking.created_at).toLocaleDateString('fr-FR')}
                           </span>
                         </div>
@@ -765,6 +775,9 @@ export default function BusinessDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

@@ -39,6 +39,7 @@ export default function Settings() {
   const [autoPlay, setAutoPlay] = useState(false);
   const [dataUsage, setDataUsage] = useState("wifi");
   const [user, setUser] = useState(null);
+  const [previousRoute, setPreviousRoute] = useState("/");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,6 +55,16 @@ export default function Settings() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      
+      // Set default route based on user type if no saved route
+      const savedRoute = sessionStorage.getItem('previousRoute');
+      if (savedRoute) {
+        setPreviousRoute(savedRoute);
+      } else if (session?.user?.user_metadata?.account_type === "business") {
+        setPreviousRoute("/business-dashboard");
+      } else {
+        setPreviousRoute("/");
+      }
     };
     
     checkAuth();
@@ -93,7 +104,7 @@ export default function Settings() {
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
           <Link 
-            to={user?.user_metadata?.account_type === "business" ? "/business-dashboard" : "/profile"}
+            to={previousRoute}
           >
             <Button variant="ghost" size="icon">
               <ArrowLeft size={20} />
