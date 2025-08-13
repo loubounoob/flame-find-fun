@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Lock, User, Building, Camera, MapPin } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building, Camera } from "lucide-react";
 import { generateInitialsAvatar } from "@/utils/avatarUtils";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -22,6 +23,8 @@ export default function Auth() {
   const [accountType, setAccountType] = useState("student");
   const [companyName, setCompanyName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [businessLocation, setBusinessLocation] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -95,6 +98,50 @@ export default function Auth() {
     }
   };
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fichier image.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `temp-${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Photo ajoutée",
+        description: "Votre photo de profil a été ajoutée avec succès.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter la photo.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signUp = async () => {
     setLoading(true);
     try {
@@ -102,7 +149,7 @@ export default function Auth() {
       
       const finalAvatarUrl = avatarUrl || generateInitialsAvatar(firstName, lastName);
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -112,7 +159,10 @@ export default function Auth() {
             last_name: lastName,
             account_type: accountType,
             avatar_url: finalAvatarUrl,
-            company_name: accountType === "business" ? companyName : null
+            company_name: accountType === "business" ? companyName : null,
+            business_address: accountType === "business" ? businessAddress : null,
+            business_latitude: accountType === "business" && businessLocation ? businessLocation.lat : null,
+            business_longitude: accountType === "business" && businessLocation ? businessLocation.lng : null
           }
         }
       });
@@ -132,12 +182,25 @@ export default function Auth() {
           });
         }
       } else {
+        // If business account, update profile with additional info
+        if (accountType === "business" && data.user) {
+          await supabase
+            .from('profiles')
+            .update({
+              business_name: companyName,
+              address: businessAddress,
+              latitude: businessLocation?.lat,
+              longitude: businessLocation?.lng,
+              account_type: 'business'
+            })
+            .eq('user_id', data.user.id);
+        }
+
         toast({
           title: "Inscription réussie !",
           description: "📧 Vérifiez votre boîte email pour confirmer votre compte et terminer l'inscription.",
         });
         
-        // Show additional popup for email confirmation
         setTimeout(() => {
           toast({
             title: "Confirmation requise",
@@ -271,15 +334,16 @@ export default function Auth() {
                       
                       <div className="space-y-2">
                         <Label htmlFor="business-address">Adresse de l'activité *</Label>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="business-address"
-                            placeholder="123 rue de la République, 69002 Lyon"
-                            required
-                            className="pl-10"
-                          />
-                        </div>
+                        <AddressAutocomplete
+                          value={businessAddress}
+                          onChange={setBusinessAddress}
+                          onAddressSelect={(address, location) => {
+                            setBusinessAddress(address);
+                            setBusinessLocation(location);
+                          }}
+                          placeholder="123 rue de la République, 69002 Lyon"
+                          className="w-full"
+                        />
                         <p className="text-xs text-muted-foreground">
                           Adresse exacte pour apparaître sur la carte des utilisateurs
                         </p>
@@ -315,14 +379,24 @@ export default function Auth() {
 
                 <div className="space-y-2">
                   <Label htmlFor="avatar-upload">Photo de profil (optionnel)</Label>
+                  {avatarUrl && (
+                    <div className="flex justify-center mb-2">
+                      <img 
+                        src={avatarUrl} 
+                        alt="Aperçu" 
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border"
+                      />
+                    </div>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById('avatar-upload')?.click()}
                     className="w-full justify-start pl-10"
+                    disabled={loading}
                   >
                     <Camera className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                    Choisir une photo
+                    {avatarUrl ? "Changer la photo" : "Choisir une photo"}
                   </Button>
                   <input
                     id="avatar-upload"
@@ -330,6 +404,7 @@ export default function Auth() {
                     accept="image/*"
                     capture="environment"
                     className="hidden"
+                    onChange={handleAvatarUpload}
                   />
                   <p className="text-xs text-muted-foreground">
                     Si aucune photo n'est fournie, un avatar avec tes initiales sera créé automatiquement.
@@ -377,7 +452,7 @@ export default function Auth() {
 
                 <Button 
                   onClick={signUp} 
-                  disabled={loading || !email || !password || !firstName || !lastName || (accountType === "business" && !companyName)}
+                  disabled={loading || !email || !password || !firstName || !lastName || (accountType === "business" && (!companyName || !businessAddress))}
                   className="w-full bg-gradient-primary hover:opacity-90"
                 >
                   {loading ? "Inscription..." : "S'inscrire"}

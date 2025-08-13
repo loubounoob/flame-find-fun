@@ -83,17 +83,16 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
       const map = new google.maps.Map(mapRef.current, {
         center: defaultCenter,
         zoom: 14,
-        disableDefaultUI: true, // Interface simplifiée pour mobile
-        zoomControl: true,
+        disableDefaultUI: true, // Interface complètement simplifiée
         gestureHandling: 'cooperative',
         styles: [
           {
-            featureType: 'poi.business',
+            featureType: 'poi',
             elementType: 'all',
-            stylers: [{ visibility: 'on' }]
+            stylers: [{ visibility: 'off' }] // Masquer tous les POI existants
           },
           {
-            featureType: 'poi.government',
+            featureType: 'transit',
             elementType: 'all',
             stylers: [{ visibility: 'off' }]
           }
