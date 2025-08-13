@@ -20,14 +20,21 @@ declare global {
       class Size {
         constructor(width: number, height: number);
       }
+      namespace places {
+        class PlacesService {
+          constructor(map: Map);
+          nearbySearch(request: any, callback: (results: any[], status: any) => void): void;
+        }
+        enum PlacesServiceStatus {
+          OK = 'OK'
+        }
+      }
     }
   }
 }
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Plus } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -39,55 +46,27 @@ interface GoogleMapProps {
 export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const [apiKey, setApiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
+  const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
   const { position, isLoading: locationLoading, getCurrentPosition } = useGeolocation();
 
-  // Récupérer les offres depuis Supabase
-  const { data: offers = [] } = useQuery({
-    queryKey: ["offers-map"],
+  // Récupérer les entreprises depuis Supabase
+  const { data: businesses = [] } = useQuery({
+    queryKey: ["businesses-map"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("offers")
+        .from("profiles")
         .select("*")
-        .eq("status", "active");
+        .eq("account_type", "business")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  // Calculer la distance entre deux points
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Rayon de la Terre en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // Distance en km
-    return distance;
-  };
-
-  // Charger les offres proches
-  const loadNearbyOffers = (lat: number, lng: number) => {
-    const nearby = offers
-      .filter(offer => offer.latitude && offer.longitude)
-        .map(offer => ({
-          ...offer,
-          distance: calculateDistance(lat, lng, Number(offer.latitude), Number(offer.longitude))
-        }))
-      .filter(offer => offer.distance <= 5) // 5km radius
-      .sort((a, b) => a.distance - b.distance);
-    
-    setNearbyOffers(nearby);
-  };
-
-  // Initialiser Google Maps
-  const initializeMap = async (apiKey: string) => {
+  // Initialiser Google Maps avec Neighborhood Discovery
+  const initializeMap = async () => {
     if (!mapRef.current) return;
 
     try {
@@ -103,11 +82,19 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
 
       const map = new google.maps.Map(mapRef.current, {
         center: defaultCenter,
-        zoom: 13,
+        zoom: 14,
+        disableDefaultUI: true, // Interface simplifiée pour mobile
+        zoomControl: true,
+        gestureHandling: 'cooperative',
         styles: [
           {
-            featureType: 'poi',
-            elementType: 'labels',
+            featureType: 'poi.business',
+            elementType: 'all',
+            stylers: [{ visibility: 'on' }]
+          },
+          {
+            featureType: 'poi.government',
+            elementType: 'all',
             stylers: [{ visibility: 'off' }]
           }
         ]
@@ -115,51 +102,46 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
 
       mapInstanceRef.current = map;
 
-      // Ajouter des marqueurs pour les offres
-      offers.forEach(offer => {
-        if (offer.latitude && offer.longitude) {
+      // Ajouter des marqueurs pour toutes les entreprises
+      businesses.forEach(business => {
+        if (business.latitude && business.longitude) {
           const marker = new google.maps.Marker({
             position: { 
-              lat: Number(offer.latitude), 
-              lng: Number(offer.longitude) 
+              lat: Number(business.latitude), 
+              lng: Number(business.longitude) 
             },
             map: map,
-            title: offer.title,
+            title: business.business_name || business.first_name,
             icon: {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="16" cy="16" r="12" fill="#ff6b35" stroke="white" stroke-width="2"/>
-                  <path d="M16 8l2.5 5 5.5 0.5-4 4 1 5.5-5-2.5-5 2.5 1-5.5-4-4 5.5-0.5z" fill="white"/>
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="18" fill="#ff6b35" stroke="white" stroke-width="3"/>
+                  <text x="20" y="26" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">🏢</text>
                 </svg>
               `),
-              scaledSize: new google.maps.Size(32, 32)
+              scaledSize: new google.maps.Size(40, 40)
             }
           });
 
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 12px; max-width: 250px;">
-                <h3 style="margin: 0 0 8px 0; font-weight: bold; color: #333;">${offer.title}</h3>
-                <p style="margin: 0 0 4px 0; color: #666; font-size: 12px;">${offer.category}</p>
-                <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;">${offer.location}</p>
-                <button onclick="window.location.href='/offer/${offer.id}'" style="
+              <div style="padding: 16px; max-width: 280px; font-family: Arial, sans-serif;">
+                <h3 style="margin: 0 0 12px 0; font-weight: bold; color: #333; font-size: 16px;">
+                  ${business.business_name || business.first_name}
+                </h3>
+                ${business.business_type ? `<p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${business.business_type}</p>` : ''}
+                ${business.address ? `<p style="margin: 0 0 12px 0; color: #333; font-size: 14px;">📍 ${business.address}</p>` : ''}
+                <button onclick="window.location.href='/business-profile?id=${business.user_id}'" style="
                   background: #ff6b35; 
                   color: white; 
                   border: none; 
-                  padding: 6px 12px; 
-                  border-radius: 4px; 
-                  font-size: 12px; 
+                  padding: 12px 20px; 
+                  border-radius: 8px; 
+                  font-size: 14px; 
+                  font-weight: bold;
                   cursor: pointer;
-                  margin-right: 8px;
-                ">Voir l'offre</button>
-                <button onclick="window.location.href='/business-profile?id=${offer.business_user_id}'" style="
-                  background: transparent; 
-                  color: #ff6b35; 
-                  border: 1px solid #ff6b35; 
-                  padding: 6px 12px; 
-                  border-radius: 4px; 
-                  font-size: 12px; 
-                  cursor: pointer;
+                  width: 100%;
+                  margin-top: 8px;
                 ">Voir le profil</button>
               </div>
             `
@@ -171,7 +153,7 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
         }
       });
 
-      // Marqueur pour la position de l'utilisateur
+      // Marqueur pour la position de l'utilisateur (plus visible sur mobile)
       if (position) {
         new google.maps.Marker({
           position: position,
@@ -179,17 +161,34 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
           title: 'Votre position',
           icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="8" fill="#4285f4" stroke="white" stroke-width="2"/>
-                <circle cx="12" cy="12" r="3" fill="white"/>
+              <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="15" cy="15" r="12" fill="#4285f4" stroke="white" stroke-width="3"/>
+                <circle cx="15" cy="15" r="5" fill="white"/>
               </svg>
             `),
-            scaledSize: new google.maps.Size(24, 24)
+            scaledSize: new google.maps.Size(30, 30)
           }
         });
 
-        loadNearbyOffers(position.lat, position.lng);
         onLocationUpdate?.(position);
+      }
+
+      // Activer Neighborhood Discovery
+      const placesService = new google.maps.places.PlacesService(map);
+      
+      if (position) {
+        const request = {
+          location: position,
+          radius: 2000, // 2km radius
+          type: ['establishment']
+        };
+
+        placesService.nearbySearch(request, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            // Optionnel: traiter les résultats des établissements à proximité
+            console.log('Establishments nearby:', results.length);
+          }
+        });
       }
 
     } catch (error) {
@@ -201,120 +200,39 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   const recenterMap = () => {
     if (position && mapInstanceRef.current) {
       mapInstanceRef.current.setCenter(position);
-      mapInstanceRef.current.setZoom(15);
+      mapInstanceRef.current.setZoom(16);
     } else {
       getCurrentPosition();
     }
   };
 
-  const handleApiKeySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (apiKey.trim()) {
-      setShowApiKeyInput(false);
-      initializeMap(apiKey);
-    }
-  };
-
   useEffect(() => {
-    if (!showApiKeyInput && apiKey) {
-      initializeMap(apiKey);
+    if (apiKey && businesses.length >= 0) {
+      initializeMap();
     }
-  }, [offers, position]);
+  }, [businesses, position]);
 
   // Géolocalisation automatique au chargement
   useEffect(() => {
     getCurrentPosition();
   }, []);
 
-  if (showApiKeyInput) {
-    return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6">
-            <form onSubmit={handleApiKeySubmit} className="space-y-4">
-              <div className="text-center">
-                <h3 className="font-semibold mb-2">Configuration Google Maps</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Entrez votre clé API Google Maps pour afficher la carte
-                </p>
-              </div>
-              <Input
-                type="text"
-                placeholder="Clé API Google Maps"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                required
-              />
-              <Button type="submit" className="w-full">
-                Charger la carte
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Obtenez votre clé API sur{' '}
-                <a 
-                  href="https://console.cloud.google.com/apis/credentials" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Google Cloud Console
-                </a>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full rounded-lg" />
       
-      {/* Controls */}
-      <div className="absolute top-4 right-4 space-y-2">
+      {/* Bouton de recentrage optimisé pour mobile */}
+      <div className="absolute bottom-6 right-4">
         <Button
           variant="outline"
           size="icon"
           onClick={recenterMap}
           disabled={locationLoading}
-          className="bg-background/95 backdrop-blur-sm"
+          className="bg-background/95 backdrop-blur-sm shadow-lg w-12 h-12"
         >
-          <Navigation size={20} />
+          <Navigation size={24} />
         </Button>
       </div>
-
-      {/* Nearby offers list */}
-      {nearbyOffers.length > 0 && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <Card className="bg-background/95 backdrop-blur-md border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-sm">Offres à proximité</h3>
-                <Badge variant="secondary" className="text-xs">
-                  {nearbyOffers.length} offre{nearbyOffers.length > 1 ? 's' : ''}
-                </Badge>
-              </div>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {nearbyOffers.slice(0, 3).map((offer) => (
-                  <div key={offer.id} className="flex items-center justify-between text-sm">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{offer.title}</p>
-                      <p className="text-muted-foreground text-xs">{offer.category}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin size={12} />
-                      {offer.distance < 1 
-                        ? `${Math.round(offer.distance * 1000)}m`
-                        : `${offer.distance.toFixed(1)}km`
-                      }
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
