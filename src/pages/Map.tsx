@@ -5,7 +5,7 @@ import { MapPin, Navigation, Filter, List, Heart, Flame } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
-import { MapboxMap } from "@/components/ui/mapbox-map";
+import { GoogleMap } from "@/components/ui/google-map";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -98,8 +98,8 @@ export default function Map() {
       </header>
 
       <div className="relative h-[calc(100vh-180px)]">
-        {/* Vraie carte Mapbox */}
-        <MapboxMap onLocationUpdate={handleLocationUpdate} />
+        {/* Carte Google Maps */}
+        <GoogleMap onLocationUpdate={handleLocationUpdate} />
 
         {/* Floating List Toggle */}
         {showList && (

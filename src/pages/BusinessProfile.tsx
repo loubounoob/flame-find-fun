@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { MediaUpload } from "@/components/MediaUpload";
+import { BusinessPricing } from "@/components/BusinessPricing";
 import { BottomNav } from "@/components/ui/bottom-nav";
 
 export default function BusinessProfile() {
@@ -399,17 +400,10 @@ export default function BusinessProfile() {
         </Card>
 
         {/* Media Upload Section - Instagram-like */}
-        <MediaUpload 
-          onMediaUploaded={(url, type) => {
-            toast({
-              title: "Média ajouté",
-              description: `Votre ${type === 'image' ? 'photo' : 'vidéo'} a été ajoutée à votre profil !`,
-            });
-            // Here you could save to a business_media table if needed
-          }}
-          maxFiles={10}
-          allowedTypes={['image', 'video']}
-        />
+        <MediaUpload />
+
+        {/* Pricing Section */}
+        <BusinessPricing />
       </div>
 
       <BottomNav />

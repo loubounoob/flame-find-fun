@@ -103,6 +103,87 @@ export type Database = {
         }
         Relationships: []
       }
+      business_media: {
+        Row: {
+          business_user_id: string
+          created_at: string
+          description: string | null
+          id: string
+          media_type: string
+          media_url: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type: string
+          media_url: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_pricing: {
+        Row: {
+          business_user_id: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          max_participants: number | null
+          min_participants: number | null
+          price_amount: number
+          price_type: string
+          service_name: string
+          special_conditions: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          min_participants?: number | null
+          price_amount: number
+          price_type: string
+          service_name: string
+          special_conditions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          min_participants?: number | null
+          price_amount?: number
+          price_type?: string
+          service_name?: string
+          special_conditions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flames: {
         Row: {
           created_at: string

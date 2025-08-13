@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Video, Upload, X, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MediaUploadProps {
   onMediaUploaded?: (url: string, type: 'image' | 'video') => void;
@@ -17,14 +19,60 @@ export function MediaUpload({
   maxFiles = 5,
   allowedTypes = ['image', 'video']
 }: MediaUploadProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
-  const [uploadedMedia, setUploadedMedia] = useState<Array<{url: string, type: 'image' | 'video', name: string}>>([]);
   const { toast } = useToast();
 
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  // Récupérer les médias existants depuis la base de données
+  const { data: existingMedia = [] } = useQuery({
+    queryKey: ['business-media', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('business_media')
+        .select('*')
+        .eq('business_user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
 
-    if (uploadedMedia.length + files.length > maxFiles) {
+  // Mutation pour supprimer un média
+  const deleteMediaMutation = useMutation({
+    mutationFn: async (mediaId: string) => {
+      const { error } = await supabase
+        .from('business_media')
+        .delete()
+        .eq('id', mediaId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-media', user?.id] });
+      toast({
+        title: "Média supprimé",
+        description: "Le média a été supprimé avec succès.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur de suppression",
+        description: "Impossible de supprimer le média.",
+        variant: "destructive"
+      });
+      console.error('Error deleting media:', error);
+    }
+  });
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !user?.id) return;
+
+    if (existingMedia.length + files.length > maxFiles) {
       toast({
         title: "Limite atteinte",
         description: `Vous ne pouvez uploader que ${maxFiles} fichiers maximum.`,
@@ -61,7 +109,7 @@ export function MediaUpload({
 
         // Upload file to Supabase storage
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const fileName = `business-media/${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('avatars')
@@ -73,15 +121,23 @@ export function MediaUpload({
           .from('avatars')
           .getPublicUrl(fileName);
 
-        const newMedia = {
-          url: publicUrl,
-          type: mediaType as 'image' | 'video',
-          name: file.name
-        };
+        // Enregistrer en base de données
+        const { error: dbError } = await supabase
+          .from('business_media')
+          .insert({
+            business_user_id: user.id,
+            media_url: publicUrl,
+            media_type: mediaType,
+            description: file.name
+          });
 
-        setUploadedMedia(prev => [...prev, newMedia]);
+        if (dbError) throw dbError;
+
         onMediaUploaded?.(publicUrl, mediaType);
       }
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['business-media', user?.id] });
 
       toast({
         title: "Upload réussi",
@@ -99,8 +155,8 @@ export function MediaUpload({
     }
   };
 
-  const removeMedia = (index: number) => {
-    setUploadedMedia(prev => prev.filter((_, i) => i !== index));
+  const removeMedia = (mediaId: string) => {
+    deleteMediaMutation.mutate(mediaId);
   };
 
   return (
@@ -111,7 +167,7 @@ export function MediaUpload({
             <div className="text-center">
               <h3 className="font-semibold mb-2">Ajouter des médias</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Partagez des photos et vidéos de votre activité ({uploadedMedia.length}/{maxFiles})
+                Partagez des photos et vidéos de votre activité ({existingMedia.length}/{maxFiles})
               </p>
             </div>
 
@@ -123,12 +179,12 @@ export function MediaUpload({
                   accept="image/*"
                   onChange={(e) => handleFileUpload(e.target.files)}
                   className="hidden"
-                  disabled={uploading || uploadedMedia.length >= maxFiles}
+                  disabled={uploading || existingMedia.length >= maxFiles}
                 />
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  disabled={uploading || uploadedMedia.length >= maxFiles}
+                  disabled={uploading || existingMedia.length >= maxFiles}
                   asChild
                 >
                   <div>
@@ -145,12 +201,12 @@ export function MediaUpload({
                   accept="video/*"
                   onChange={(e) => handleFileUpload(e.target.files)}
                   className="hidden"
-                  disabled={uploading || uploadedMedia.length >= maxFiles}
+                  disabled={uploading || existingMedia.length >= maxFiles}
                 />
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  disabled={uploading || uploadedMedia.length >= maxFiles}
+                  disabled={uploading || existingMedia.length >= maxFiles}
                   asChild
                 >
                   <div>
@@ -162,20 +218,20 @@ export function MediaUpload({
             </div>
 
             {/* Media Grid */}
-            {uploadedMedia.length > 0 && (
+            {existingMedia.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-                {uploadedMedia.map((media, index) => (
-                  <div key={index} className="relative group">
+                {existingMedia.map((media) => (
+                  <div key={media.id} className="relative group">
                     <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                      {media.type === 'image' ? (
+                      {media.media_type === 'image' ? (
                         <img 
-                          src={media.url} 
-                          alt={media.name}
+                          src={media.media_url} 
+                          alt={media.description || 'Media'}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <video 
-                          src={media.url}
+                          src={media.media_url}
                           className="w-full h-full object-cover"
                           controls={false}
                           muted
@@ -186,13 +242,14 @@ export function MediaUpload({
                       variant="secondary" 
                       className="absolute top-2 left-2 text-xs"
                     >
-                      {media.type === 'image' ? <ImageIcon size={12} /> : <Video size={12} />}
+                      {media.media_type === 'image' ? <ImageIcon size={12} /> : <Video size={12} />}
                     </Badge>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeMedia(index)}
+                      onClick={() => removeMedia(media.id)}
+                      disabled={deleteMediaMutation.isPending}
                     >
                       <X size={12} />
                     </Button>
