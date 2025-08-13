@@ -301,15 +301,21 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string | null
+          address: string | null
           avatar_url: string | null
           bio: string | null
           birth_date: string | null
+          business_name: string | null
+          business_type: string | null
           created_at: string
           email: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          latitude: number | null
           location: string | null
+          longitude: number | null
           opening_hours: string | null
           phone: string | null
           study_level: string | null
@@ -319,15 +325,21 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          account_type?: string | null
+          address?: string | null
           avatar_url?: string | null
           bio?: string | null
           birth_date?: string | null
+          business_name?: string | null
+          business_type?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           opening_hours?: string | null
           phone?: string | null
           study_level?: string | null
@@ -337,15 +349,21 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          account_type?: string | null
+          address?: string | null
           avatar_url?: string | null
           bio?: string | null
           birth_date?: string | null
+          business_name?: string | null
+          business_type?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           opening_hours?: string | null
           phone?: string | null
           study_level?: string | null

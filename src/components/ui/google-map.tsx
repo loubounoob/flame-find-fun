@@ -49,14 +49,14 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
   const { position, isLoading: locationLoading, getCurrentPosition } = useGeolocation();
 
-  // Récupérer les entreprises depuis Supabase
+  // Récupérer les offres avec coordonnées depuis Supabase
   const { data: businesses = [] } = useQuery({
     queryKey: ["businesses-map"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("offers")
         .select("*")
-        .eq("account_type", "business")
+        .eq("status", "active")
         .not("latitude", "is", null)
         .not("longitude", "is", null);
       
@@ -102,16 +102,16 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
 
       mapInstanceRef.current = map;
 
-      // Ajouter des marqueurs pour toutes les entreprises
-      businesses.forEach(business => {
-        if (business.latitude && business.longitude) {
+      // Ajouter des marqueurs pour toutes les offres/entreprises
+      businesses.forEach(offer => {
+        if (offer.latitude && offer.longitude) {
           const marker = new google.maps.Marker({
             position: { 
-              lat: Number(business.latitude), 
-              lng: Number(business.longitude) 
+              lat: Number(offer.latitude), 
+              lng: Number(offer.longitude) 
             },
             map: map,
-            title: business.business_name || business.first_name,
+            title: offer.title,
             icon: {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -127,22 +127,35 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
             content: `
               <div style="padding: 16px; max-width: 280px; font-family: Arial, sans-serif;">
                 <h3 style="margin: 0 0 12px 0; font-weight: bold; color: #333; font-size: 16px;">
-                  ${business.business_name || business.first_name}
+                  ${offer.title}
                 </h3>
-                ${business.business_type ? `<p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${business.business_type}</p>` : ''}
-                ${business.address ? `<p style="margin: 0 0 12px 0; color: #333; font-size: 14px;">📍 ${business.address}</p>` : ''}
-                <button onclick="window.location.href='/business-profile?id=${business.user_id}'" style="
-                  background: #ff6b35; 
-                  color: white; 
-                  border: none; 
-                  padding: 12px 20px; 
-                  border-radius: 8px; 
-                  font-size: 14px; 
-                  font-weight: bold;
-                  cursor: pointer;
-                  width: 100%;
-                  margin-top: 8px;
-                ">Voir le profil</button>
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${offer.category}</p>
+                ${offer.location ? `<p style="margin: 0 0 8px 0; color: #333; font-size: 14px;">📍 ${offer.location}</p>` : ''}
+                ${offer.price ? `<p style="margin: 0 0 12px 0; color: #ff6b35; font-size: 14px; font-weight: bold;">${offer.price}</p>` : ''}
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                  <button onclick="window.location.href='/offer/${offer.id}'" style="
+                    background: #ff6b35; 
+                    color: white; 
+                    border: none; 
+                    padding: 8px 16px; 
+                    border-radius: 6px; 
+                    font-size: 12px; 
+                    font-weight: bold;
+                    cursor: pointer;
+                    flex: 1;
+                  ">Voir l'offre</button>
+                  <button onclick="window.location.href='/business-profile?id=${offer.business_user_id}'" style="
+                    background: transparent; 
+                    color: #ff6b35; 
+                    border: 1px solid #ff6b35; 
+                    padding: 8px 16px; 
+                    border-radius: 6px; 
+                    font-size: 12px; 
+                    font-weight: bold;
+                    cursor: pointer;
+                    flex: 1;
+                  ">Profil</button>
+                </div>
               </div>
             `
           });
