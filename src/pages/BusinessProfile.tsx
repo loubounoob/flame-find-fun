@@ -136,11 +136,25 @@ export default function BusinessProfile() {
 
       if (flamesError) throw flamesError;
 
+      // Load average rating - calcul en temps réel
+      let averageRating = 0;
+      if (offers && offers.length > 0) {
+        const { data: ratings, error: ratingsError } = await supabase
+          .from('offer_ratings')
+          .select('rating')
+          .in('offer_id', offers.map(o => o.id));
+
+        if (!ratingsError && ratings && ratings.length > 0) {
+          const totalRating = ratings.reduce((sum, r) => sum + r.rating, 0);
+          averageRating = totalRating / ratings.length;
+        }
+      }
+
       setStats({
         activeOffers: offers?.length || 0,
         totalBookings: bookings?.length || 0,
         totalFlames: flames?.length || 0,
-        averageRating: 4.5 // Mock data for now
+        averageRating: averageRating
       });
     } catch (error) {
       console.error('Error loading stats:', error);

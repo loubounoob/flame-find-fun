@@ -24,6 +24,7 @@ export function RatingModal({ offerId, onClose, onRatingSubmitted }: RatingModal
 
     setIsSubmitting(true);
     try {
+      // Insérer la note
       const { error } = await supabase
         .from("offer_ratings")
         .insert({
@@ -34,6 +35,30 @@ export function RatingModal({ offerId, onClose, onRatingSubmitted }: RatingModal
         });
 
       if (error) throw error;
+
+      // Récupérer l'entreprise propriétaire de l'offre pour créer une notification
+      const { data: offer } = await supabase
+        .from("offers")
+        .select("business_user_id, title")
+        .eq("id", offerId)
+        .single();
+
+      if (offer) {
+        // Créer une notification pour l'entreprise
+        await supabase
+          .from("notifications")
+          .insert({
+            user_id: offer.business_user_id,
+            type: "new_rating",
+            title: "Nouvelle évaluation reçue !",
+            message: `Votre offre "${offer.title}" a reçu une note de ${rating} étoile${rating > 1 ? 's' : ''}.`,
+            metadata: {
+              offer_id: offerId,
+              rating: rating,
+              customer_id: user.id
+            }
+          });
+      }
 
       toast({
         title: "Merci pour votre avis !",

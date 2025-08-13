@@ -1,7 +1,9 @@
 import { cn } from "@/lib/utils";
-import { Home, MapPin, User, Search, Heart, BarChart3 } from "lucide-react";
+import { Home, MapPin, User, Search, Heart, BarChart3, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BottomNavProps {
   className?: string;
@@ -33,6 +35,22 @@ const navItems = [
 export function BottomNav({ className }: BottomNavProps) {
   const location = useLocation();
   const { user } = useAuth();
+  
+  // Récupérer le nombre de notifications non lues
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread-notifications", user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
+      return count || 0;
+    },
+    enabled: !!user,
+    refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+  });
   
   // Modifier la navigation pour les comptes entreprise
   if (user?.user_metadata?.account_type === "business") {
@@ -118,36 +136,42 @@ export function BottomNav({ className }: BottomNavProps) {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
           
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex flex-col items-center justify-center",
-                "px-3 py-2 rounded-xl transition-all duration-300",
-                "min-w-[60px]",
-                isActive
-                  ? "bg-gradient-primary text-primary-foreground shadow-lg scale-105"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              <Icon 
-                size={20} 
-                className={cn(
-                  "mb-1 transition-transform duration-300",
-                  isActive && "scale-110"
-                )} 
-              />
-              <span 
-                className={cn(
-                  "text-xs font-medium transition-all duration-300",
-                  isActive ? "opacity-100" : "opacity-70"
-                )}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex flex-col items-center justify-center relative",
+                    "px-3 py-2 rounded-xl transition-all duration-300",
+                    "min-w-[60px]",
+                    isActive
+                      ? "bg-gradient-primary text-primary-foreground shadow-lg scale-105"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <Icon 
+                    size={20} 
+                    className={cn(
+                      "mb-1 transition-transform duration-300",
+                      isActive && "scale-110"
+                    )} 
+                  />
+                  <span 
+                    className={cn(
+                      "text-xs font-medium transition-all duration-300",
+                      isActive ? "opacity-100" : "opacity-70"
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  {/* Badge de notifications pour le profil */}
+                  {item.path === "/profile" && unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </div>
+                  )}
+                </Link>
+              );
         })}
       </div>
     </nav>

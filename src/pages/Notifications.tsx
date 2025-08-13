@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Bell, Heart, Calendar, MapPin, Crown, Trash2, Star } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { RatingModal } from "@/components/RatingModal";
 
 export default function Notifications() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingOfferId, setRatingOfferId] = useState<string | null>(null);
   
@@ -119,11 +120,9 @@ export default function Notifications() {
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/profile">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft size={20} />
-              </Button>
-            </Link>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft size={20} />
+            </Button>
             <div>
               <h1 className="text-xl font-poppins font-bold text-foreground">
                 Notifications
