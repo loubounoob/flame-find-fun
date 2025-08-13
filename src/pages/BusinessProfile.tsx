@@ -378,7 +378,9 @@ export default function BusinessProfile() {
                   placeholder="123 rue de la République, 69002 Lyon"
                 />
               ) : (
-                <p className="text-muted-foreground">{profile.location || "Non renseigné"}</p>
+                <p className="text-muted-foreground">
+                  {profile.address || profile.location || "Non renseigné"}
+                </p>
               )}
             </div>
 

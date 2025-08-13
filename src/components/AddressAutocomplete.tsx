@@ -2,25 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { MapPin } from "lucide-react";
 
-declare global {
-  namespace google {
-    namespace maps {
-      namespace places {
-        class AutocompleteService {
-          getPlacePredictions(request: any, callback: (predictions: any[], status: any) => void): void;
-        }
-        class PlacesService {
-          constructor(map: HTMLDivElement);
-          getDetails(request: any, callback: (place: any, status: any) => void): void;
-        }
-        enum PlacesServiceStatus {
-          OK = 'OK'
-        }
-      }
-    }
-  }
-}
-
 interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
@@ -39,32 +20,38 @@ export function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  const autocompleteService = useRef<any>(null);
+  const placesService = useRef<any>(null);
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initialize Google Places services
     const initializeServices = async () => {
-      if (typeof google === 'undefined') {
-        // Load Google Maps API if not already loaded
+      if (typeof (window as any).google === 'undefined') {
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM&libraries=places`;
         script.async = true;
         script.defer = true;
         
         script.onload = () => {
-          autocompleteService.current = new google.maps.places.AutocompleteService();
-          if (mapRef.current) {
-            placesService.current = new google.maps.places.PlacesService(mapRef.current);
+          const google = (window as any).google;
+          if (google?.maps?.places) {
+            autocompleteService.current = new google.maps.places.AutocompleteService();
+            if (mapRef.current) {
+              const map = new google.maps.Map(mapRef.current, {});
+              placesService.current = new google.maps.places.PlacesService(map);
+            }
           }
         };
         
         document.head.appendChild(script);
       } else {
-        autocompleteService.current = new google.maps.places.AutocompleteService();
-        if (mapRef.current) {
-          placesService.current = new google.maps.places.PlacesService(mapRef.current);
+        const google = (window as any).google;
+        if (google?.maps?.places) {
+          autocompleteService.current = new google.maps.places.AutocompleteService();
+          if (mapRef.current) {
+            const map = new google.maps.Map(mapRef.current, {});
+            placesService.current = new google.maps.places.PlacesService(map);
+          }
         }
       }
     };
@@ -83,13 +70,14 @@ export function AddressAutocomplete({
     
     const request = {
       input: query,
-      componentRestrictions: { country: 'fr' }, // Restrict to France
+      componentRestrictions: { country: 'fr' },
       types: ['establishment', 'geocode']
     };
 
-    autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
+    autocompleteService.current.getPlacePredictions(request, (predictions: any, status: any) => {
       setIsLoading(false);
-      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+      const google = (window as any).google;
+      if (status === google?.maps?.places?.PlacesServiceStatus?.OK && predictions) {
         setSuggestions(predictions);
         setShowSuggestions(true);
       } else {
@@ -110,15 +98,15 @@ export function AddressAutocomplete({
     setShowSuggestions(false);
     setSuggestions([]);
 
-    // Get place details to extract coordinates
     if (placesService.current && onAddressSelect) {
       const request = {
         placeId: suggestion.place_id,
         fields: ['geometry', 'formatted_address']
       };
 
-      placesService.current.getDetails(request, (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+      placesService.current.getDetails(request, (place: any, status: any) => {
+        const google = (window as any).google;
+        if (status === google?.maps?.places?.PlacesServiceStatus?.OK && place?.geometry?.location) {
           const location = {
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng()
@@ -131,7 +119,6 @@ export function AddressAutocomplete({
 
   return (
     <div className="relative">
-      {/* Hidden div for PlacesService initialization */}
       <div ref={mapRef} style={{ display: 'none' }} />
       
       <div className="relative">
@@ -143,7 +130,6 @@ export function AddressAutocomplete({
           className={`pl-10 ${className}`}
           onFocus={() => value.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => {
-            // Delay hiding suggestions to allow clicking
             setTimeout(() => setShowSuggestions(false), 200);
           }}
         />

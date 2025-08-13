@@ -20,15 +20,6 @@ declare global {
       class Size {
         constructor(width: number, height: number);
       }
-      namespace places {
-        class PlacesService {
-          constructor(map: Map);
-          nearbySearch(request: any, callback: (results: any[], status: any) => void): void;
-        }
-        enum PlacesServiceStatus {
-          OK = 'OK'
-        }
-      }
     }
   }
 }
@@ -45,7 +36,7 @@ interface GoogleMapProps {
 
 export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
   const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
   const { position, isLoading: locationLoading, getCurrentPosition } = useGeolocation();
 
@@ -77,6 +68,7 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
       });
 
       await loader.load();
+      const google = (window as any).google;
 
       const defaultCenter = position || { lat: 45.7640, lng: 4.8357 }; // Lyon par défaut
 
@@ -186,21 +178,22 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
       }
 
       // Activer Neighborhood Discovery
-      const placesService = new google.maps.places.PlacesService(map);
-      
-      if (position) {
-        const request = {
-          location: position,
-          radius: 2000, // 2km radius
-          type: ['establishment']
-        };
+      if (google?.maps?.places) {
+        const placesService = new google.maps.places.PlacesService(map);
+        
+        if (position) {
+          const request = {
+            location: position,
+            radius: 2000, // 2km radius
+            type: ['establishment']
+          };
 
-        placesService.nearbySearch(request, (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-            // Optionnel: traiter les résultats des établissements à proximité
-            console.log('Establishments nearby:', results.length);
-          }
-        });
+          placesService.nearbySearch(request, (results: any, status: any) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+              console.log('Establishments nearby:', results.length);
+            }
+          });
+        }
       }
 
     } catch (error) {
