@@ -2,10 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bell, Heart, Calendar, MapPin, Crown, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Bell, Heart, Calendar, MapPin, Crown, Trash2, Star } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { RatingModal } from "@/components/RatingModal";
 
 const notifications = [
   {
@@ -16,7 +20,8 @@ const notifications = [
     time: "Il y a 5 minutes",
     read: false,
     icon: Heart,
-    color: "flame"
+    color: "flame",
+    metadata: {}
   },
   {
     id: 2,
@@ -26,7 +31,8 @@ const notifications = [
     time: "Il y a 1 heure",
     read: false,
     icon: Calendar,
-    color: "success"
+    color: "success",
+    metadata: {}
   },
   {
     id: 3,
@@ -36,7 +42,8 @@ const notifications = [
     time: "Il y a 2 heures",
     read: true,
     icon: MapPin,
-    color: "primary"
+    color: "primary",
+    metadata: {}
   },
   {
     id: 4,
@@ -46,7 +53,8 @@ const notifications = [
     time: "Hier",
     read: true,
     icon: Crown,
-    color: "secondary"
+    color: "secondary",
+    metadata: {}
   },
   {
     id: 5,
@@ -56,11 +64,16 @@ const notifications = [
     time: "Il y a 2 jours",
     read: true,
     icon: Bell,
-    color: "info"
+    color: "info",
+    metadata: {}
   }
 ];
 
 export default function Notifications() {
+  const { user } = useAuth();
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingOfferId, setRatingOfferId] = useState<string | null>(null);
+  
   const [notificationSettings, setNotificationSettings] = useState({
     push: true,
     email: true,
@@ -68,6 +81,23 @@ export default function Notifications() {
     flames: true,
     bookings: true,
     premium: true
+  });
+
+  // Récupérer les notifications réelles de la base de données
+  const { data: realNotifications = [], refetch: refetchNotifications } = useQuery({
+    queryKey: ["notifications", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
   });
 
   const [notificationList, setNotificationList] = useState(
@@ -88,25 +118,79 @@ export default function Notifications() {
     })
   );
 
-  const markAsRead = (id: number) => {
+  // Fusionner les notifications mockées avec les vraies
+  const allNotifications = [
+    ...realNotifications.map(notif => ({
+      id: parseInt(notif.id.slice(-6), 16), // Convert UUID to number for compatibility
+      type: notif.type,
+      title: notif.title,
+      message: notif.message,
+      time: new Date(notif.created_at).toLocaleString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit'
+      }),
+      read: notif.read,
+      icon: notif.type === 'booking_confirmation' ? Calendar :
+            notif.type === 'new_booking' ? Bell :
+            notif.type === 'rating_request' ? Star : Heart,
+      color: notif.type === 'booking_confirmation' ? 'success' :
+             notif.type === 'new_booking' ? 'primary' :
+             notif.type === 'rating_request' ? 'warning' : 'flame',
+      metadata: notif.metadata
+    })),
+    ...notificationList
+  ].sort((a, b) => {
+    if (a.read !== b.read) return a.read ? 1 : -1;
+    return 0;
+  });
+
+  const markAsRead = async (id: number, metadata?: any) => {
+    // Si c'est une notification de demande d'évaluation, ouvrir le modal
+    if (metadata?.requires_rating && metadata?.offer_id) {
+      setRatingOfferId(metadata.offer_id);
+      setShowRatingModal(true);
+    }
+
     setNotificationList(prev => 
       prev.map(notif => 
         notif.id === id ? { ...notif, read: true } : notif
       )
     );
+
+    // Marquer comme lu dans la base de données si c'est une vraie notification
+    if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
+      const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
+      if (realNotif) {
+        await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("id", realNotif.id);
+      }
+    }
   };
 
   const deleteNotification = (id: number) => {
     setNotificationList(prev => prev.filter(notif => notif.id !== id));
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotificationList(prev => 
       prev.map(notif => ({ ...notif, read: true }))
     );
+
+    // Marquer toutes les notifications réelles comme lues
+    if (user) {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
+    }
   };
 
-  const unreadCount = notificationList.filter(n => !n.read).length;
+  const unreadCount = allNotifications.filter(n => !n.read).length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -223,7 +307,7 @@ export default function Notifications() {
             Récentes
           </h3>
           
-          {notificationList.map((notification) => {
+          {allNotifications.map((notification) => {
             const Icon = notification.icon;
             
             return (
@@ -232,7 +316,7 @@ export default function Notifications() {
                 className={`bg-gradient-card border-border/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
                   !notification.read ? 'border-primary/50' : ''
                 }`}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => markAsRead(notification.id, notification.metadata)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -278,7 +362,7 @@ export default function Notifications() {
           })}
         </div>
 
-        {notificationList.length === 0 && (
+        {allNotifications.length === 0 && (
           <div className="text-center py-12">
             <Bell className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
@@ -292,6 +376,20 @@ export default function Notifications() {
       </div>
 
       <BottomNav />
+
+      {/* Modal d'évaluation */}
+      {showRatingModal && ratingOfferId && (
+        <RatingModal
+          offerId={ratingOfferId}
+          onClose={() => {
+            setShowRatingModal(false);
+            setRatingOfferId(null);
+          }}
+          onRatingSubmitted={() => {
+            refetchNotifications();
+          }}
+        />
+      )}
     </div>
   );
 }

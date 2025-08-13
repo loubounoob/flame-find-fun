@@ -56,6 +56,21 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
     },
   });
 
+  // Récupérer les adresses d'entreprises depuis Supabase
+  const { data: businessAddresses = [] } = useQuery({
+    queryKey: ["business-addresses-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_addresses")
+        .select("*")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Initialiser Google Maps avec Neighborhood Discovery
   const initializeMap = async () => {
     if (!mapRef.current) return;
@@ -87,6 +102,11 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
             featureType: 'transit',
             elementType: 'all',
             stylers: [{ visibility: 'off' }]
+          },
+          {
+            featureType: 'road',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }] // Masquer les noms de routes A1, M917, etc.
           }
         ]
       });
@@ -107,7 +127,7 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="20" cy="20" r="18" fill="#ff6b35" stroke="white" stroke-width="3"/>
-                  <text x="20" y="26" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">🏢</text>
+                  <text x="20" y="26" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">🎯</text>
                 </svg>
               `),
               scaledSize: new google.maps.Size(40, 40)
@@ -146,6 +166,59 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
                     cursor: pointer;
                     flex: 1;
                   ">Profil</button>
+                </div>
+              </div>
+            `
+          });
+
+          marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+          });
+        }
+      });
+
+      // Ajouter des marqueurs pour les adresses d'entreprises
+      businessAddresses.forEach(address => {
+        if (address.latitude && address.longitude) {
+          const businessName = address.address_name;
+          const marker = new google.maps.Marker({
+            position: { 
+              lat: Number(address.latitude), 
+              lng: Number(address.longitude) 
+            },
+            map: map,
+            title: businessName,
+            icon: {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="17.5" cy="17.5" r="15" fill="#4285f4" stroke="white" stroke-width="3"/>
+                  <text x="17.5" y="22" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold">🏢</text>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(35, 35)
+            }
+          });
+
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <div style="padding: 16px; max-width: 280px; font-family: Arial, sans-serif;">
+                <h3 style="margin: 0 0 12px 0; font-weight: bold; color: #333; font-size: 16px;">
+                  ${businessName}
+                </h3>
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Entreprise</p>
+                ${address.full_address ? `<p style="margin: 0 0 8px 0; color: #333; font-size: 14px;">📍 ${address.full_address}</p>` : ''}
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                  <button onclick="window.location.href='/business-profile?id=${address.business_user_id}'" style="
+                    background: #4285f4; 
+                    color: white; 
+                    border: none; 
+                    padding: 8px 16px; 
+                    border-radius: 6px; 
+                    font-size: 12px; 
+                    font-weight: bold;
+                    cursor: pointer;
+                    width: 100%;
+                  ">Voir le profil</button>
                 </div>
               </div>
             `
@@ -212,10 +285,10 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   };
 
   useEffect(() => {
-    if (apiKey && businesses.length >= 0) {
+    if (apiKey && (businesses.length >= 0 || businessAddresses.length >= 0)) {
       initializeMap();
     }
-  }, [businesses, position]);
+  }, [businesses, businessAddresses, position]);
 
   // Géolocalisation automatique au chargement
   useEffect(() => {
