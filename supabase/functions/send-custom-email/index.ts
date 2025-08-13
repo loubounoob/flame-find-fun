@@ -145,7 +145,7 @@ serve(async (req) => {
     }
 
     const { error } = await resend.emails.send({
-      from: 'Ludigo <noreply@votredomaine.com>', // Replace with your domain
+      from: 'Ludigo <noreply@loubounoob33.resend.dev>',
       to: [user.email],
       subject: subject,
       html: html,
