@@ -143,19 +143,36 @@ export default function OfferDetail() {
     enabled: !!offer?.business_user_id,
   });
 
-  // Récupérer les évaluations de l'offre
+  // Récupérer les évaluations de l'offre avec les profils utilisateurs
   const { data: ratings = [], refetch: refetchRatings } = useQuery({
     queryKey: ["offerRatings", id],
     queryFn: async () => {
       if (!id) return [];
-      const { data, error } = await supabase
+      const { data: ratingsData, error } = await supabase
         .from("offer_ratings")
         .select("*")
         .eq("offer_id", id)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Fetch user profiles for each rating
+      const ratingsWithProfiles = await Promise.all(
+        (ratingsData || []).map(async (rating) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("first_name, last_name, avatar_url")
+            .eq("user_id", rating.user_id)
+            .single();
+          
+          return {
+            ...rating,
+            profiles: profile
+          };
+        })
+      );
+      
+      return ratingsWithProfiles;
     },
     enabled: !!id,
   });
@@ -483,20 +500,20 @@ export default function OfferDetail() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  {ratings.slice(0, 3).map((rating) => (
-                    <div key={rating.id} className="border-b border-border/50 pb-4 last:border-0">
-                      <div className="flex items-start gap-3">
-                         <Avatar className="w-8 h-8">
-                           <AvatarImage src={undefined} />
-                           <AvatarFallback className="bg-gradient-secondary text-xs">
-                             U
-                           </AvatarFallback>
-                         </Avatar>
-                         <div className="flex-1">
-                           <div className="flex items-center gap-2 mb-1">
-                             <span className="font-medium text-foreground">
-                               Utilisateur
-                             </span>
+                   {ratings.slice(0, 3).map((rating) => (
+                     <div key={rating.id} className="border-b border-border/50 pb-4 last:border-0">
+                       <div className="flex items-start gap-3">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={rating.profiles?.avatar_url || undefined} />
+                            <AvatarFallback className="bg-gradient-secondary text-xs">
+                              {rating.profiles?.first_name?.charAt(0) || 'U'}{rating.profiles?.last_name?.charAt(0) || ''}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-foreground">
+                                {rating.profiles ? `${rating.profiles.first_name} ${rating.profiles.last_name}` : 'Utilisateur'}
+                              </span>
                             <div className="flex">
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star

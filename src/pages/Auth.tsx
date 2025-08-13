@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Mail, Lock, User, Building, Camera } from "lucide-react";
 import { generateInitialsAvatar } from "@/utils/avatarUtils";
-import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { GlobalAddressInput } from "@/components/GlobalAddressInput";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -334,7 +334,7 @@ export default function Auth() {
                       
                       <div className="space-y-2">
                         <Label htmlFor="business-address">Adresse de l'activité *</Label>
-                        <AddressAutocomplete
+                        <GlobalAddressInput
                           value={businessAddress}
                           onChange={setBusinessAddress}
                           onAddressSelect={(address, location) => {

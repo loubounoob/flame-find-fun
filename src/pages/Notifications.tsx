@@ -11,77 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { RatingModal } from "@/components/RatingModal";
 
-const notifications = [
-  {
-    id: 1,
-    type: "flame",
-    title: "Nouvelle flamme reçue !",
-    message: "Ton offre \"Bowling Party\" a reçu une flamme de Marie L.",
-    time: "Il y a 5 minutes",
-    read: false,
-    icon: Heart,
-    color: "flame",
-    metadata: {}
-  },
-  {
-    id: 2,
-    type: "booking",
-    title: "Réservation confirmée",
-    message: "Ta réservation pour le Laser Game Epic est confirmée pour demain 14h30.",
-    time: "Il y a 1 heure",
-    read: false,
-    icon: Calendar,
-    color: "success",
-    metadata: {}
-  },
-  {
-    id: 3,
-    type: "offer",
-    title: "Nouvelle offre près de toi !",
-    message: "Escape Game Mystery disponible à 500m de ta position.",
-    time: "Il y a 2 heures",
-    read: true,
-    icon: MapPin,
-    color: "primary",
-    metadata: {}
-  },
-  {
-    id: 4,
-    type: "premium",
-    title: "Avantage Premium",
-    message: "Accès prioritaire activé pour l'événement spécial de ce weekend !",
-    time: "Hier",
-    read: true,
-    icon: Crown,
-    color: "secondary",
-    metadata: {}
-  },
-  {
-    id: 5,
-    type: "system",
-    title: "Mise à jour Ludigo",
-    message: "Découvre les nouvelles fonctionnalités dans la version 2.1 !",
-    time: "Il y a 2 jours",
-    read: true,
-    icon: Bell,
-    color: "info",
-    metadata: {}
-  }
-];
+// Removed default notifications - only show real notifications from database
 
 export default function Notifications() {
   const { user } = useAuth();
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingOfferId, setRatingOfferId] = useState<string | null>(null);
   
-  const [notificationSettings, setNotificationSettings] = useState({
-    push: true,
-    email: true,
-    newOffers: true,
-    flames: true,
-    bookings: true,
-    premium: true
-  });
+  // Removed notification settings - no longer needed
 
   // Récupérer les notifications réelles de la base de données
   const { data: realNotifications = [], refetch: refetchNotifications } = useQuery({
@@ -100,50 +37,31 @@ export default function Notifications() {
     enabled: !!user,
   });
 
-  const [notificationList, setNotificationList] = useState(
-    notifications.sort((a, b) => {
-      // Sort by read status first (unread first), then by time (most recent first)
-      if (a.read !== b.read) {
-        return a.read ? 1 : -1;
-      }
-      // For time comparison, we'll use a simple heuristic based on the time strings
-      const timeToMinutes = (timeStr) => {
-        if (timeStr.includes('minutes')) return parseInt(timeStr);
-        if (timeStr.includes('heure')) return parseInt(timeStr) * 60;
-        if (timeStr.includes('Hier')) return 24 * 60;
-        if (timeStr.includes('jours')) return parseInt(timeStr) * 24 * 60;
-        return 0;
-      };
-      return timeToMinutes(a.time) - timeToMinutes(b.time);
-    })
-  );
+  // No longer using mock notifications
 
-  // Fusionner les notifications mockées avec les vraies
-  const allNotifications = [
-    ...realNotifications.map(notif => ({
-      id: parseInt(notif.id.slice(-6), 16), // Convert UUID to number for compatibility
-      type: notif.type,
-      title: notif.title,
-      message: notif.message,
-      time: new Date(notif.created_at).toLocaleString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit'
-      }),
-      read: notif.read,
-      icon: notif.type === 'booking_confirmation' ? Calendar :
-            notif.type === 'new_booking' ? Bell :
-            notif.type === 'rating_request' ? Star : Heart,
-      color: notif.type === 'booking_confirmation' ? 'success' :
-             notif.type === 'new_booking' ? 'primary' :
-             notif.type === 'rating_request' ? 'warning' : 'flame',
-      metadata: notif.metadata
-    })),
-    ...notificationList
-  ].sort((a, b) => {
+  // Only use real notifications from database
+  const allNotifications = realNotifications.map(notif => ({
+    id: parseInt(notif.id.slice(-6), 16), // Convert UUID to number for compatibility
+    type: notif.type,
+    title: notif.title,
+    message: notif.message,
+    time: new Date(notif.created_at).toLocaleString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit'
+    }),
+    read: notif.read,
+    icon: notif.type === 'booking_confirmation' ? Calendar :
+          notif.type === 'new_booking' ? Bell :
+          notif.type === 'rating_request' ? Star : Heart,
+    color: notif.type === 'booking_confirmation' ? 'success' :
+           notif.type === 'new_booking' ? 'primary' :
+           notif.type === 'rating_request' ? 'warning' : 'flame',
+    metadata: notif.metadata
+  })).sort((a, b) => {
     if (a.read !== b.read) return a.read ? 1 : -1;
-    return 0;
+    return new Date(b.time).getTime() - new Date(a.time).getTime();
   });
 
   const markAsRead = async (id: number, metadata?: any) => {
@@ -153,11 +71,7 @@ export default function Notifications() {
       setShowRatingModal(true);
     }
 
-    setNotificationList(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+    // Mark notification as read in component state will be handled by refetch
 
     // Marquer comme lu dans la base de données si c'est une vraie notification
     if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
@@ -171,22 +85,29 @@ export default function Notifications() {
     }
   };
 
-  const deleteNotification = (id: number) => {
-    setNotificationList(prev => prev.filter(notif => notif.id !== id));
+  const deleteNotification = async (id: number) => {
+    // Delete from database
+    if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
+      const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
+      if (realNotif) {
+        await supabase
+          .from("notifications")
+          .delete()
+          .eq("id", realNotif.id);
+        refetchNotifications();
+      }
+    }
   };
 
   const markAllAsRead = async () => {
-    setNotificationList(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-
-    // Marquer toutes les notifications réelles comme lues
+    // Mark all real notifications as read
     if (user) {
       await supabase
         .from("notifications")
         .update({ read: true })
         .eq("user_id", user.id)
         .eq("read", false);
+      refetchNotifications();
     }
   };
 
@@ -223,83 +144,6 @@ export default function Notifications() {
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Notification Settings */}
-        <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Paramètres de notification</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-foreground">Notifications push</h4>
-                <p className="text-sm text-muted-foreground">Recevoir des notifications sur ton téléphone</p>
-              </div>
-              <Switch 
-                checked={notificationSettings.push}
-                onCheckedChange={(checked) => 
-                  setNotificationSettings(prev => ({ ...prev, push: checked }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-foreground">Notifications email</h4>
-                <p className="text-sm text-muted-foreground">Recevoir un résumé par email</p>
-              </div>
-              <Switch 
-                checked={notificationSettings.email}
-                onCheckedChange={(checked) => 
-                  setNotificationSettings(prev => ({ ...prev, email: checked }))
-                }
-              />
-            </div>
-
-            <div className="border-t border-border/50 pt-4 space-y-4">
-              <h4 className="font-medium text-foreground">Types de notifications</h4>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Nouvelles offres près de moi</span>
-                <Switch 
-                  checked={notificationSettings.newOffers}
-                  onCheckedChange={(checked) => 
-                    setNotificationSettings(prev => ({ ...prev, newOffers: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Flammes reçues</span>
-                <Switch 
-                  checked={notificationSettings.flames}
-                  onCheckedChange={(checked) => 
-                    setNotificationSettings(prev => ({ ...prev, flames: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Réservations et rappels</span>
-                <Switch 
-                  checked={notificationSettings.bookings}
-                  onCheckedChange={(checked) => 
-                    setNotificationSettings(prev => ({ ...prev, bookings: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Avantages Premium</span>
-                <Switch 
-                  checked={notificationSettings.premium}
-                  onCheckedChange={(checked) => 
-                    setNotificationSettings(prev => ({ ...prev, premium: checked }))
-                  }
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Notifications List */}
         <div className="space-y-4">

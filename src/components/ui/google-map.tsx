@@ -20,6 +20,9 @@ declare global {
       class Size {
         constructor(width: number, height: number);
       }
+      class Point {
+        constructor(x: number, y: number);
+      }
     }
   }
 }
@@ -29,6 +32,7 @@ import { Navigation } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { updateAddressCoordinates } from '@/utils/geocoding';
 
 interface GoogleMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -92,23 +96,28 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
         zoom: 14,
         disableDefaultUI: true, // Interface complètement simplifiée
         gestureHandling: 'cooperative',
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'all',
-            stylers: [{ visibility: 'off' }] // Masquer tous les POI existants
-          },
-          {
-            featureType: 'transit',
-            elementType: 'all',
-            stylers: [{ visibility: 'off' }]
-          },
-          {
-            featureType: 'road',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }] // Masquer les noms de routes A1, M917, etc.
-          }
-        ]
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'all',
+              stylers: [{ visibility: 'off' }] // Masquer tous les POI existants
+            },
+            {
+              featureType: 'transit',
+              elementType: 'all',
+              stylers: [{ visibility: 'off' }]
+            },
+            {
+              featureType: 'road',
+              elementType: 'labels.text',
+              stylers: [{ visibility: 'off' }] // Masquer les noms de routes A1, M917, etc.
+            },
+            {
+              featureType: 'administrative',
+              elementType: 'labels.text',
+              stylers: [{ visibility: 'simplified' }] // Garder les noms de villes visibles mais simplifiés
+            }
+          ]
       });
 
       mapInstanceRef.current = map;
@@ -125,12 +134,15 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
             title: offer.title,
             icon: {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="20" cy="20" r="18" fill="#ff6b35" stroke="white" stroke-width="3"/>
-                  <text x="20" y="26" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">🎯</text>
+                <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="22.5" cy="22.5" r="20" fill="#ff6b35" stroke="white" stroke-width="4"/>
+                  <circle cx="22.5" cy="22.5" r="16" fill="#ff6b35"/>
+                  <circle cx="22.5" cy="22.5" r="8" fill="white"/>
+                  <circle cx="22.5" cy="22.5" r="4" fill="#ff6b35"/>
                 </svg>
               `),
-              scaledSize: new google.maps.Size(40, 40)
+              scaledSize: new google.maps.Size(45, 45),
+              anchor: new google.maps.Point(22.5, 22.5)
             }
           });
 
@@ -190,12 +202,15 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
             title: businessName,
             icon: {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="17.5" cy="17.5" r="15" fill="#4285f4" stroke="white" stroke-width="3"/>
-                  <text x="17.5" y="22" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold">🏢</text>
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="17" fill="#4285f4" stroke="white" stroke-width="4"/>
+                  <circle cx="20" cy="20" r="13" fill="#4285f4"/>
+                  <circle cx="20" cy="20" r="7" fill="white"/>
+                  <circle cx="20" cy="20" r="3" fill="#4285f4"/>
                 </svg>
               `),
-              scaledSize: new google.maps.Size(35, 35)
+              scaledSize: new google.maps.Size(40, 40),
+              anchor: new google.maps.Point(20, 20)
             }
           });
 
@@ -238,12 +253,16 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
           title: 'Votre position',
           icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="15" cy="15" r="12" fill="#4285f4" stroke="white" stroke-width="3"/>
-                <circle cx="15" cy="15" r="5" fill="white"/>
+              <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="17.5" cy="17.5" r="15" fill="#1a73e8" stroke="white" stroke-width="4"/>
+                <circle cx="17.5" cy="17.5" r="11" fill="#1a73e8"/>
+                <circle cx="17.5" cy="17.5" r="6" fill="white"/>
+                <circle cx="17.5" cy="17.5" r="3" fill="#1a73e8"/>
+                <circle cx="17.5" cy="17.5" r="1" fill="white"/>
               </svg>
             `),
-            scaledSize: new google.maps.Size(30, 30)
+            scaledSize: new google.maps.Size(35, 35),
+            anchor: new google.maps.Point(17.5, 17.5)
           }
         });
 
@@ -290,9 +309,11 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
     }
   }, [businesses, businessAddresses, position]);
 
-  // Géolocalisation automatique au chargement
+  // Géolocalisation automatique au chargement et mise à jour des coordonnées
   useEffect(() => {
     getCurrentPosition();
+    // Update coordinates for addresses without them
+    updateAddressCoordinates();
   }, []);
 
   return (
