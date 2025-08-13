@@ -213,6 +213,69 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offer_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          offer_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          offer_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          offer_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       offer_views: {
         Row: {
           created_at: string
@@ -408,6 +471,10 @@ export type Database = {
     Functions: {
       archive_old_bookings: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      schedule_rating_notification: {
+        Args: { booking_id: string; user_id: string; offer_id: string }
         Returns: undefined
       }
     }
