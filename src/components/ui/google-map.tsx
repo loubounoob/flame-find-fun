@@ -39,8 +39,8 @@ interface GoogleMapProps {
 export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+  const [apiKey, setApiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
   const { position, isLoading: locationLoading, getCurrentPosition } = useGeolocation();
 
@@ -138,10 +138,29 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
 
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 8px; max-width: 200px;">
-                <h3 style="margin: 0 0 4px 0; font-weight: bold;">${offer.title}</h3>
+              <div style="padding: 12px; max-width: 250px;">
+                <h3 style="margin: 0 0 8px 0; font-weight: bold; color: #333;">${offer.title}</h3>
                 <p style="margin: 0 0 4px 0; color: #666; font-size: 12px;">${offer.category}</p>
-                <p style="margin: 0; color: #333; font-size: 14px;">${offer.location}</p>
+                <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;">${offer.location}</p>
+                <button onclick="window.location.href='/offer/${offer.id}'" style="
+                  background: #ff6b35; 
+                  color: white; 
+                  border: none; 
+                  padding: 6px 12px; 
+                  border-radius: 4px; 
+                  font-size: 12px; 
+                  cursor: pointer;
+                  margin-right: 8px;
+                ">Voir l'offre</button>
+                <button onclick="window.location.href='/business-profile?id=${offer.business_user_id}'" style="
+                  background: transparent; 
+                  color: #ff6b35; 
+                  border: 1px solid #ff6b35; 
+                  padding: 6px 12px; 
+                  border-radius: 4px; 
+                  font-size: 12px; 
+                  cursor: pointer;
+                ">Voir le profil</button>
               </div>
             `
           });
@@ -201,6 +220,11 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
       initializeMap(apiKey);
     }
   }, [offers, position]);
+
+  // Géolocalisation automatique au chargement
+  useEffect(() => {
+    getCurrentPosition();
+  }, []);
 
   if (showApiKeyInput) {
     return (
