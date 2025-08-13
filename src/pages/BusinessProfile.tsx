@@ -51,6 +51,33 @@ export default function BusinessProfile() {
     checkAuth();
   }, []);
 
+  // Écouter les nouvelles notifications pour recharger les stats en temps réel
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('rating-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.new?.type === 'new_rating') {
+            loadStats(); // Recharger les stats quand une nouvelle note arrive
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user || session.user.user_metadata?.account_type !== "business") {

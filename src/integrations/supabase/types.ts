@@ -473,6 +473,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      auto_mark_old_notifications_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       schedule_rating_notification: {
         Args: { booking_id: string; user_id: string; offer_id: string }
         Returns: undefined

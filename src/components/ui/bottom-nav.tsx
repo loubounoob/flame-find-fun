@@ -91,7 +91,7 @@ export function BottomNav({ className }: BottomNavProps) {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center",
+                  "flex flex-col items-center justify-center relative",
                   "px-3 py-2 rounded-xl transition-all duration-300",
                   "min-w-[60px]",
                   isActive
@@ -114,6 +114,12 @@ export function BottomNav({ className }: BottomNavProps) {
                 >
                   {item.label}
                 </span>
+                {/* Badge de notifications pour le profil business */}
+                {item.path === "/business-profile" && unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -136,42 +142,42 @@ export function BottomNav({ className }: BottomNavProps) {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
           
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex flex-col items-center justify-center relative",
-                    "px-3 py-2 rounded-xl transition-all duration-300",
-                    "min-w-[60px]",
-                    isActive
-                      ? "bg-gradient-primary text-primary-foreground shadow-lg scale-105"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <Icon 
-                    size={20} 
-                    className={cn(
-                      "mb-1 transition-transform duration-300",
-                      isActive && "scale-110"
-                    )} 
-                  />
-                  <span 
-                    className={cn(
-                      "text-xs font-medium transition-all duration-300",
-                      isActive ? "opacity-100" : "opacity-70"
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                  {/* Badge de notifications pour le profil */}
-                  {item.path === "/profile" && unreadCount > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </div>
-                  )}
-                </Link>
-              );
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex flex-col items-center justify-center relative",
+                "px-3 py-2 rounded-xl transition-all duration-300",
+                "min-w-[60px]",
+                isActive
+                  ? "bg-gradient-primary text-primary-foreground shadow-lg scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <Icon 
+                size={20} 
+                className={cn(
+                  "mb-1 transition-transform duration-300",
+                  isActive && "scale-110"
+                )} 
+              />
+              <span 
+                className={cn(
+                  "text-xs font-medium transition-all duration-300",
+                  isActive ? "opacity-100" : "opacity-70"
+                )}
+              >
+                {item.label}
+              </span>
+              {/* Badge de notifications pour le profil */}
+              {item.path === "/profile" && unreadCount > 0 && (
+                <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </div>
+              )}
+            </Link>
+          );
         })}
       </div>
     </nav>
