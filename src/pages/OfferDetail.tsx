@@ -18,7 +18,8 @@ import {
   Instagram,
   Euro,
   Image,
-  Video
+  Video,
+  Flame
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -553,16 +554,16 @@ export default function OfferDetail() {
             <Button
               variant="outline"
               onClick={handleLike}
-              className={`flex-1 ${userFlame ? 'bg-flame/10 border-flame text-flame' : ''}`}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
             >
-              <Heart 
+              <Flame 
                 size={18} 
-                className={`mr-2 ${userFlame ? 'fill-current' : ''}`} 
+                className="mr-2 fill-current text-white" 
               />
               {flamesCount} Flammes
             </Button>
             
-            <Link to={`/booking/${id}`} className="flex-1">
+            <Link to={`/booking-form/${id}`} className="flex-1">
               <Button className="w-full bg-gradient-primary hover:opacity-90">
                 Réserver maintenant
               </Button>

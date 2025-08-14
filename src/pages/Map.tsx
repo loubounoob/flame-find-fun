@@ -126,37 +126,74 @@ export default function Map() {
           onMarkerClick={handleBusinessSelect}
         />
 
-        {/* Nearby Activities Panel */}
-        <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-64 overflow-y-auto">
-          <div className="p-4 space-y-3">
-            <h3 className="font-semibold text-foreground text-center">Activités à proximité</h3>
+        {/* Recentering Button */}
+        <div className="absolute top-20 right-4 z-10">
+          <Button
+            variant="outline"
+            size="icon"
+            className="bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg"
+            onClick={() => {
+              if (userLocation && map) {
+                (map as any).panTo(userLocation);
+                (map as any).setZoom(15);
+              }
+            }}
+            disabled={!userLocation}
+          >
+            <Navigation size={16} />
+          </Button>
+        </div>
+
+        {/* Sliding Activities Panel */}
+        <div className={`absolute bottom-0 left-0 right-0 transform transition-transform duration-300 ${showList ? 'translate-y-0' : 'translate-y-[calc(100%-80px)]'}`}>
+          <div className="bg-background/95 backdrop-blur-md border-t border-border/50">
+            {/* Handle */}
+            <div 
+              className="p-4 cursor-pointer flex items-center justify-center"
+              onClick={() => setShowList(!showList)}
+            >
+              <div className="w-12 h-1 bg-muted-foreground/30 rounded-full"></div>
+            </div>
             
-            {/* Mock nearby activities - replace with real data */}
-            <div className="space-y-3">
-              {nearbyOffers.slice(0, 3).map((offer) => (
-                <div key={offer.id} className="bg-background/50 rounded-lg p-3 border border-border/30">
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm truncate">{offer.title}</h4>
-                          <p className="text-xs text-muted-foreground">{offer.category}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground ml-2">{offer.distance}</span>
+            {/* Content */}
+            <div className="px-4 pb-4 max-h-64 overflow-y-auto">
+              <h3 className="font-semibold text-foreground text-center mb-3">Activités à proximité</h3>
+              
+              {/* Mock nearby activities - replace with real data */}
+              <div className="space-y-3">
+                {nearbyOffers.slice(0, 3).map((offer) => (
+                  <div 
+                    key={offer.id} 
+                    className="bg-background/50 rounded-lg p-3 border border-border/30 cursor-pointer hover:bg-background/70 transition-colors"
+                    onClick={() => window.location.href = `/offer/${offer.id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 bg-gradient-primary rounded-full flex-shrink-0 flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">{offer.business.charAt(0)}</span>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <Badge variant="outline" className="text-xs px-2 py-0">
-                          {offer.discount}
-                        </Badge>
-                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
-                          Voir profil
-                        </Button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium text-sm truncate">{offer.title}</h4>
+                            <p className="text-xs text-muted-foreground">{offer.business}</p>
+                            <p className="text-xs text-muted-foreground">{offer.category}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-2">{offer.distance}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <Badge variant="outline" className="text-xs px-2 py-0">
+                            {offer.discount}
+                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Flame size={12} className="text-orange-500" />
+                            <span className="text-xs text-muted-foreground">{offer.flames}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

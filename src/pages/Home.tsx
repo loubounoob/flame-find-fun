@@ -251,31 +251,13 @@ export default function Home() {
             );
           })}
           
-          {/* Regular offers (fallback if no promotions) */}
+          {/* Only show message if no promotions, never show regular offers */}
           {activePromotions.length === 0 && (
-            <>
-              <div className="text-center py-8">
-                <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
-                <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
-              </div>
-              
-              {/* Show regular offers as fallback */}
-              {sortedOffers.slice(0, 3).map((offer) => (
-                <OfferCard
-                  key={offer.id}
-                  id={offer.id}
-                  title={offer.title}
-                  business_user_id={offer.business_user_id}
-                  location={offer.location}
-                  category={offer.category}
-                  flames={flamesCounts[offer.id] || 0}
-                  image={offer.image_url}
-                  price={offer.price}
-                  description={offer.description}
-                />
-              ))}
-            </>
+            <div className="text-center py-8">
+              <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
+              <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+            </div>
           )}
         </div>
       </section>

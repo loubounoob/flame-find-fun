@@ -569,38 +569,42 @@ export default function BusinessDashboard() {
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Adresse</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
+                    <div className="space-y-2">
+                      <div className="w-full">
                         {/* Use the AddressAutocomplete component */}
                         <AddressAutocomplete
                           value={formData.address}
                           onChange={(value) => setFormData({...formData, address: value})}
                           placeholder="Tapez votre adresse..."
+                          className="w-full"
                         />
                       </div>
-                      <Select value={formData.address} onValueChange={(value) => setFormData({...formData, address: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ou sélectionner une adresse sauvegardée" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border shadow-lg z-50">
-                          {savedAddresses.map((addr) => (
-                            <SelectItem key={addr.id} value={addr.full_address}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{addr.address_name}</span>
-                                <span className="text-xs text-muted-foreground">{addr.full_address}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setIsAddingNewAddress(true)}
-                      >
-                        <Plus size={16} />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Select value="" onValueChange={(value) => setFormData({...formData, address: value})}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Adresses sauvegardées" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border border-border shadow-lg z-50">
+                            {savedAddresses.map((addr) => (
+                              <SelectItem key={addr.id} value={addr.full_address}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs">{addr.address_name}</span>
+                                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">{addr.full_address}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsAddingNewAddress(true)}
+                        >
+                          <Plus size={16} />
+                          Nouvelle
+                        </Button>
+                      </div>
                     </div>
                     
                     {isAddingNewAddress && (

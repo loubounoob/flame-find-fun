@@ -272,7 +272,8 @@ export function PromoCard({
             size="sm"
             className={cn(
               "flex-1 transition-all duration-300",
-              "hover:scale-105 active:scale-95"
+              "hover:scale-105 active:scale-95",
+              "bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
             )}
             onClick={(e) => handleButtonClick(e, async () => {
               if (isLiked) {
@@ -285,7 +286,7 @@ export function PromoCard({
             })}
             disabled={isExpired || flameLoading}
           >
-            <Flame size={16} className={cn("mr-1", isLiked && "fill-current")} />
+            <Flame size={16} className={cn("mr-1", "fill-current text-white")} />
             Flamme
           </Button>
           
@@ -296,7 +297,7 @@ export function PromoCard({
               "flex-1 transition-all duration-300",
               "hover:scale-105 active:scale-95"
             )}
-            onClick={(e) => handleButtonClick(e, () => navigate(`/booking-form/${offerId}`))}
+            onClick={handleBookClick}
             disabled={isExpired}
           >
             <Zap size={16} className="mr-1" />

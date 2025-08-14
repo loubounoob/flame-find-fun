@@ -530,20 +530,22 @@ export function PromotionManager() {
                     </p>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(promotion)}
+                      className="h-7 px-2"
                     >
-                      <Edit size={16} />
+                      <Edit size={12} />
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => deletePromotion(promotion.id)}
+                      className="h-7 px-2"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={12} />
                     </Button>
                   </div>
                 </div>
