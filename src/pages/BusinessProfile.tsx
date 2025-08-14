@@ -425,7 +425,7 @@ export default function BusinessProfile() {
               )}
             </div>
 
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Label htmlFor="opening_hours">Horaires d'ouverture</Label>
               {isEditing ? (
                 <Textarea
@@ -439,6 +439,15 @@ export default function BusinessProfile() {
                 <p className="text-muted-foreground">{profile.opening_hours || "Non renseigné"}</p>
               )}
             </div>
+            
+            {!isEditing && (
+              <div className="pt-4 border-t border-border/50">
+                <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full">
+                  <Edit size={16} className="mr-2" />
+                  Modifier
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

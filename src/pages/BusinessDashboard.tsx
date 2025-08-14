@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/ui/bottom-nav";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 export default function BusinessDashboard() {
   const [user, setUser] = useState(null);
@@ -47,7 +48,8 @@ export default function BusinessDashboard() {
     location: "",
     address: "",
     max_participants: "",
-    image_file: null
+    image_file: null,
+    custom_category: ""
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -161,7 +163,7 @@ export default function BusinessDashboard() {
   };
 
   const saveNewAddress = async () => {
-    if (!user || !newAddress.name || !newAddress.address || !newAddress.city) return;
+    if (!user || !newAddress.name || !newAddress.address) return;
 
     try {
       const { error } = await supabase
@@ -169,7 +171,7 @@ export default function BusinessDashboard() {
         .insert({
           business_user_id: user.id,
           address_name: newAddress.name,
-          full_address: `${newAddress.address}, ${newAddress.city}`
+          full_address: newAddress.address
         });
 
       if (error) throw error;
@@ -346,7 +348,8 @@ export default function BusinessDashboard() {
       location: offer.location || "",
       address: offer.address || "",
       max_participants: offer.max_participants?.toString() || "",
-      image_file: null
+      image_file: null,
+      custom_category: ""
     });
     setShowCreateForm(true);
   };
@@ -362,7 +365,8 @@ export default function BusinessDashboard() {
       location: "",
       address: "",
       max_participants: "",
-      image_file: null
+      image_file: null,
+      custom_category: ""
     });
   };
 
@@ -516,8 +520,17 @@ export default function BusinessDashboard() {
                           <SelectItem value="sport">⚽ Sport</SelectItem>
                           <SelectItem value="musee">🏛️ Musée</SelectItem>
                           <SelectItem value="concert">🎵 Concert</SelectItem>
+                          <SelectItem value="autre">➕ Autre</SelectItem>
                         </SelectContent>
                       </Select>
+                      {formData.category === "autre" && (
+                        <Input
+                          value={formData.custom_category || ""}
+                          onChange={(e) => setFormData({...formData, custom_category: e.target.value})}
+                          placeholder="Spécifiez votre domaine d'activité"
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -532,9 +545,9 @@ export default function BusinessDashboard() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="price">Prix</Label>
+                      <Label htmlFor="price">Prix (€)</Label>
                       <Input
                         id="price"
                         value={formData.price}
@@ -543,22 +556,40 @@ export default function BusinessDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Ville</Label>
+                      <Label htmlFor="max_participants">Participants max</Label>
                       <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
-                        placeholder="Lyon, France"
+                        id="max_participants"
+                        type="number"
+                        value={formData.max_participants}
+                        onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
+                        placeholder="8"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="location">Ville</Label>
+                    <AddressAutocomplete
+                      value={formData.location}
+                      onChange={(value) => setFormData({...formData, location: value})}
+                      placeholder="Tapez votre ville..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="address">Adresse</Label>
                     <div className="flex gap-2">
+                      <div className="flex-1">
+                        {/* Use the AddressAutocomplete component */}
+                        <AddressAutocomplete
+                          value={formData.address}
+                          onChange={(value) => setFormData({...formData, address: value})}
+                          placeholder="Tapez votre adresse..."
+                        />
+                      </div>
                       <Select value={formData.address} onValueChange={(value) => setFormData({...formData, address: value})}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Sélectionner une adresse" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ou sélectionner une adresse sauvegardée" />
                         </SelectTrigger>
                         <SelectContent className="bg-background border border-border shadow-lg z-50">
                           {savedAddresses.map((addr) => (
@@ -592,24 +623,14 @@ export default function BusinessDashboard() {
                             placeholder="Mon restaurant"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="full-address">Adresse</Label>
-                          <Input
-                            id="full-address"
-                            value={newAddress.address}
-                            onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
-                            placeholder="123 rue de la République"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="city">Ville</Label>
-                          <Input
-                            id="city"
-                            value={newAddress.city}
-                            onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
-                            placeholder="Lyon"
-                          />
-                        </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="full-address">Adresse</Label>
+                           <AddressAutocomplete
+                             value={newAddress.address}
+                             onChange={(value) => setNewAddress({...newAddress, address: value})}
+                             placeholder="Tapez l'adresse complète..."
+                           />
+                         </div>
                         <div className="flex gap-2">
                           <Button
                             type="button"
@@ -631,18 +652,6 @@ export default function BusinessDashboard() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="max_participants">Participants max</Label>
-                      <Input
-                        id="max_participants"
-                        type="number"
-                        value={formData.max_participants}
-                        onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
-                        placeholder="8"
-                      />
-                    </div>
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="image-upload">Photo de l'offre</Label>
@@ -653,7 +662,9 @@ export default function BusinessDashboard() {
                       className="w-full justify-start"
                     >
                       <Camera className="mr-2 h-4 w-4" />
-                      {formData.image_file ? formData.image_file.name : "Choisir une photo"}
+                      <span className="truncate">
+                        {formData.image_file ? formData.image_file.name : "Choisir une photo"}
+                      </span>
                     </Button>
                     <input
                       id="image-upload"

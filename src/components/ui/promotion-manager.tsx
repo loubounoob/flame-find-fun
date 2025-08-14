@@ -392,9 +392,9 @@ export function PromotionManager() {
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-center">
-                  <div className="flex items-center space-x-2">
+                <div className="space-y-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-4">
                     <Switch
                       id="is_active"
                       checked={formData.is_active}
@@ -402,15 +402,15 @@ export function PromotionManager() {
                     />
                     <Label htmlFor="is_active">Promotion active</Label>
                   </div>
-                </div>
 
-                <div className="flex gap-2 justify-center">
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    Annuler
-                  </Button>
-                  <Button type="submit" className="bg-gradient-to-r from-green-500 to-emerald-600">
-                    {editingPromotion ? "Modifier" : "Créer"} la Promotion
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Annuler
+                    </Button>
+                    <Button type="submit" className="bg-gradient-to-r from-green-500 to-emerald-600">
+                      {editingPromotion ? "Modifier" : "Créer"} la Promotion
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

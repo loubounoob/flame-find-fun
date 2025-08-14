@@ -296,11 +296,11 @@ export function PromoCard({
               "flex-1 transition-all duration-300",
               "hover:scale-105 active:scale-95"
             )}
-            onClick={handleBookClick}
-            disabled={isExpired || isBooking}
+            onClick={(e) => handleButtonClick(e, () => navigate(`/booking-form/${offerId}`))}
+            disabled={isExpired}
           >
             <Zap size={16} className="mr-1" />
-            {isBooking ? "..." : isExpired ? "Expiré" : "Réserver"}
+            {isExpired ? "Expiré" : "Réserver"}
           </Button>
         </div>
       </div>
