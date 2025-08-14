@@ -562,7 +562,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      offer_ratings_public: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string | null
+          offer_id: string | null
+          rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string | null
+          offer_id?: string | null
+          rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string | null
+          offer_id?: string | null
+          rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       archive_old_bookings: {
