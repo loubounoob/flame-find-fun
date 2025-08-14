@@ -241,7 +241,7 @@ export default function BusinessDashboard() {
           business_user_id: user.id,
           title: formData.title,
           description: formData.description,
-          category: formData.category,
+          category: formData.category === "Autre" ? formData.custom_category : formData.category,
           price: formData.price,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
@@ -462,11 +462,10 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="offers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="offers">Mes Offres</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
-            <TabsTrigger value="map">Carte</TabsTrigger>
           </TabsList>
 
           <TabsContent value="offers" className="space-y-4">

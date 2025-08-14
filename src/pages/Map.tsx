@@ -74,6 +74,26 @@ export default function Map() {
   const handleMapLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
     setIsLoaded(true);
+    
+    // Add global functions for info window buttons
+    (window as any).viewBusiness = (businessId: string) => {
+      console.log('View business:', businessId);
+      // Navigate to business profile or offers
+    };
+    
+    (window as any).getDirections = (lat: number, lng: number) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const origin = `${position.coords.latitude},${position.coords.longitude}`;
+          const destination = `${lat},${lng}`;
+          const url = `https://www.google.com/maps/dir/${origin}/${destination}`;
+          window.open(url, '_blank');
+        });
+      } else {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        window.open(url, '_blank');
+      }
+    };
   }, []);
 
   const handleBusinessSelect = useCallback((business: any) => {
@@ -87,32 +107,8 @@ export default function Map() {
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-            Carte
+            Carte des entreprises
           </h1>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={() => setShowList(!showList)}>
-              <List size={20} />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Filter size={20} />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="mt-3 flex gap-2">
-          <Badge variant="secondary" className="px-3 py-1 flex-1 justify-center">
-            Entreprises du réseau
-          </Badge>
-          {userLocation && (
-            <Badge variant="outline" className="px-3 py-1">
-              Position active
-            </Badge>
-          )}
-          {selectedBusiness && (
-            <Badge variant="default" className="px-3 py-1">
-              {selectedBusiness.business_name}
-            </Badge>
-          )}
         </div>
       </header>
 
@@ -130,38 +126,40 @@ export default function Map() {
           onMarkerClick={handleBusinessSelect}
         />
 
-        {/* Floating List Toggle */}
-        {showList && selectedBusiness && (
-          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-80 overflow-y-auto">
-            <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">{selectedBusiness.business_name}</h3>
-                <Button variant="outline" size="sm" onClick={() => setShowList(false)}>
-                  Fermer
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-primary" />
-                  <span className="text-sm text-muted-foreground">{selectedBusiness.address}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <Flame size={14} className="text-flame" />
-                    <span className="text-sm">{selectedBusiness.total_flames} flames</span>
+        {/* Nearby Activities Panel */}
+        <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-64 overflow-y-auto">
+          <div className="p-4 space-y-3">
+            <h3 className="font-semibold text-foreground text-center">Activités à proximité</h3>
+            
+            {/* Mock nearby activities - replace with real data */}
+            <div className="space-y-3">
+              {nearbyOffers.slice(0, 3).map((offer) => (
+                <div key={offer.id} className="bg-background/50 rounded-lg p-3 border border-border/30">
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex-shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium text-sm truncate">{offer.title}</h4>
+                          <p className="text-xs text-muted-foreground">{offer.category}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground ml-2">{offer.distance}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <Badge variant="outline" className="text-xs px-2 py-0">
+                          {offer.discount}
+                        </Badge>
+                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
+                          Voir profil
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm">{selectedBusiness.total_offers} offres actives</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {selectedBusiness.business_type}
-                  </Badge>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
       
       <BottomNav />

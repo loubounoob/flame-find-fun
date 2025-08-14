@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { usePromotions } from "@/hooks/usePromotions";
+import { useOfferScoring } from "@/hooks/useOfferScoring";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,7 @@ export default function Home() {
   
   const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const { activePromotions } = usePromotions();
+  const { scoredOffers } = useOfferScoring();
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["offers"],
@@ -115,6 +117,15 @@ export default function Home() {
       return data;
     },
   });
+
+  // Sort offers based on scoring algorithm
+  const sortedOffers = user && scoredOffers.length > 0 
+    ? offers.sort((a, b) => {
+        const scoreA = scoredOffers.find(s => s.offerId === a.id)?.score || 0;
+        const scoreB = scoredOffers.find(s => s.offerId === b.id)?.score || 0;
+        return scoreB - scoreA;
+      })
+    : offers;
 
   const { data: flamesCounts = {} } = useQuery({
     queryKey: ["flamesCounts"],
@@ -250,7 +261,7 @@ export default function Home() {
               </div>
               
               {/* Show regular offers as fallback */}
-              {offers.slice(0, 3).map((offer) => (
+              {sortedOffers.slice(0, 3).map((offer) => (
                 <OfferCard
                   key={offer.id}
                   id={offer.id}

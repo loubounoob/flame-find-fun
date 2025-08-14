@@ -107,13 +107,18 @@ export function BusinessMapMarkers({ onMarkerClick, map, isLoaded }: BusinessMap
     const newInfoWindows: google.maps.InfoWindow[] = [];
 
     businesses.forEach((business) => {
+      // Check if business has special offers (promotions)
+      const hasSpecialOffers = business.total_offers > 0; // You can add more complex logic here
+      const markerColor = hasSpecialOffers ? "#ef4444" : "#3b82f6"; // Red for special, blue for normal
+      const animationClass = hasSpecialOffers ? 'animate-pulse' : '';
+      
       // Create custom marker icon
       const markerIcon = {
         url: 'data:image/svg+xml;base64,' + btoa(`
-          <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#ff6b35" stroke="white" stroke-width="2"/>
+          <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" class="${animationClass}">
+            <circle cx="20" cy="20" r="18" fill="${markerColor}" stroke="white" stroke-width="2"/>
             <circle cx="20" cy="20" r="12" fill="white"/>
-            <text x="20" y="25" text-anchor="middle" font-size="12" fill="#ff6b35" font-weight="bold">${business.total_offers}</text>
+            <text x="20" y="25" text-anchor="middle" font-size="12" fill="${markerColor}" font-weight="bold">${business.total_offers}</text>
           </svg>
         `),
         scaledSize: new (window as any).google.maps.Size(40, 40),
@@ -129,27 +134,35 @@ export function BusinessMapMarkers({ onMarkerClick, map, isLoaded }: BusinessMap
 
       // Create info window content
       const infoWindowContent = `
-        <div style="padding: 12px; max-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
-          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: hsl(var(--foreground));">
+        <div style="padding: 12px; max-width: 280px; font-family: system-ui, -apple-system, sans-serif;">
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">
             ${business.business_name}
           </h3>
-          <p style="margin: 0 0 8px 0; font-size: 12px; color: hsl(var(--muted-foreground));">
+          <p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">
             📍 ${business.address}
           </p>
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-            <span style="background: hsl(var(--primary)); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">
               ${business.business_type}
             </span>
           </div>
-          <div style="display: flex; align-items: center; gap: 16px; font-size: 12px;">
+          <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="color: hsl(var(--primary));">🔥</span>
+              <span>🔥</span>
               <span>${business.total_flames} flames</span>
             </div>
             <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="color: hsl(var(--success));">📋</span>
+              <span>📋</span>
               <span>${business.total_offers} offres</span>
             </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="window.viewBusiness('${business.id}')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+              Voir l'offre
+            </button>
+            <button onclick="window.getDirections(${business.latitude}, ${business.longitude})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+              Itinéraire
+            </button>
           </div>
         </div>
       `;

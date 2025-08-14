@@ -130,7 +130,7 @@ export default function BookingForm() {
                 <p className="text-sm text-muted-foreground">{offer.category}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
-                    {offer.price || "Prix sur demande"}
+                    {offer.price ? `${offer.price}` : "Prix sur demande"}
                   </Badge>
                 </div>
               </div>
@@ -220,6 +220,14 @@ export default function BookingForm() {
                     <span className="text-muted-foreground">Prix:</span>
                     <span className="font-medium">{offer.price || "À discuter"}</span>
                   </div>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
+                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                      💳 Paiement requis avant confirmation
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Le paiement sera traité de manière sécurisée via Stripe
+                    </p>
+                  </div>
                 </div>
                 
                 <Button 
@@ -227,27 +235,13 @@ export default function BookingForm() {
                   className="w-full bg-gradient-primary hover:opacity-90"
                   disabled={isSubmitting || !bookingDate || !bookingTime}
                 >
-                  {isSubmitting ? "Réservation en cours..." : "Confirmer la réservation"}
+                  {isSubmitting ? "Traitement du paiement..." : "Payer et réserver"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
 
-        {/* Info */}
-        <Card className="bg-gradient-card border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-2">
-              <Clock size={16} className="text-info mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">Confirmation instantanée</p>
-                <p className="text-muted-foreground">
-                  Votre réservation sera confirmée immédiatement. L'entreprise sera notifiée.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
