@@ -36,9 +36,10 @@ import { updateAddressCoordinates } from '@/utils/geocoding';
 
 interface GoogleMapProps {
   onLocationUpdate?: (location: { lat: number; lng: number }) => void;
+  onMapLoad?: (map: google.maps.Map) => void;
 }
 
-export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
+export function GoogleMap({ onLocationUpdate, onMapLoad }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
@@ -121,6 +122,7 @@ export function GoogleMap({ onLocationUpdate }: GoogleMapProps) {
       });
 
       mapInstanceRef.current = map;
+      onMapLoad?.(map);
 
       // Ajouter des marqueurs pour toutes les offres/entreprises
       businesses.forEach(offer => {

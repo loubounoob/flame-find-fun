@@ -305,25 +305,25 @@ export function PromotionManager() {
                   />
                 </div>
 
-                {/* Prix preview */}
-                {selectedOffer && formData.discount_value > 0 && (
-                  <div className="col-span-2">
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <Label>Aperçu des prix</Label>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-lg font-bold text-primary">
-                          {calculatePromotionalPrice()}€
-                        </span>
-                        <span className="text-sm text-muted-foreground line-through">
-                          {getOriginalPrice()}€
-                        </span>
-                        <Badge variant="secondary">
-                          {formData.discount_text}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 {/* Prix preview */}
+                 {selectedOffer && formData.discount_value > 0 && (
+                   <div className="col-span-1 md:col-span-2">
+                     <div className="bg-muted/50 p-4 rounded-lg">
+                       <Label>Aperçu des prix</Label>
+                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+                         <span className="text-lg font-bold text-primary">
+                           {calculatePromotionalPrice()}€
+                         </span>
+                         <span className="text-sm text-muted-foreground line-through">
+                           {getOriginalPrice()}€
+                         </span>
+                         <Badge variant="secondary" className="w-fit">
+                           {formData.discount_text}
+                         </Badge>
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
                 <div>
                   <Label>Date de début</Label>
@@ -392,9 +392,9 @@ export function PromotionManager() {
                 />
               </div>
 
-                <div className="space-y-4">
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="space-y-4">
+                <div className="text-center space-y-4">
+                  <div className="flex items-center justify-center space-x-2">
                     <Switch
                       id="is_active"
                       checked={formData.is_active}
@@ -403,7 +403,7 @@ export function PromotionManager() {
                     <Label htmlFor="is_active">Promotion active</Label>
                   </div>
 
-                  <div className="flex gap-2 justify-center">
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
                     <Button type="button" variant="outline" onClick={resetForm}>
                       Annuler
                     </Button>

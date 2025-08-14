@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Navigation, Filter, List, Heart, Flame } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { GoogleMap } from "@/components/ui/google-map";
+import { BusinessMapMarkers } from "@/components/BusinessMapMarkers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -48,6 +49,9 @@ const nearbyOffers = [
 export default function Map() {
   const [showList, setShowList] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState<any>(null);
 
   // Récupérer les vraies offres depuis Supabase
   const { data: offers = [] } = useQuery({
@@ -66,6 +70,16 @@ export default function Map() {
   const handleLocationUpdate = (location: { lat: number; lng: number }) => {
     setUserLocation(location);
   };
+
+  const handleMapLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+    setIsLoaded(true);
+  }, []);
+
+  const handleBusinessSelect = useCallback((business: any) => {
+    setSelectedBusiness(business);
+    setShowList(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -87,11 +101,16 @@ export default function Map() {
         
         <div className="mt-3 flex gap-2">
           <Badge variant="secondary" className="px-3 py-1 flex-1 justify-center">
-            {offers.length} offres disponibles
+            Entreprises du réseau
           </Badge>
           {userLocation && (
             <Badge variant="outline" className="px-3 py-1">
               Position active
+            </Badge>
+          )}
+          {selectedBusiness && (
+            <Badge variant="default" className="px-3 py-1">
+              {selectedBusiness.business_name}
             </Badge>
           )}
         </div>
@@ -99,36 +118,47 @@ export default function Map() {
 
       <div className="relative h-[calc(100vh-180px)]">
         {/* Carte Google Maps */}
-        <GoogleMap onLocationUpdate={handleLocationUpdate} />
+        <GoogleMap 
+          onLocationUpdate={handleLocationUpdate}
+          onMapLoad={handleMapLoad}
+        />
+        
+        {/* Business Markers */}
+        <BusinessMapMarkers 
+          map={map}
+          isLoaded={isLoaded}
+          onMarkerClick={handleBusinessSelect}
+        />
 
         {/* Floating List Toggle */}
-        {showList && (
+        {showList && selectedBusiness && (
           <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/50 max-h-80 overflow-y-auto">
             <div className="p-4 space-y-3">
-              <h3 className="font-semibold text-foreground mb-3">Offres disponibles</h3>
-              {offers.map((offer) => (
-                <Link key={offer.id} to={`/offer/${offer.id}`}>
-                  <Card className="bg-gradient-card border-border/50 hover-lift">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">{offer.title}</h4>
-                          <p className="text-sm text-muted-foreground">{offer.category}</p>
-                          <div className="flex items-center gap-4 mt-1">
-                            <div className="flex items-center gap-1">
-                              <MapPin size={12} className="text-primary" />
-                              <span className="text-xs text-muted-foreground">{offer.location}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <Badge className="bg-gradient-flame text-white">
-                          Voir détails
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">{selectedBusiness.business_name}</h3>
+                <Button variant="outline" size="sm" onClick={() => setShowList(false)}>
+                  Fermer
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MapPin size={14} className="text-primary" />
+                  <span className="text-sm text-muted-foreground">{selectedBusiness.address}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <Flame size={14} className="text-flame" />
+                    <span className="text-sm">{selectedBusiness.total_flames} flames</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">{selectedBusiness.total_offers} offres actives</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedBusiness.business_type}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
         )}

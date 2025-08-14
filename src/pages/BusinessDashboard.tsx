@@ -45,7 +45,6 @@ export default function BusinessDashboard() {
     description: "",
     category: "",
     price: "",
-    location: "",
     address: "",
     max_participants: "",
     image_file: null,
@@ -244,7 +243,7 @@ export default function BusinessDashboard() {
           description: formData.description,
           category: formData.category,
           price: formData.price,
-          location: formData.location,
+          location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: imageUrl
@@ -285,7 +284,7 @@ export default function BusinessDashboard() {
           description: formData.description,
           category: formData.category,
           price: formData.price,
-          location: formData.location,
+          location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: imageUrl
@@ -345,7 +344,7 @@ export default function BusinessDashboard() {
       description: offer.description || "",
       category: offer.category || "",
       price: offer.price || "",
-      location: offer.location || "",
+      
       address: offer.address || "",
       max_participants: offer.max_participants?.toString() || "",
       image_file: null,
@@ -362,7 +361,7 @@ export default function BusinessDashboard() {
       description: "",
       category: "",
       price: "",
-      location: "",
+      
       address: "",
       max_participants: "",
       image_file: null,
@@ -463,10 +462,11 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="offers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="offers">Mes Offres</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
+            <TabsTrigger value="map">Carte</TabsTrigger>
           </TabsList>
 
           <TabsContent value="offers" className="space-y-4">
@@ -567,14 +567,6 @@ export default function BusinessDashboard() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Ville</Label>
-                    <AddressAutocomplete
-                      value={formData.location}
-                      onChange={(value) => setFormData({...formData, location: value})}
-                      placeholder="Tapez votre ville..."
-                    />
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Adresse</Label>
@@ -789,6 +781,16 @@ export default function BusinessDashboard() {
                   </Card>
                 ))
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-4">
+            <div className="text-center p-8">
+              <h2 className="text-lg font-semibold mb-4">Carte des entreprises</h2>
+              <p className="text-muted-foreground mb-4">Visualisez toutes les entreprises de notre réseau</p>
+              <Button onClick={() => navigate("/map")} className="bg-gradient-primary">
+                Voir la carte complète
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
