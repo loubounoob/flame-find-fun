@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { MediaUpload } from "@/components/MediaUpload";
-import { BusinessPricing } from "@/components/BusinessPricing";
+
 import { BottomNav } from "@/components/ui/bottom-nav";
 
 export default function BusinessProfile() {
@@ -453,9 +453,6 @@ export default function BusinessProfile() {
 
         {/* Media Upload Section - Instagram-like */}
         <MediaUpload />
-
-        {/* Pricing Section */}
-        <BusinessPricing />
       </div>
 
       <BottomNav />

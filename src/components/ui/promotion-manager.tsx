@@ -53,6 +53,11 @@ export function PromotionManager() {
     is_active: true,
   });
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
+  const [buyXGetYDetails, setBuyXGetYDetails] = useState({
+    getQuantity: "",
+    freeItem: "",
+    conditions: ""
+  });
 
   // Fetch business offers with pricing for the form
   const { data: businessOffers = [] } = useQuery({
@@ -277,32 +282,87 @@ export function PromotionManager() {
                 </div>
 
                 <div>
-                  <Label htmlFor="discount_value">
-                    {formData.discount_type === 'percentage' && "Pourcentage de réduction (%)"}
-                    {formData.discount_type === 'fixed_amount' && "Montant de réduction (€)"}
-                    {formData.discount_type === 'free_item' && "Nombre d'articles gratuits"}
-                    {formData.discount_type === 'buy_x_get_y' && "Formule (ex: 2 pour 1)"}
-                  </Label>
-                  <Input
-                    id="discount_value"
-                    type="number"
-                    value={formData.discount_value}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        discount_value: value,
-                        discount_text: generateDiscountText(value, formData.discount_type)
-                      }));
-                    }}
-                    placeholder={
-                      formData.discount_type === 'percentage' ? "Ex: 20" :
-                      formData.discount_type === 'fixed_amount' ? "Ex: 5" :
-                      formData.discount_type === 'free_item' ? "Ex: 1" :
-                      "Ex: 2"
-                    }
-                    required
-                  />
+                {formData.discount_type === "buy_x_get_y" ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="buy_quantity">Nombre d'articles à acheter</Label>
+                      <Input
+                        id="buy_quantity"
+                        type="number"
+                        min="1"
+                        value={formData.discount_value}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            discount_value: value,
+                            discount_text: generateDiscountText(value, formData.discount_type)
+                          }));
+                        }}
+                        placeholder="ex: 2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="get_quantity">Nombre d'articles gratuits</Label>
+                      <Input
+                        id="get_quantity"
+                        type="number"
+                        min="1"
+                        value={buyXGetYDetails.getQuantity}
+                        onChange={(e) => setBuyXGetYDetails(prev => ({...prev, getQuantity: e.target.value}))}
+                        placeholder="ex: 1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="free_item">Article gratuit (optionnel)</Label>
+                      <Input
+                        id="free_item"
+                        value={buyXGetYDetails.freeItem}
+                        onChange={(e) => setBuyXGetYDetails(prev => ({...prev, freeItem: e.target.value}))}
+                        placeholder="ex: boisson, dessert..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="conditions">Conditions spéciales (optionnel)</Label>
+                      <Textarea
+                        id="conditions"
+                        value={buyXGetYDetails.conditions}
+                        onChange={(e) => setBuyXGetYDetails(prev => ({...prev, conditions: e.target.value}))}
+                        placeholder="ex: valable sur une sélection d'articles..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="discount_value">
+                      {formData.discount_type === 'percentage' && "Pourcentage de réduction (%)"}
+                      {formData.discount_type === 'fixed_amount' && "Montant de réduction (€)"}
+                      {formData.discount_type === 'free_item' && "Nombre d'articles gratuits"}
+                    </Label>
+                    <Input
+                      id="discount_value"
+                      type="number"
+                      value={formData.discount_value}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          discount_value: value,
+                          discount_text: generateDiscountText(value, formData.discount_type)
+                        }));
+                      }}
+                      placeholder={
+                        formData.discount_type === 'percentage' ? "Ex: 20" :
+                        formData.discount_type === 'fixed_amount' ? "Ex: 5.00" :
+                        "Ex: 1"
+                      }
+                      required
+                    />
+                  </div>
+                )}
                 </div>
 
                  {/* Prix preview */}

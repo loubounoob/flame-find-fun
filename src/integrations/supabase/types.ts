@@ -184,6 +184,36 @@ export type Database = {
         }
         Relationships: []
       }
+      business_ratings: {
+        Row: {
+          average_rating: number
+          business_user_id: string
+          created_at: string
+          id: string
+          total_rating: number
+          total_reviews: number
+          updated_at: string
+        }
+        Insert: {
+          average_rating?: number
+          business_user_id: string
+          created_at?: string
+          id?: string
+          total_rating?: number
+          total_reviews?: number
+          updated_at?: string
+        }
+        Update: {
+          average_rating?: number
+          business_user_id?: string
+          created_at?: string
+          id?: string
+          total_rating?: number
+          total_reviews?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flames: {
         Row: {
           created_at: string

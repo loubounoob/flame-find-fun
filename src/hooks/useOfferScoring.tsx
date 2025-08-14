@@ -15,7 +15,8 @@ interface OfferScore {
 
 export function useOfferScoring() {
   const { user } = useAuth();
-  const { location } = useGeolocation();
+  const { position } = useGeolocation();
+  const location = position ? { lat: position.lat, lng: position.lng } : null;
 
   const { data: scoredOffers = [] } = useQuery({
     queryKey: ["offer-scoring", user?.id, location],

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Home, MapPin, User, Search, Heart, BarChart3, Bell } from "lucide-react";
+import { Home, MapPin, User, Search, Heart, BarChart3, Bell, Map } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -66,6 +66,11 @@ export function BottomNav({ className }: BottomNavProps) {
         path: "/business-dashboard" 
       },
       { 
+        icon: Map, 
+        label: "Carte", 
+        path: "/map" 
+      },
+      { 
         icon: User, 
         label: "Profil", 
         path: "/business-profile" 
@@ -81,7 +86,7 @@ export function BottomNav({ className }: BottomNavProps) {
           className
         )}
       >
-        <div className="flex items-center justify-around max-w-md mx-auto">
+        <div className="flex items-center justify-around max-w-md mx-auto grid-cols-4">{/* Added grid-cols-4 for spacing */}
           {businessNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
