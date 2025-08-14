@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PromotionManager } from "@/components/ui/promotion-manager";
 import { 
   Plus, 
   BarChart3, 
@@ -22,7 +23,8 @@ import {
   Flame,
   Bell,
   Camera,
-  MapPin
+  MapPin,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -457,8 +459,9 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="offers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="offers">Mes Offres</TabsTrigger>
+            <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
 
@@ -728,6 +731,10 @@ export default function BusinessDashboard() {
                 ))
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="promotions" className="space-y-4">
+            <PromotionManager />
           </TabsContent>
 
           <TabsContent value="bookings" className="space-y-4">

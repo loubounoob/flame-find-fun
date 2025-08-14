@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -308,10 +308,12 @@ export type Database = {
       offers: {
         Row: {
           address: string | null
+          base_price: number | null
           business_user_id: string
           category: string
           created_at: string
           description: string
+          has_promotion: boolean | null
           id: string
           image_url: string | null
           latitude: number | null
@@ -319,6 +321,7 @@ export type Database = {
           longitude: number | null
           max_participants: number | null
           price: string | null
+          pricing_options: Json | null
           status: string
           title: string
           updated_at: string
@@ -326,10 +329,12 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          base_price?: number | null
           business_user_id: string
           category: string
           created_at?: string
           description: string
+          has_promotion?: boolean | null
           id?: string
           image_url?: string | null
           latitude?: number | null
@@ -337,6 +342,7 @@ export type Database = {
           longitude?: number | null
           max_participants?: number | null
           price?: string | null
+          pricing_options?: Json | null
           status?: string
           title: string
           updated_at?: string
@@ -344,10 +350,12 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          base_price?: number | null
           business_user_id?: string
           category?: string
           created_at?: string
           description?: string
+          has_promotion?: boolean | null
           id?: string
           image_url?: string | null
           latitude?: number | null
@@ -355,6 +363,7 @@ export type Database = {
           longitude?: number | null
           max_participants?: number | null
           price?: string | null
+          pricing_options?: Json | null
           status?: string
           title?: string
           updated_at?: string
@@ -437,6 +446,63 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          business_user_id: string
+          created_at: string
+          description: string | null
+          discount_text: string
+          discount_type: string
+          discount_value: number
+          end_date: string
+          id: string
+          is_active: boolean
+          max_participants: number | null
+          offer_id: string
+          original_price: number
+          promotional_price: number
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string
+          description?: string | null
+          discount_text: string
+          discount_type: string
+          discount_value: number
+          end_date: string
+          id?: string
+          is_active?: boolean
+          max_participants?: number | null
+          offer_id: string
+          original_price: number
+          promotional_price: number
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string
+          description?: string | null
+          discount_text?: string
+          discount_type?: string
+          discount_value?: number
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          max_participants?: number | null
+          offer_id?: string
+          original_price?: number
+          promotional_price?: number
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_flames_daily: {
         Row: {
           created_at: string
@@ -478,7 +544,7 @@ export type Database = {
         Returns: undefined
       }
       schedule_rating_notification: {
-        Args: { booking_id: string; user_id: string; offer_id: string }
+        Args: { booking_id: string; offer_id: string; user_id: string }
         Returns: undefined
       }
     }

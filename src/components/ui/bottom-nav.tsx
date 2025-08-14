@@ -114,12 +114,6 @@ export function BottomNav({ className }: BottomNavProps) {
                 >
                   {item.label}
                 </span>
-                {/* Badge de notifications pour le profil business */}
-                {item.path === "/business-profile" && unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </div>
-                )}
               </Link>
             );
           })}
@@ -170,12 +164,6 @@ export function BottomNav({ className }: BottomNavProps) {
               >
                 {item.label}
               </span>
-              {/* Badge de notifications pour le profil */}
-              {item.path === "/profile" && unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </div>
-              )}
             </Link>
           );
         })}

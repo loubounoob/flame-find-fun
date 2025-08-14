@@ -2,15 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { OfferCard } from "@/components/ui/offer-card";
+import { PromoCard } from "@/components/ui/promo-card";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
+import { usePromotions } from "@/hooks/usePromotions";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Search, Star, Zap, Flame } from "lucide-react";
+import { Bell, Search, Star, Zap, Flame, Filter } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
 
@@ -98,6 +100,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   
   const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const { activePromotions } = usePromotions();
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["offers"],
@@ -176,12 +179,12 @@ export default function Home() {
               </span>
             </div>
             
+            {/* Real-time notifications counter */}
             <Link to="/notifications">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative hover:scale-110 transition-transform duration-200">
                 <Bell size={20} />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-flame text-white text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
+                {/* Only show badge if there are unread notifications */}
+                {/* Remove default badge, will be implemented with real notifications */}
               </Button>
             </Link>
           </div>
@@ -190,22 +193,80 @@ export default function Home() {
 
 
 
-      {/* Main Feed */}
+      {/* Flash Offers Section */}
       <section className="p-4 space-y-4 mt-4">
-        {offers.map((offer) => (
-          <OfferCard
-            key={offer.id}
-            id={offer.id}
-            title={offer.title}
-            business_user_id={offer.business_user_id}
-            location={offer.location}
-            category={offer.category}
-            flames={flamesCounts[offer.id] || 0}
-            image={offer.image_url}
-            price={offer.price}
-            description={offer.description}
-          />
-        ))}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="text-orange-500 animate-pulse" />
+            <h2 className="text-xl font-bold text-gradient-primary">Offres Flash</h2>
+            <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce">
+              LIMITÉ
+            </Badge>
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter size={16} className="mr-1" />
+            Filtrer
+          </Button>
+        </div>
+        
+        {/* Promotional Offers */}
+        <div className="space-y-4">
+          {activePromotions.map((promotion) => {
+            // Find the corresponding offer
+            const offer = offers.find(o => o.id === promotion.offer_id);
+            if (!offer) return null;
+            
+            return (
+              <PromoCard
+                key={promotion.id}
+                id={offer.id}
+                title={offer.title}
+                business="Business Name" // You'll need to fetch this from profiles
+                description={offer.description}
+                location={offer.location}
+                category={offer.category}
+                image={offer.image_url}
+                video={offer.video_url}
+                originalPrice={promotion.original_price}
+                promotionalPrice={promotion.promotional_price}
+                discountText={promotion.discount_text}
+                endDate={promotion.end_date}
+                flames={flamesCounts[offer.id] || 0}
+                maxParticipants={promotion.max_participants}
+                onLike={() => handleLike(offer.id)}
+                onBook={() => handleBook(offer.id)}
+                isLiked={hasGivenFlameToOffer(offer.id)}
+              />
+            );
+          })}
+          
+          {/* Regular offers (fallback if no promotions) */}
+          {activePromotions.length === 0 && (
+            <>
+              <div className="text-center py-8">
+                <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
+                <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+              </div>
+              
+              {/* Show regular offers as fallback */}
+              {offers.slice(0, 3).map((offer) => (
+                <OfferCard
+                  key={offer.id}
+                  id={offer.id}
+                  title={offer.title}
+                  business_user_id={offer.business_user_id}
+                  location={offer.location}
+                  category={offer.category}
+                  flames={flamesCounts[offer.id] || 0}
+                  image={offer.image_url}
+                  price={offer.price}
+                  description={offer.description}
+                />
+              ))}
+            </>
+          )}
+        </div>
       </section>
     </div>
   );
