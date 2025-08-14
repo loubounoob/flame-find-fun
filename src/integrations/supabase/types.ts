@@ -562,33 +562,7 @@ export type Database = {
       }
     }
     Views: {
-      offer_ratings_public: {
-        Row: {
-          comment: string | null
-          created_at: string | null
-          id: string | null
-          offer_id: string | null
-          rating: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          comment?: string | null
-          created_at?: string | null
-          id?: string | null
-          offer_id?: string | null
-          rating?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string | null
-          id?: string | null
-          offer_id?: string | null
-          rating?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       archive_old_bookings: {
@@ -598,6 +572,14 @@ export type Database = {
       auto_mark_old_notifications_read: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_offer_rating_stats: {
+        Args: { offer_id_param: string }
+        Returns: {
+          average_rating: number
+          rating_distribution: Json
+          total_reviews: number
+        }[]
       }
       schedule_rating_notification: {
         Args: { booking_id: string; offer_id: string; user_id: string }
