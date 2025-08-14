@@ -25,8 +25,6 @@ interface PromotionFormData {
   discount_type: 'percentage' | 'fixed_amount' | 'free_item' | 'buy_x_get_y';
   discount_value: number;
   discount_text: string;
-  original_price: number;
-  promotional_price: number;
   start_date: Date;
   end_date: Date;
   start_time: string;
@@ -47,8 +45,6 @@ export function PromotionManager() {
     discount_type: "percentage",
     discount_value: 0,
     discount_text: "",
-    original_price: 0,
-    promotional_price: 0,
     start_date: new Date(),
     end_date: new Date(),
     start_time: "09:00",
@@ -56,15 +52,16 @@ export function PromotionManager() {
     max_participants: undefined,
     is_active: true,
   });
+  const [selectedOffer, setSelectedOffer] = useState<any>(null);
 
-  // Fetch business offers for the form
+  // Fetch business offers with pricing for the form
   const { data: businessOffers = [] } = useQuery({
     queryKey: ["business-offers", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('offers')
-        .select('id, title, price')
+        .select('id, title, price, base_price, pricing_options')
         .eq('business_user_id', user.id)
         .eq('status', 'active');
 
@@ -87,6 +84,22 @@ export function PromotionManager() {
     const [endHour, endMinute] = formData.end_time.split(':');
     endDateTime.setHours(parseInt(endHour), parseInt(endMinute));
 
+    // Calculate prices based on selected offer
+    let originalPrice = 0;
+    let promotionalPrice = 0;
+
+    if (selectedOffer) {
+      originalPrice = selectedOffer.base_price || parseFloat(selectedOffer.price?.replace(/[^\d.]/g, '') || '0');
+      
+      if (formData.discount_type === 'percentage') {
+        promotionalPrice = originalPrice * (1 - formData.discount_value / 100);
+      } else if (formData.discount_type === 'fixed_amount') {
+        promotionalPrice = originalPrice - formData.discount_value;
+      } else {
+        promotionalPrice = originalPrice; // For free_item and buy_x_get_y
+      }
+    }
+
     const promotionData = {
       business_user_id: user.id,
       offer_id: formData.offer_id,
@@ -95,8 +108,8 @@ export function PromotionManager() {
       discount_type: formData.discount_type,
       discount_value: formData.discount_value,
       discount_text: formData.discount_text,
-      original_price: formData.original_price,
-      promotional_price: formData.promotional_price,
+      original_price: originalPrice,
+      promotional_price: Math.max(0, promotionalPrice),
       start_date: startDateTime.toISOString(),
       end_date: endDateTime.toISOString(),
       is_active: formData.is_active,
@@ -120,8 +133,6 @@ export function PromotionManager() {
       discount_type: "percentage",
       discount_value: 0,
       discount_text: "",
-      original_price: 0,
-      promotional_price: 0,
       start_date: new Date(),
       end_date: new Date(),
       start_time: "09:00",
@@ -129,11 +140,14 @@ export function PromotionManager() {
       max_participants: undefined,
       is_active: true,
     });
+    setSelectedOffer(null);
     setShowForm(false);
     setEditingPromotion(null);
   };
 
   const handleEdit = (promotion: any) => {
+    const offer = businessOffers.find(o => o.id === promotion.offer_id);
+    setSelectedOffer(offer);
     setFormData({
       title: promotion.title,
       description: promotion.description || "",
@@ -141,8 +155,6 @@ export function PromotionManager() {
       discount_type: promotion.discount_type,
       discount_value: promotion.discount_value,
       discount_text: promotion.discount_text,
-      original_price: promotion.original_price,
-      promotional_price: promotion.promotional_price,
       start_date: new Date(promotion.start_date),
       end_date: new Date(promotion.end_date),
       start_time: format(new Date(promotion.start_date), "HH:mm"),
@@ -154,30 +166,45 @@ export function PromotionManager() {
     setShowForm(true);
   };
 
-  // Auto-calculate promotional price when discount changes
-  const handleDiscountChange = (value: number, type: string) => {
-    setFormData(prev => {
-      const newData = { ...prev, discount_value: value };
-      
-      if (type === 'percentage') {
-        newData.promotional_price = prev.original_price * (1 - value / 100);
-        newData.discount_text = `-${value}%`;
-      } else if (type === 'fixed_amount') {
-        newData.promotional_price = prev.original_price - value;
-        newData.discount_text = `-${value}€`;
-      }
-      
-      return newData;
-    });
+  // Helper functions for price calculation
+  const getOriginalPrice = () => {
+    if (!selectedOffer) return 0;
+    return selectedOffer.base_price || parseFloat(selectedOffer.price?.replace(/[^\d.]/g, '') || '0');
+  };
+
+  const calculatePromotionalPrice = () => {
+    const originalPrice = getOriginalPrice();
+    
+    if (formData.discount_type === 'percentage') {
+      return (originalPrice * (1 - formData.discount_value / 100)).toFixed(2);
+    } else if (formData.discount_type === 'fixed_amount') {
+      return Math.max(0, originalPrice - formData.discount_value).toFixed(2);
+    }
+    return originalPrice.toFixed(2);
+  };
+
+  const generateDiscountText = (value: number, type: string) => {
+    switch (type) {
+      case 'percentage':
+        return `-${value}%`;
+      case 'fixed_amount':
+        return `-${value}€`;
+      case 'free_item':
+        return `${value} gratuit${value > 1 ? 's' : ''}`;
+      case 'buy_x_get_y':
+        return `${value + 1} pour ${value}`;
+      default:
+        return '';
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Gestion des Promotions</h2>
+      <div className="text-center">
         <Button 
           onClick={() => setShowForm(!showForm)}
           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+          size="lg"
         >
           <Plus size={16} className="mr-2" />
           Créer une Offre Flash
@@ -211,7 +238,11 @@ export function PromotionManager() {
                   <Label htmlFor="offer_id">Offre concernée</Label>
                   <Select
                     value={formData.offer_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, offer_id: value }))}
+                    onValueChange={(value) => {
+                      const offer = businessOffers.find(o => o.id === value);
+                      setSelectedOffer(offer);
+                      setFormData(prev => ({ ...prev, offer_id: value }));
+                    }}
                     required
                   >
                     <SelectTrigger>
@@ -220,7 +251,7 @@ export function PromotionManager() {
                     <SelectContent>
                       {businessOffers.map((offer) => (
                         <SelectItem key={offer.id} value={offer.id}>
-                          {offer.title}
+                          {offer.title} - {offer.price || `${offer.base_price}€`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -246,39 +277,53 @@ export function PromotionManager() {
                 </div>
 
                 <div>
-                  <Label htmlFor="discount_value">Valeur de la réduction</Label>
+                  <Label htmlFor="discount_value">
+                    {formData.discount_type === 'percentage' && "Pourcentage de réduction (%)"}
+                    {formData.discount_type === 'fixed_amount' && "Montant de réduction (€)"}
+                    {formData.discount_type === 'free_item' && "Nombre d'articles gratuits"}
+                    {formData.discount_type === 'buy_x_get_y' && "Formule (ex: 2 pour 1)"}
+                  </Label>
                   <Input
                     id="discount_value"
                     type="number"
                     value={formData.discount_value}
-                    onChange={(e) => handleDiscountChange(Number(e.target.value), formData.discount_type)}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        discount_value: value,
+                        discount_text: generateDiscountText(value, formData.discount_type)
+                      }));
+                    }}
+                    placeholder={
+                      formData.discount_type === 'percentage' ? "Ex: 20" :
+                      formData.discount_type === 'fixed_amount' ? "Ex: 5" :
+                      formData.discount_type === 'free_item' ? "Ex: 1" :
+                      "Ex: 2"
+                    }
                     required
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="original_price">Prix original (€)</Label>
-                  <Input
-                    id="original_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.original_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, original_price: Number(e.target.value) }))}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="promotional_price">Prix promotionnel (€)</Label>
-                  <Input
-                    id="promotional_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.promotional_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, promotional_price: Number(e.target.value) }))}
-                    required
-                  />
-                </div>
+                {/* Prix preview */}
+                {selectedOffer && formData.discount_value > 0 && (
+                  <div className="col-span-2">
+                    <div className="bg-muted/50 p-4 rounded-lg">
+                      <Label>Aperçu des prix</Label>
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="text-lg font-bold text-primary">
+                          {calculatePromotionalPrice()}€
+                        </span>
+                        <span className="text-sm text-muted-foreground line-through">
+                          {getOriginalPrice()}€
+                        </span>
+                        <Badge variant="secondary">
+                          {formData.discount_text}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label>Date de début</Label>
@@ -347,17 +392,19 @@ export function PromotionManager() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                  />
-                  <Label htmlFor="is_active">Promotion active</Label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is_active"
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                    />
+                    <Label htmlFor="is_active">Promotion active</Label>
+                  </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <Button type="button" variant="outline" onClick={resetForm}>
                     Annuler
                   </Button>

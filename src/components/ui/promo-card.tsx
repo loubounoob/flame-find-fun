@@ -5,9 +5,16 @@ import { Button } from "./button";
 import { Clock, Zap, Users, MapPin, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useFlames } from "@/hooks/useFlames";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PromoCardProps {
   id: string;
+  promotionId: string;
+  offerId: string;
+  businessUserId: string;
   title: string;
   business: string;
   description: string;
@@ -21,14 +28,14 @@ interface PromoCardProps {
   endDate: string;
   flames: number;
   maxParticipants?: number;
-  onLike?: () => void;
-  onBook?: () => void;
-  isLiked?: boolean;
   className?: string;
 }
 
 export function PromoCard({
   id,
+  promotionId,
+  offerId,
+  businessUserId,
   title,
   business,
   description,
@@ -40,16 +47,19 @@ export function PromoCard({
   promotionalPrice,
   discountText,
   endDate,
-  flames,
+  flames: initialFlames,
   maxParticipants,
-  onLike,
-  onBook,
-  isLiked = false,
   className
 }: PromoCardProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { hasGivenFlameToOffer, giveFlame, removeFlame, isLoading: flameLoading } = useFlames();
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [currentFlames, setCurrentFlames] = useState(initialFlames);
+  const isLiked = hasGivenFlameToOffer(offerId);
 
   // Real-time countdown
   useEffect(() => {
@@ -86,7 +96,7 @@ export function PromoCard({
   }, [endDate]);
 
   const handleCardClick = () => {
-    navigate(`/offer/${id}`);
+    navigate(`/offer/${offerId}`);
   };
 
   const handleButtonClick = (e: React.MouseEvent, action: () => void) => {
@@ -94,13 +104,54 @@ export function PromoCard({
     action();
   };
 
+  const handleBookClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Connectez-vous pour réserver cette offre flash.",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+
+    setIsBooking(true);
+    
+    try {
+      // Call Stripe payment
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          offerId,
+          promotionId,
+          amount: promotionalPrice,
+          participantCount: 1
+        }
+      });
+
+      if (error) throw error;
+      
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter le paiement. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   return (
     <Card 
       className={cn(
         "group relative overflow-hidden cursor-pointer",
         "transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
-        "border-2 border-primary/20 bg-gradient-to-br from-background to-muted/20",
-        "animate-pulse-glow",
+        "border-2 border-primary/20 bg-gradient-to-br from-background via-background to-primary/5",
         isExpired && "opacity-60 grayscale",
         className
       )}
@@ -202,8 +253,8 @@ export function PromoCard({
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <Flame size={14} className="text-orange-500" />
-              <span className="font-medium">{flames}</span>
+              <Flame size={14} className="text-primary" />
+              <span className="font-medium">{currentFlames}</span>
             </div>
             {maxParticipants && (
               <div className="flex items-center gap-1">
@@ -217,15 +268,22 @@ export function PromoCard({
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
           <Button
-            variant={isLiked ? "flame" : "outline"}
+            variant={isLiked ? "default" : "outline"}
             size="sm"
             className={cn(
               "flex-1 transition-all duration-300",
-              "hover:scale-105 active:scale-95",
-              isLiked && "animate-pulse"
+              "hover:scale-105 active:scale-95"
             )}
-            onClick={(e) => handleButtonClick(e, onLike || (() => {}))}
-            disabled={isExpired}
+            onClick={(e) => handleButtonClick(e, async () => {
+              if (isLiked) {
+                await removeFlame();
+                setCurrentFlames(prev => prev - 1);
+              } else {
+                await giveFlame(offerId);
+                setCurrentFlames(prev => prev + 1);
+              }
+            })}
+            disabled={isExpired || flameLoading}
           >
             <Flame size={16} className={cn("mr-1", isLiked && "fill-current")} />
             Flamme
@@ -236,14 +294,13 @@ export function PromoCard({
             size="sm"
             className={cn(
               "flex-1 transition-all duration-300",
-              "hover:scale-105 active:scale-95",
-              "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              "hover:scale-105 active:scale-95"
             )}
-            onClick={(e) => handleButtonClick(e, onBook || (() => {}))}
-            disabled={isExpired}
+            onClick={handleBookClick}
+            disabled={isExpired || isBooking}
           >
             <Zap size={16} className="mr-1" />
-            {isExpired ? "Expiré" : "Réserver"}
+            {isBooking ? "..." : isExpired ? "Expiré" : "Réserver"}
           </Button>
         </div>
       </div>

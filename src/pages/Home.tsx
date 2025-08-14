@@ -219,10 +219,13 @@ export default function Home() {
             return (
               <PromoCard
                 key={promotion.id}
-                id={offer.id}
-                title={offer.title}
-                business="Business Name" // You'll need to fetch this from profiles
-                description={offer.description}
+                id={promotion.id}
+                promotionId={promotion.id}
+                offerId={promotion.offer_id}
+                businessUserId={promotion.business_user_id}
+                title={promotion.title}
+                business="Business"
+                description={promotion.description || offer.description}
                 location={offer.location}
                 category={offer.category}
                 image={offer.image_url}
@@ -232,10 +235,7 @@ export default function Home() {
                 discountText={promotion.discount_text}
                 endDate={promotion.end_date}
                 flames={flamesCounts[offer.id] || 0}
-                maxParticipants={promotion.max_participants}
-                onLike={() => handleLike(offer.id)}
-                onBook={() => handleBook(offer.id)}
-                isLiked={hasGivenFlameToOffer(offer.id)}
+                maxParticipants={promotion.max_participants || offer.max_participants}
               />
             );
           })}
