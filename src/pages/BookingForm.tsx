@@ -23,6 +23,24 @@ export default function BookingForm() {
   const [bookingTime, setBookingTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check if this is a promotion booking
+  const { data: promotion } = useQuery({
+    queryKey: ["promotion", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("promotions")
+        .select("*")
+        .eq("offer_id", id)
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
   const { data: offer, isLoading } = useQuery({
     queryKey: ["offer", id],
     queryFn: async () => {
@@ -90,17 +108,46 @@ export default function BookingForm() {
     );
   }
 
+  const calculatePrice = () => {
+    if (promotion) {
+      return promotion.promotional_price * participantCount;
+    }
+    if (offer?.base_price) {
+      return offer.base_price * participantCount;
+    }
+    return 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!offer) return;
 
     setIsSubmitting(true);
-    const success = await createBooking(offer.id, offer.business_user_id, participantCount, notes, bookingDate, bookingTime);
     
-    if (success) {
-      navigate("/booking");
+    // Create payment session first
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          offerId: offer.id,
+          promotionId: promotion?.id,
+          amount: Math.round(calculatePrice() * 100), // Convert to cents
+          participantCount,
+          bookingDate,
+          bookingTime,
+          notes
+        }
+      });
+
+      if (error) throw error;
+      
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -217,8 +264,16 @@ export default function BookingForm() {
                     <span className="font-medium">{participantCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Prix:</span>
-                    <span className="font-medium">{offer.price || "À discuter"}</span>
+                    <span className="text-muted-foreground">Prix unitaire:</span>
+                    <span className="font-medium">
+                      {promotion ? `${promotion.promotional_price}€` : (offer.base_price ? `${offer.base_price}€` : "À discuter")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total:</span>
+                    <span className="font-bold text-lg text-primary">
+                      {calculatePrice() > 0 ? `${calculatePrice()}€` : "À discuter"}
+                    </span>
                   </div>
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
                     <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">

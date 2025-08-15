@@ -235,7 +235,6 @@ export default function Home() {
                 offerId={promotion.offer_id}
                 businessUserId={promotion.business_user_id}
                 title={promotion.title}
-                business="Business"
                 description={promotion.description || offer.description}
                 location={offer.location}
                 category={offer.category}
@@ -247,16 +246,60 @@ export default function Home() {
                 endDate={promotion.end_date}
                 flames={flamesCounts[offer.id] || 0}
                 maxParticipants={promotion.max_participants || offer.max_participants}
+                latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
+                longitude={offer.longitude ? parseFloat(offer.longitude.toString()) : undefined}
               />
             );
           })}
           
-          {/* Only show message if no promotions, never show regular offers */}
+          {/* Show message if no promotions */}
           {activePromotions.length === 0 && (
             <div className="text-center py-8">
               <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
               <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
               <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Regular Offers Section */}
+      <section className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Star className="text-primary" />
+            <h2 className="text-xl font-bold text-gradient-primary">Toutes les activités</h2>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          {sortedOffers.map((offer) => {
+            // Skip offers that have active promotions (already shown in flash section)
+            const hasActivePromo = activePromotions.some(p => p.offer_id === offer.id);
+            if (hasActivePromo) return null;
+            
+            return (
+              <OfferCard
+                key={offer.id}
+                id={offer.id}
+                title={offer.title}
+                business_user_id={offer.business_user_id}
+                location={offer.location}
+                category={offer.category}
+                image={offer.image_url}
+                price={offer.price}
+                description={offer.description}
+                flames={flamesCounts[offer.id] || 0}
+                latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
+                longitude={offer.longitude ? parseFloat(offer.longitude.toString()) : undefined}
+              />
+            );
+          })}
+          
+          {sortedOffers.filter(offer => !activePromotions.some(p => p.offer_id === offer.id)).length === 0 && (
+            <div className="text-center py-8">
+              <Star className="mx-auto text-4xl text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">Aucune activité disponible pour le moment.</p>
             </div>
           )}
         </div>

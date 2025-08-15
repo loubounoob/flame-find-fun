@@ -2,28 +2,20 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isVerifying, setIsVerifying] = useState(true);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-
-  const sessionId = searchParams.get('session_id');
+  const [success, setSuccess] = useState(false);
+  const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
     const verifyPayment = async () => {
       if (!sessionId) {
-        toast({
-          title: "Erreur",
-          description: "Session de paiement introuvable.",
-          variant: "destructive"
-        });
-        navigate("/");
+        setIsVerifying(false);
         return;
       }
 
@@ -33,45 +25,22 @@ export default function PaymentSuccess() {
         });
 
         if (error) throw error;
-
-        if (data.success) {
-          setPaymentConfirmed(true);
-          toast({
-            title: "Paiement confirmé !",
-            description: "Votre réservation a été confirmée avec succès.",
-          });
-        } else {
-          toast({
-            title: "Paiement non confirmé",
-            description: "Le paiement n'a pas pu être vérifié.",
-            variant: "destructive"
-          });
-        }
+        setSuccess(data?.success || false);
       } catch (error) {
-        console.error('Error verifying payment:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de vérifier le paiement.",
-          variant: "destructive"
-        });
+        console.error('Payment verification error:', error);
+        setSuccess(false);
       } finally {
         setIsVerifying(false);
       }
     };
 
     verifyPayment();
-  }, [sessionId, navigate, toast]);
+  }, [sessionId]);
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <Loader2 className="mx-auto mb-4 animate-spin text-primary" size={48} />
-            <h2 className="text-xl font-semibold mb-2">Vérification du paiement...</h2>
-            <p className="text-muted-foreground">Veuillez patienter quelques instants.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Vérification du paiement...</div>
       </div>
     );
   }
@@ -80,25 +49,38 @@ export default function PaymentSuccess() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CheckCircle2 className="mx-auto mb-4 text-green-500" size={64} />
-          <CardTitle className="text-2xl text-green-600">
-            {paymentConfirmed ? "Paiement confirmé !" : "Paiement effectué"}
+          <div className="mx-auto mb-4">
+            <CheckCircle 
+              size={64} 
+              className={success ? "text-green-500" : "text-red-500"}
+            />
+          </div>
+          <CardTitle className={success ? "text-green-600" : "text-red-600"}>
+            {success ? "Paiement réussi !" : "Erreur de paiement"}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground">
-            {paymentConfirmed 
-              ? "Votre réservation a été confirmée avec succès. Vous recevrez un email de confirmation."
-              : "Votre paiement a été traité. Vérification en cours..."
+            {success 
+              ? "Votre réservation a été confirmée. Vous recevrez une confirmation par email."
+              : "Il y a eu un problème avec votre paiement. Veuillez réessayer."
             }
           </p>
-          
           <div className="space-y-2">
-            <Button onClick={() => navigate("/")} className="w-full">
-              Retour à l'accueil
+            <Button 
+              onClick={() => navigate("/booking")} 
+              className="w-full"
+              variant={success ? "default" : "outline"}
+            >
+              {success ? "Voir mes réservations" : "Réessayer"}
             </Button>
-            <Button onClick={() => navigate("/profile")} variant="outline" className="w-full">
-              Mes réservations
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/")}
+              className="w-full"
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              Retour à l'accueil
             </Button>
           </div>
         </CardContent>

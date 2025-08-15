@@ -5,6 +5,7 @@ import { MapPin, Flame, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDistance } from "@/hooks/useDistance";
 
 interface OfferCardProps {
   id: string;
@@ -18,6 +19,8 @@ interface OfferCardProps {
   image?: string;
   price?: string;
   description?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export function OfferCard({ 
@@ -31,10 +34,13 @@ export function OfferCard({
   flames, 
   image, 
   price, 
-  description 
+  description,
+  latitude,
+  longitude
 }: OfferCardProps) {
-  const { giveFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const queryClient = useQueryClient();
+  const { getDistance } = useDistance();
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,11 +53,16 @@ export function OfferCard({
       return;
     }
     
-    const success = await giveFlame(id);
-    if (success) {
-      // Force re-render of all offer cards to sync flame states
-      window.dispatchEvent(new CustomEvent('flameUpdated'));
+    const hasFlameOnThisOffer = hasGivenFlameToOffer(id);
+    
+    if (hasFlameOnThisOffer) {
+      await removeFlame();
+    } else {
+      await giveFlame(id);
     }
+    
+    // Refresh flame counts
+    queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
   };
 
 
@@ -102,9 +113,16 @@ export function OfferCard({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin size={12} className="text-primary" />
-                <span className="line-clamp-1">{location}</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <MapPin size={12} className="text-primary" />
+                  <span className="line-clamp-1">{location}</span>
+                </div>
+                {latitude && longitude && (
+                  <span className="text-primary font-medium">
+                    {getDistance(latitude, longitude)}
+                  </span>
+                )}
               </div>
             </div>
             

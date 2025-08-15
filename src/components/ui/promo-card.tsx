@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { useAuth } from "@/hooks/useAuth";
+import { useDistance } from "@/hooks/useDistance";
 
 interface PromoCardProps {
   id: string;
@@ -16,7 +17,7 @@ interface PromoCardProps {
   offerId: string;
   businessUserId: string;
   title: string;
-  business: string;
+  business?: string;
   description: string;
   location: string;
   category: string;
@@ -28,6 +29,8 @@ interface PromoCardProps {
   endDate: string;
   flames: number;
   maxParticipants?: number;
+  latitude?: number;
+  longitude?: number;
   className?: string;
 }
 
@@ -49,12 +52,15 @@ export function PromoCard({
   endDate,
   flames: initialFlames,
   maxParticipants,
+  latitude,
+  longitude,
   className
 }: PromoCardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const { hasGivenFlameToOffer, giveFlame, removeFlame, isLoading: flameLoading } = useFlames();
+  const { getDistance } = useDistance();
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
@@ -117,33 +123,8 @@ export function PromoCard({
       return;
     }
 
-    setIsBooking(true);
-    
-    try {
-      // Call Stripe payment
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          offerId,
-          promotionId,
-          amount: promotionalPrice,
-          participantCount: 1
-        }
-      });
-
-      if (error) throw error;
-      
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de traiter le paiement. Veuillez réessayer.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsBooking(false);
-    }
+    // Navigate to booking form instead
+    navigate(`/booking/${offerId}`);
   };
 
   return (
@@ -224,16 +205,23 @@ export function PromoCard({
           <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">
             {title}
           </h3>
-          <p className="text-muted-foreground text-sm font-medium">{business}</p>
+          {business && <p className="text-muted-foreground text-sm font-medium">{business}</p>}
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-2">
           {description}
         </p>
 
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <MapPin size={14} />
-          <span className="text-sm line-clamp-1">{location}</span>
+        <div className="flex items-center justify-between text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <MapPin size={14} />
+            <span className="text-sm line-clamp-1">{location}</span>
+          </div>
+          {latitude && longitude && (
+            <span className="text-primary font-medium text-sm">
+              {getDistance(latitude, longitude)}
+            </span>
+          )}
         </div>
 
         {/* Pricing */}
@@ -273,7 +261,9 @@ export function PromoCard({
             className={cn(
               "flex-1 transition-all duration-300",
               "hover:scale-105 active:scale-95",
-              "bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+              isLiked 
+                ? "bg-red-500 hover:bg-red-600 text-white font-medium"
+                : "bg-orange-500 hover:bg-orange-600 text-white font-medium"
             )}
             onClick={(e) => handleButtonClick(e, async () => {
               if (isLiked) {
@@ -286,8 +276,8 @@ export function PromoCard({
             })}
             disabled={isExpired || flameLoading}
           >
-            <Flame size={16} className={cn("mr-1", "fill-current text-white")} />
-            Flamme
+            <Flame size={16} className={cn("mr-1", isLiked ? "fill-current" : "", "text-white")} />
+            {isLiked ? "Retirer" : "Flamme"}
           </Button>
           
           <Button

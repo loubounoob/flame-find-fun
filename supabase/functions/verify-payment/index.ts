@@ -8,77 +8,68 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create Supabase client with service role key
+    // Initialize clients
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { sessionId } = await req.json();
-
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Retrieve the checkout session
+    // Get session ID from request
+    const { sessionId } = await req.json();
+
+    // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status === 'paid') {
-      // Extract metadata
-      const { offer_id, user_id, participant_count, promotion_id } = session.metadata;
-
+    if (session.payment_status === "paid") {
+      const metadata = session.metadata;
+      
       // Get offer details
       const { data: offer } = await supabaseClient
-        .from('offers')
-        .select('business_user_id')
-        .eq('id', offer_id)
+        .from("offers")
+        .select("business_user_id")
+        .eq("id", metadata!.offerId)
         .single();
 
-      if (offer) {
-        // Create booking
-        const { error: bookingError } = await supabaseClient
-          .from('bookings')
-          .insert({
-            user_id,
-            offer_id,
-            business_user_id: offer.business_user_id,
-            participant_count: parseInt(participant_count),
-            status: 'confirmed',
-            booking_date: new Date().toISOString(),
-            notes: promotion_id ? `Réservation via offre flash (Promotion ID: ${promotion_id})` : null
-          });
-
-        if (bookingError) {
-          console.error('Error creating booking:', bookingError);
-          throw bookingError;
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: "Paiement confirmé et réservation créée" 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+      // Create booking
+      const { error: bookingError } = await supabaseClient
+        .from("bookings")
+        .insert({
+          user_id: metadata!.userId,
+          offer_id: metadata!.offerId,
+          business_user_id: offer!.business_user_id,
+          participant_count: parseInt(metadata!.participantCount),
+          booking_date: metadata!.bookingDate,
+          booking_time: metadata!.bookingTime,
+          notes: metadata!.notes,
+          status: "confirmed",
         });
+
+      if (bookingError) {
+        throw bookingError;
       }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    return new Response(JSON.stringify({ 
-      success: false, 
-      message: "Paiement non confirmé" 
-    }), {
+    return new Response(JSON.stringify({ success: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });
   } catch (error) {
-    console.error('Error verifying payment:', error);
+    console.error("Payment verification error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

@@ -23,13 +23,21 @@ export function useOfferScoring() {
     queryFn: async (): Promise<OfferScore[]> => {
       if (!user) return [];
 
-      // Get all offers
+      // Get all offers and promotions
       const { data: offers, error: offersError } = await supabase
         .from("offers")
         .select("*")
         .eq("status", "active");
 
       if (offersError) throw offersError;
+
+      const { data: promotions, error: promotionsError } = await supabase
+        .from("promotions")
+        .select("offer_id")
+        .eq("is_active", true)
+        .gte("end_date", new Date().toISOString());
+
+      if (promotionsError) throw promotionsError;
 
       // Get user booking history
       const { data: userBookings, error: bookingsError } = await supabase
@@ -109,7 +117,11 @@ export function useOfferScoring() {
         else if (totalInteractions >= 5) popularityScore = 1;
         else popularityScore = 0.5;
 
-        const totalScore = habitScore + proximityScore + popularityScore;
+        // 4. Promotion bonus: Add 2 points if offer has active promotion
+        const hasPromotion = promotions.some(p => p.offer_id === offer.id);
+        const promotionBonus = hasPromotion ? 2 : 0;
+
+        const totalScore = habitScore + proximityScore + popularityScore + promotionBonus;
 
         return {
           offerId: offer.id,

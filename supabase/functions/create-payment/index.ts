@@ -25,27 +25,27 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    
+
     if (!user?.email) {
-      throw new Error("User not authenticated or email not available");
+      throw new Error("User not authenticated");
     }
 
-    // Get request body
-    const { offerId, promotionId, amount, participantCount = 1 } = await req.json();
+    // Parse request body
+    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes } = await req.json();
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Check if a Stripe customer record exists for this user
+    // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
     }
 
-    // Create a one-time payment session
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -53,24 +53,26 @@ serve(async (req) => {
         {
           price_data: {
             currency: "eur",
-            product_data: { 
-              name: promotionId ? "Offre Flash - Réservation" : "Réservation d'activité",
-              description: `${participantCount} participant(s)`
+            product_data: {
+              name: "Réservation d'activité",
             },
-            unit_amount: Math.round(amount * 100), // Convert to cents
+            unit_amount: amount, // Amount in cents
           },
           quantity: 1,
         },
       ],
       mode: "payment",
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/offer/${offerId}`,
+      cancel_url: `${req.headers.get("origin")}/booking/${offerId}`,
       metadata: {
-        offer_id: offerId,
-        user_id: user.id,
-        participant_count: participantCount.toString(),
-        ...(promotionId && { promotion_id: promotionId })
-      }
+        offerId,
+        promotionId: promotionId || "",
+        userId: user.id,
+        participantCount: participantCount.toString(),
+        bookingDate,
+        bookingTime,
+        notes: notes || "",
+      },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
@@ -78,7 +80,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error('Error creating payment session:', error);
+    console.error("Payment creation error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
