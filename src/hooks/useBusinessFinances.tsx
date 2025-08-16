@@ -64,7 +64,7 @@ export function useBusinessFinances() {
     enabled: !!user,
   });
 
-  // Add earnings from a booking
+  // Add earnings from a booking (using secure function)
   const addEarningMutation = useMutation({
     mutationFn: async ({ amount, bookingId, description }: { 
       amount: number; 
@@ -73,29 +73,11 @@ export function useBusinessFinances() {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Add transaction record
-      const { error: transactionError } = await supabase
-        .from("financial_transactions")
-        .insert({
-          business_user_id: user.id,
-          transaction_type: "earning",
-          amount,
-          description,
-          booking_id: bookingId
-        });
+      const { error } = await supabase.functions.invoke('secure-add-earning', {
+        body: { amount, bookingId, description }
+      });
 
-      if (transactionError) throw transactionError;
-
-      // Update finances
-      const { error: financeError } = await supabase
-        .from("business_finances")
-        .update({
-          available_balance: (finances?.available_balance || 0) + amount,
-          total_earnings: (finances?.total_earnings || 0) + amount
-        })
-        .eq("business_user_id", user.id);
-
-      if (financeError) throw financeError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business_finances"] });
@@ -103,38 +85,16 @@ export function useBusinessFinances() {
     },
   });
 
-  // Request withdrawal
+  // Request withdrawal (using secure function)
   const requestWithdrawalMutation = useMutation({
     mutationFn: async ({ amount }: { amount: number }) => {
       if (!user) throw new Error("User not authenticated");
-      
-      // Check available balance
-      if (!finances || finances.available_balance < amount) {
-        throw new Error("Solde insuffisant");
-      }
 
-      // Create withdrawal transaction
-      const { error: transactionError } = await supabase
-        .from("financial_transactions")
-        .insert({
-          business_user_id: user.id,
-          transaction_type: "withdrawal",
-          amount: -amount,
-          description: `Retrait de ${amount}€`
-        });
+      const { error } = await supabase.functions.invoke('secure-withdrawal', {
+        body: { amount }
+      });
 
-      if (transactionError) throw transactionError;
-
-      // Update finances
-      const { error: financeError } = await supabase
-        .from("business_finances")
-        .update({
-          available_balance: finances.available_balance - amount,
-          total_withdrawn: finances.total_withdrawn + amount
-        })
-        .eq("business_user_id", user.id);
-
-      if (financeError) throw financeError;
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({
@@ -153,7 +113,7 @@ export function useBusinessFinances() {
     },
   });
 
-  // Pay for boost
+  // Pay for boost (using secure function)
   const payForBoostMutation = useMutation({
     mutationFn: async ({ 
       offerId, 
@@ -168,50 +128,11 @@ export function useBusinessFinances() {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Calculate boost score based on amount
-      const boostScore = amount / 10; // 1€ = 0.1 boost score
+      const { error } = await supabase.functions.invoke('secure-boost-payment', {
+        body: { offerId, boostType, amount, duration }
+      });
 
-      // Create boost record
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + duration);
-
-      const { error: boostError } = await supabase
-        .from("offer_boosts")
-        .insert({
-          offer_id: offerId,
-          business_user_id: user.id,
-          boost_type: boostType,
-          boost_score: boostScore,
-          end_date: endDate.toISOString(),
-          amount_paid: amount
-        });
-
-      if (boostError) throw boostError;
-
-      // Add transaction record
-      const { error: transactionError } = await supabase
-        .from("financial_transactions")
-        .insert({
-          business_user_id: user.id,
-          transaction_type: "boost_payment",
-          amount: -amount,
-          description: `Boost ${boostType} - ${duration} jours`
-        });
-
-      if (transactionError) throw transactionError;
-
-      // Update finances if using balance
-      if (finances && finances.available_balance >= amount) {
-        const { error: financeError } = await supabase
-          .from("business_finances")
-          .update({
-            available_balance: finances.available_balance - amount,
-            total_boost_spent: finances.total_boost_spent + amount
-          })
-          .eq("business_user_id", user.id);
-
-        if (financeError) throw financeError;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({

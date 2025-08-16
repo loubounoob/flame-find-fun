@@ -33,6 +33,26 @@ serve(async (req) => {
     // Parse request body
     const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes } = await req.json();
 
+    // Validate critical inputs
+    if (!offerId || !amount || !participantCount || !bookingDate) {
+      throw new Error("Missing required payment parameters");
+    }
+
+    if (amount <= 0 || participantCount <= 0) {
+      throw new Error("Invalid amount or participant count");
+    }
+
+    // Verify offer exists and get business details
+    const { data: offer, error: offerError } = await supabaseClient
+      .from("offers")
+      .select("id, business_user_id, base_price, title")
+      .eq("id", offerId)
+      .single();
+
+    if (offerError || !offer) {
+      throw new Error("Offer not found or unavailable");
+    }
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",

@@ -742,6 +742,29 @@ export type Database = {
         Args: { booking_id: string; offer_id: string; user_id: string }
         Returns: undefined
       }
+      secure_add_earning: {
+        Args: {
+          p_amount: number
+          p_booking_id: string
+          p_business_user_id: string
+          p_description: string
+        }
+        Returns: boolean
+      }
+      secure_pay_for_boost: {
+        Args: {
+          p_amount: number
+          p_boost_type: string
+          p_business_user_id: string
+          p_duration: number
+          p_offer_id: string
+        }
+        Returns: boolean
+      }
+      secure_request_withdrawal: {
+        Args: { p_amount: number; p_business_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

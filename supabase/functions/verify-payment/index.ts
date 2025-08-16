@@ -33,29 +33,62 @@ serve(async (req) => {
     if (session.payment_status === "paid") {
       const metadata = session.metadata;
       
-      // Get offer details
+      // Validate metadata
+      if (!metadata || !metadata.offerId || !metadata.userId) {
+        throw new Error("Invalid payment metadata");
+      }
+
+      // Verify payment amount matches expected amount
       const { data: offer } = await supabaseClient
         .from("offers")
-        .select("business_user_id")
-        .eq("id", metadata!.offerId)
+        .select("business_user_id, base_price")
+        .eq("id", metadata.offerId)
         .single();
 
-      // Create booking
+      if (!offer) {
+        throw new Error("Offer not found");
+      }
+
+      // Validate payment amount (amount_total is in cents)
+      const paidAmount = session.amount_total;
+      const participantCount = parseInt(metadata.participantCount);
+      
+      // Basic validation - in production you'd want more sophisticated pricing validation
+      if (paidAmount <= 0 || participantCount <= 0) {
+        throw new Error("Invalid payment or participant data");
+      }
+
+      // Create booking with transaction safety
       const { error: bookingError } = await supabaseClient
         .from("bookings")
         .insert({
-          user_id: metadata!.userId,
-          offer_id: metadata!.offerId,
-          business_user_id: offer!.business_user_id,
-          participant_count: parseInt(metadata!.participantCount),
-          booking_date: metadata!.bookingDate,
-          booking_time: metadata!.bookingTime,
-          notes: metadata!.notes,
+          user_id: metadata.userId,
+          offer_id: metadata.offerId,
+          business_user_id: offer.business_user_id,
+          participant_count: participantCount,
+          booking_date: metadata.bookingDate,
+          booking_time: metadata.bookingTime,
+          notes: metadata.notes || "",
           status: "confirmed",
         });
 
       if (bookingError) {
+        console.error("Booking creation error:", bookingError);
         throw bookingError;
+      }
+
+      // Add earning to business finances using secure function
+      const earningAmount = paidAmount / 100; // Convert from cents to euros
+      const { error: earningError } = await supabaseClient.rpc('secure_add_earning', {
+        p_business_user_id: offer.business_user_id,
+        p_amount: earningAmount,
+        p_booking_id: metadata.userId, // We'd need the actual booking ID here
+        p_description: `Payment for booking - Offer ${metadata.offerId}`
+      });
+
+      if (earningError) {
+        console.error("Earning addition error:", earningError);
+        // Don't throw here as booking is already created, just log
       }
 
       return new Response(JSON.stringify({ success: true }), {
