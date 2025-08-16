@@ -73,8 +73,12 @@ export function useBusinessFinances() {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const { error } = await supabase.functions.invoke('secure-add-earning', {
-        body: { amount, bookingId, description }
+      // Use secure database function
+      const { error } = await supabase.rpc('secure_add_earning', {
+        p_business_user_id: user.id,
+        p_amount: amount,
+        p_booking_id: bookingId,
+        p_description: description
       });
 
       if (error) throw error;
@@ -83,15 +87,34 @@ export function useBusinessFinances() {
       queryClient.invalidateQueries({ queryKey: ["business_finances"] });
       queryClient.invalidateQueries({ queryKey: ["financial_transactions"] });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'enregistrer les gains.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Request withdrawal (using secure function)
   const requestWithdrawalMutation = useMutation({
     mutationFn: async ({ amount }: { amount: number }) => {
       if (!user) throw new Error("User not authenticated");
+      
+      // Check rate limit first
+      const { error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_business_user_id: user.id,
+        p_operation_type: 'withdrawal',
+        p_max_operations: 5,
+        p_window_minutes: 60
+      });
 
-      const { error } = await supabase.functions.invoke('secure-withdrawal', {
-        body: { amount }
+      if (rateLimitError) throw rateLimitError;
+
+      // Use secure database function
+      const { error } = await supabase.rpc('secure_request_withdrawal', {
+        p_business_user_id: user.id,
+        p_amount: amount
       });
 
       if (error) throw error;
@@ -128,8 +151,23 @@ export function useBusinessFinances() {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const { error } = await supabase.functions.invoke('secure-boost-payment', {
-        body: { offerId, boostType, amount, duration }
+      // Check rate limit first
+      const { error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_business_user_id: user.id,
+        p_operation_type: 'boost_payment',
+        p_max_operations: 10,
+        p_window_minutes: 60
+      });
+
+      if (rateLimitError) throw rateLimitError;
+
+      // Use secure database function
+      const { error } = await supabase.rpc('secure_pay_for_boost', {
+        p_business_user_id: user.id,
+        p_offer_id: offerId,
+        p_boost_type: boostType,
+        p_amount: amount,
+        p_duration: duration
       });
 
       if (error) throw error;

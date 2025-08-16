@@ -21,36 +21,72 @@ serve(async (req) => {
     );
 
     // Get user from auth header
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Authorization header required");
+    }
 
-    if (!user?.email) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !data.user?.email) {
       throw new Error("User not authenticated");
     }
 
-    // Parse request body
-    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes } = await req.json();
+    const user = data.user;
 
-    // Validate critical inputs
+    // Parse and validate request body
+    const body = await req.json();
+    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes } = body;
+
+    // Validate required fields
     if (!offerId || !amount || !participantCount || !bookingDate) {
-      throw new Error("Missing required payment parameters");
+      throw new Error("Missing required fields");
     }
 
-    if (amount <= 0 || participantCount <= 0) {
-      throw new Error("Invalid amount or participant count");
+    // Validate amount is positive
+    if (amount <= 0) {
+      throw new Error("Invalid amount");
     }
 
-    // Verify offer exists and get business details
+    // Validate participant count
+    if (participantCount <= 0) {
+      throw new Error("Invalid participant count");
+    }
+
+    // Verify offer exists and get details
     const { data: offer, error: offerError } = await supabaseClient
       .from("offers")
-      .select("id, business_user_id, base_price, title")
+      .select("id, business_user_id, title, base_price")
       .eq("id", offerId)
       .single();
 
     if (offerError || !offer) {
-      throw new Error("Offer not found or unavailable");
+      throw new Error("Offer not found");
+    }
+
+    // If promotion is specified, verify it's valid
+    if (promotionId) {
+      const { data: promotion, error: promoError } = await supabaseClient
+        .from("promotions")
+        .select("*")
+        .eq("id", promotionId)
+        .eq("offer_id", offerId)
+        .eq("is_active", true)
+        .single();
+
+      if (promoError || !promotion) {
+        throw new Error("Invalid promotion");
+      }
+
+      // Check if promotion is within valid date range
+      const now = new Date();
+      const startDate = new Date(promotion.start_date);
+      const endDate = new Date(promotion.end_date);
+      
+      if (now < startDate || now > endDate) {
+        throw new Error("Promotion is not active");
+      }
     }
 
     // Initialize Stripe
@@ -65,7 +101,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Create checkout session
+    // Create checkout session with secure metadata
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -74,9 +110,10 @@ serve(async (req) => {
           price_data: {
             currency: "eur",
             product_data: {
-              name: "Réservation d'activité",
+              name: `Réservation: ${offer.title}`,
+              description: `${participantCount} participant(s)`,
             },
-            unit_amount: amount, // Amount in cents
+            unit_amount: Math.round(amount), // Ensure integer cents
           },
           quantity: 1,
         },
@@ -90,10 +127,13 @@ serve(async (req) => {
         userId: user.id,
         participantCount: participantCount.toString(),
         bookingDate,
-        bookingTime,
+        bookingTime: bookingTime || "",
         notes: notes || "",
+        businessUserId: offer.business_user_id,
       },
     });
+
+    console.log(`Payment session created for user ${user.id}, offer ${offerId}, amount ${amount}`);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

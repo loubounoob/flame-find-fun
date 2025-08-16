@@ -247,6 +247,33 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_rate_limits: {
+        Row: {
+          business_user_id: string
+          created_at: string | null
+          id: string
+          operation_count: number | null
+          operation_type: string
+          window_start: string | null
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string | null
+          id?: string
+          operation_count?: number | null
+          operation_type: string
+          window_start?: string | null
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string | null
+          id?: string
+          operation_count?: number | null
+          operation_type?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       financial_transactions: {
         Row: {
           amount: number
@@ -729,6 +756,15 @@ export type Database = {
       auto_mark_old_notifications_read: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_rate_limit: {
+        Args: {
+          p_business_user_id: string
+          p_max_operations?: number
+          p_operation_type: string
+          p_window_minutes?: number
+        }
+        Returns: boolean
       }
       get_offer_rating_stats: {
         Args: { offer_id_param: string }
