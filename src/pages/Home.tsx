@@ -13,6 +13,7 @@ import { useOfferScoring } from "@/hooks/useOfferScoring";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FilterModal } from "@/components/ui/filter-modal";
 import { Bell, Search, Star, Zap, Flame, Filter } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
@@ -214,10 +215,10 @@ export default function Home() {
               LIMITÉ
             </Badge>
           </div>
-          <Button variant="outline" size="sm">
-            <Filter size={16} className="mr-1" />
-            Filtrer
-          </Button>
+          <FilterModal 
+            onFiltersChange={(filters) => console.log("Filters changed:", filters)}
+            currentFilters={{}}
+          />
         </div>
         
         {/* Promotional Offers */}

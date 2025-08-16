@@ -103,6 +103,39 @@ export type Database = {
         }
         Relationships: []
       }
+      business_finances: {
+        Row: {
+          available_balance: number | null
+          business_user_id: string
+          created_at: string
+          id: string
+          total_boost_spent: number | null
+          total_earnings: number | null
+          total_withdrawn: number | null
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number | null
+          business_user_id: string
+          created_at?: string
+          id?: string
+          total_boost_spent?: number | null
+          total_earnings?: number | null
+          total_withdrawn?: number | null
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number | null
+          business_user_id?: string
+          created_at?: string
+          id?: string
+          total_boost_spent?: number | null
+          total_earnings?: number | null
+          total_withdrawn?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_media: {
         Row: {
           business_user_id: string
@@ -214,6 +247,39 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          business_user_id: string
+          created_at: string
+          description: string | null
+          id: string
+          stripe_payment_intent_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          business_user_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          business_user_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       flames: {
         Row: {
           created_at: string
@@ -275,6 +341,94 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      offer_boosts: {
+        Row: {
+          amount_paid: number
+          boost_score: number | null
+          boost_type: string
+          business_user_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          offer_id: string
+          start_date: string
+        }
+        Insert: {
+          amount_paid: number
+          boost_score?: number | null
+          boost_type: string
+          business_user_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          offer_id: string
+          start_date?: string
+        }
+        Update: {
+          amount_paid?: number
+          boost_score?: number | null
+          boost_type?: string
+          business_user_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          offer_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_offer_boosts_offer"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_pricing_options: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_default: boolean | null
+          offer_id: string
+          option_name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_default?: boolean | null
+          offer_id: string
+          option_name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_default?: boolean | null
+          offer_id?: string
+          option_name?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_offer_pricing_options_offer"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       offer_ratings: {
         Row: {
@@ -352,6 +506,7 @@ export type Database = {
           max_participants: number | null
           price: string | null
           pricing_options: Json | null
+          requires_images: boolean | null
           status: string
           title: string
           updated_at: string
@@ -373,6 +528,7 @@ export type Database = {
           max_participants?: number | null
           price?: string | null
           pricing_options?: Json | null
+          requires_images?: boolean | null
           status?: string
           title: string
           updated_at?: string
@@ -394,6 +550,7 @@ export type Database = {
           max_participants?: number | null
           price?: string | null
           pricing_options?: Json | null
+          requires_images?: boolean | null
           status?: string
           title?: string
           updated_at?: string

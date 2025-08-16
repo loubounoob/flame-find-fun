@@ -161,7 +161,7 @@ export function OfferCard({
                 }}
               >
                 <Calendar size={14} className="mr-1" />
-                Réserver
+                {price ? `${price} - Réserver` : 'Réserver'}
               </Button>
             </div>
           </CardContent>

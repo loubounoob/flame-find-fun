@@ -121,7 +121,11 @@ export function useOfferScoring() {
         const hasPromotion = promotions.some(p => p.offer_id === offer.id);
         const promotionBonus = hasPromotion ? 2 : 0;
 
-        const totalScore = habitScore + proximityScore + popularityScore + promotionBonus;
+        // 5. Boost bonus: Add points for active boosts
+        let boostBonus = 0;
+        // This will be enhanced when we add boost data fetching
+
+        const totalScore = habitScore + proximityScore + popularityScore + promotionBonus + boostBonus;
 
         return {
           offerId: offer.id,

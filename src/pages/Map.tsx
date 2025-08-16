@@ -156,37 +156,54 @@ export default function Map() {
             </div>
             
             {/* Content */}
-            <div className="px-4 pb-4 max-h-64 overflow-y-auto">
+          <div className="px-4 pb-4 max-h-64 overflow-y-auto">
               <h3 className="font-semibold text-foreground text-center mb-3">Activités à proximité</h3>
               
-              {/* Mock nearby activities - replace with real data */}
+              {/* Real offers data */}
               <div className="space-y-3">
-                {nearbyOffers.slice(0, 3).map((offer) => (
+                {offers.slice(0, 3).map((offer) => (
                   <div 
                     key={offer.id} 
                     className="bg-background/50 rounded-lg p-3 border border-border/30 cursor-pointer hover:bg-background/70 transition-colors"
                     onClick={() => window.location.href = `/offer/${offer.id}`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 bg-gradient-primary rounded-full flex-shrink-0 flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">{offer.business.charAt(0)}</span>
+                      <div className="w-12 h-12 overflow-hidden rounded-full flex-shrink-0">
+                        {offer.image_url ? (
+                          <img 
+                            src={offer.image_url} 
+                            alt={offer.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-primary flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">{offer.title.charAt(0)}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div>
                             <h4 className="font-medium text-sm truncate">{offer.title}</h4>
-                            <p className="text-xs text-muted-foreground">{offer.business}</p>
+                            <p className="text-xs text-muted-foreground">{offer.location}</p>
                             <p className="text-xs text-muted-foreground">{offer.category}</p>
                           </div>
-                          <span className="text-xs text-muted-foreground ml-2">{offer.distance}</span>
+                          {offer.latitude && offer.longitude && (
+                            <span className="text-xs text-primary font-medium ml-2">
+                              {/* Distance will be calculated */}
+                              ~1km
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center justify-between mt-1">
-                          <Badge variant="outline" className="text-xs px-2 py-0">
-                            {offer.discount}
-                          </Badge>
+                          {offer.price && (
+                            <Badge variant="outline" className="text-xs px-2 py-0">
+                              {offer.price}
+                            </Badge>
+                          )}
                           <div className="flex items-center gap-1">
                             <Flame size={12} className="text-orange-500" />
-                            <span className="text-xs text-muted-foreground">{offer.flames}</span>
+                            <span className="text-xs text-muted-foreground">0</span>
                           </div>
                         </div>
                       </div>
