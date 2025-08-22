@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { TimeSlotSelector } from "@/components/ui/time-slot-selector";
 import { Calendar, Users, Clock, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,27 +21,37 @@ export default function BookingForm() {
   const [participantCount, setParticipantCount] = useState(1);
   const [notes, setNotes] = useState("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [customBookingTime, setCustomBookingTime] = useState("");
+  const [customBookingDate, setCustomBookingDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Créneaux prédéfinis pour le jour même
-  const todayTimeSlots = [
-    { id: "now", label: "Maintenant", time: "18:00" },
-    { id: "evening1", label: "Ce soir (19h)", time: "19:00" },
-    { id: "evening2", label: "Ce soir (20h)", time: "20:00" },
-    { id: "evening3", label: "Ce soir (21h)", time: "21:00" },
-    { id: "tomorrow", label: "Demain soir (19h)", time: "19:00", date: "tomorrow" }
-  ];
-
   const getBookingDateTime = () => {
-    const slot = todayTimeSlots.find(slot => slot.id === selectedTimeSlot);
-    if (!slot) return { date: "", time: "" };
+    // Si c'est un créneau personnalisé
+    if (selectedTimeSlot === "custom" && customBookingTime && customBookingDate) {
+      return { date: customBookingDate, time: customBookingTime };
+    }
     
-    const today = new Date();
-    const date = slot.date === "tomorrow" 
-      ? new Date(today.setDate(today.getDate() + 1)).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
+    // Sinon, extraire de l'ID du slot sélectionné
+    if (!selectedTimeSlot) return { date: "", time: "" };
     
-    return { date, time: slot.time };
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    if (selectedTimeSlot.includes("today")) {
+      const time = selectedTimeSlot.split("-")[1] + ":00";
+      return { date: today, time };
+    } else if (selectedTimeSlot.includes("tomorrow")) {
+      const time = selectedTimeSlot.split("-")[1] + ":00";
+      return { date: tomorrow, time };
+    }
+    
+    return { date: "", time: "" };
+  };
+
+  const handleCustomSlot = (time: string, date: string) => {
+    setCustomBookingTime(time);
+    setCustomBookingDate(date);
+    setSelectedTimeSlot("custom");
   };
 
   // Check if this is a promotion booking
@@ -233,31 +244,11 @@ export default function BookingForm() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Clock size={16} />
-                  Choisir un créneau
-                </Label>
-                <div className="grid gap-2">
-                  {todayTimeSlots.map((slot) => (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      onClick={() => setSelectedTimeSlot(slot.id)}
-                      className={`p-3 rounded-lg border text-left transition-colors ${
-                        selectedTimeSlot === slot.id
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="font-medium">{slot.label}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {slot.date === "tomorrow" ? "Demain" : "Aujourd'hui"} à {slot.time}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <TimeSlotSelector
+                selectedSlot={selectedTimeSlot}
+                onSlotSelect={setSelectedTimeSlot}
+                onCustomSlot={handleCustomSlot}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="notes" className="flex items-center gap-2">
