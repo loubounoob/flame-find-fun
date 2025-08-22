@@ -111,7 +111,7 @@ serve(async (req) => {
             currency: "eur",
             product_data: {
               name: `Réservation: ${offer.title}`,
-              description: `${participantCount} participant(s)`,
+              description: `${participantCount} participant(s) • ${bookingDate} à ${bookingTime}`,
             },
             unit_amount: Math.round(amount), // Ensure integer cents
           },
@@ -131,6 +131,13 @@ serve(async (req) => {
         notes: notes || "",
         businessUserId: offer.business_user_id,
       },
+      payment_intent_data: {
+        metadata: {
+          offerId,
+          userId: user.id,
+          participantCount: participantCount.toString(),
+        }
+      }
     });
 
     console.log(`Payment session created for user ${user.id}, offer ${offerId}, amount ${amount}`);

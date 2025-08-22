@@ -9,6 +9,7 @@ import { GoogleMap } from "@/components/ui/google-map";
 import { BusinessMapMarkers } from "@/components/BusinessMapMarkers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { FilterModal } from "@/components/ui/filter-modal";
 
 const nearbyOffers = [
   {
@@ -52,6 +53,13 @@ export default function Map() {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<any>(null);
+  const [filters, setFilters] = useState({
+    category: "all",
+    maxDistance: [10],
+    priceRange: [0, 100],
+    participants: "all",
+    timeSlot: "all"
+  });
 
   // Récupérer les vraies offres depuis Supabase
   const { data: offers = [] } = useQuery({
@@ -65,6 +73,27 @@ export default function Map() {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Apply filters to offers
+  const filteredOffers = offers.filter(offer => {
+    // Category filter
+    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
+      return false;
+    }
+    
+    // Price filter - extract numeric value from price string
+    if (offer.price) {
+      const priceMatch = offer.price.match(/\d+/);
+      if (priceMatch) {
+        const price = parseInt(priceMatch[0]);
+        if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
   });
 
   const handleLocationUpdate = (location: { lat: number; lng: number }) => {
@@ -109,6 +138,10 @@ export default function Map() {
           <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
             Carte des entreprises
           </h1>
+          <FilterModal 
+            onFiltersChange={setFilters}
+            currentFilters={filters}
+          />
         </div>
       </header>
 
@@ -161,7 +194,7 @@ export default function Map() {
               
               {/* Real offers data */}
               <div className="space-y-3">
-                {offers.slice(0, 3).map((offer) => (
+                {filteredOffers.slice(0, 3).map((offer) => (
                   <div 
                     key={offer.id} 
                     className="bg-background/50 rounded-lg p-3 border border-border/30 cursor-pointer hover:bg-background/70 transition-colors"

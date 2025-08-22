@@ -96,6 +96,13 @@ const mockOffers = [
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    category: "all",
+    maxDistance: [10],
+    priceRange: [0, 100],
+    participants: "all",
+    timeSlot: "all"
+  });
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,14 +126,56 @@ export default function Home() {
     },
   });
 
+  // Apply filters
+  const filteredOffers = offers.filter(offer => {
+    // Category filter
+    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
+      return false;
+    }
+    
+    // Price filter - extract numeric value from price string
+    if (offer.price) {
+      const priceMatch = offer.price.match(/\d+/);
+      if (priceMatch) {
+        const price = parseInt(priceMatch[0]);
+        if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  });
+
+  // Apply filters to active promotions as well
+  const filteredPromotions = activePromotions.filter(promotion => {
+    const offer = offers.find(o => o.id === promotion.offer_id);
+    if (!offer) return false;
+    
+    // Category filter
+    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
+      return false;
+    }
+    
+    // Price filter - use promotional price
+    if (promotion.promotional_price) {
+      const price = promotion.promotional_price;
+      if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
   // Sort offers based on scoring algorithm
   const sortedOffers = user && scoredOffers.length > 0 
-    ? offers.sort((a, b) => {
+    ? filteredOffers.sort((a, b) => {
         const scoreA = scoredOffers.find(s => s.offerId === a.id)?.score || 0;
         const scoreB = scoredOffers.find(s => s.offerId === b.id)?.score || 0;
         return scoreB - scoreA;
       })
-    : offers;
+    : filteredOffers;
 
   const { data: flamesCounts = {} } = useQuery({
     queryKey: ["flamesCounts"],
@@ -216,14 +265,14 @@ export default function Home() {
             </Badge>
           </div>
           <FilterModal 
-            onFiltersChange={(filters) => console.log("Filters changed:", filters)}
-            currentFilters={{}}
+            onFiltersChange={setFilters}
+            currentFilters={filters}
           />
         </div>
         
         {/* Promotional Offers */}
         <div className="space-y-4">
-          {activePromotions.map((promotion) => {
+          {filteredPromotions.map((promotion) => {
             // Find the corresponding offer
             const offer = offers.find(o => o.id === promotion.offer_id);
             if (!offer) return null;
@@ -254,7 +303,7 @@ export default function Home() {
           })}
           
           {/* Show message if no promotions */}
-          {activePromotions.length === 0 && (
+          {filteredPromotions.length === 0 && (
             <div className="text-center py-8">
               <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
               <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>

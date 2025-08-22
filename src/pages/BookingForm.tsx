@@ -19,9 +19,29 @@ export default function BookingForm() {
   const { createBooking } = useBookings();
   const [participantCount, setParticipantCount] = useState(1);
   const [notes, setNotes] = useState("");
-  const [bookingDate, setBookingDate] = useState("");
-  const [bookingTime, setBookingTime] = useState("");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Créneaux prédéfinis pour le jour même
+  const todayTimeSlots = [
+    { id: "now", label: "Maintenant", time: "18:00" },
+    { id: "evening1", label: "Ce soir (19h)", time: "19:00" },
+    { id: "evening2", label: "Ce soir (20h)", time: "20:00" },
+    { id: "evening3", label: "Ce soir (21h)", time: "21:00" },
+    { id: "tomorrow", label: "Demain soir (19h)", time: "19:00", date: "tomorrow" }
+  ];
+
+  const getBookingDateTime = () => {
+    const slot = todayTimeSlots.find(slot => slot.id === selectedTimeSlot);
+    if (!slot) return { date: "", time: "" };
+    
+    const today = new Date();
+    const date = slot.date === "tomorrow" 
+      ? new Date(today.setDate(today.getDate() + 1)).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
+    
+    return { date, time: slot.time };
+  };
 
   // Check if this is a promotion booking
   const { data: promotion } = useQuery({
@@ -132,8 +152,8 @@ export default function BookingForm() {
           promotionId: promotion?.id,
           amount: Math.round(calculatePrice() * 100), // Convert to cents
           participantCount,
-          bookingDate,
-          bookingTime,
+          bookingDate: getBookingDateTime().date,
+          bookingTime: getBookingDateTime().time,
           notes
         }
       });
@@ -214,34 +234,29 @@ export default function BookingForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bookingDate" className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  Date de la réservation
-                </Label>
-                <Input
-                  id="bookingDate"
-                  type="date"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bookingTime" className="flex items-center gap-2">
+                <Label className="flex items-center gap-2">
                   <Clock size={16} />
-                  Heure de la réservation
+                  Choisir un créneau
                 </Label>
-                <Input
-                  id="bookingTime"
-                  type="time"
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  required
-                  className="w-full"
-                />
+                <div className="grid gap-2">
+                  {todayTimeSlots.map((slot) => (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      onClick={() => setSelectedTimeSlot(slot.id)}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        selectedTimeSlot === slot.id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="font-medium">{slot.label}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {slot.date === "tomorrow" ? "Demain" : "Aujourd'hui"} à {slot.time}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -288,7 +303,7 @@ export default function BookingForm() {
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-primary hover:opacity-90"
-                  disabled={isSubmitting || !bookingDate || !bookingTime}
+                  disabled={isSubmitting || !selectedTimeSlot}
                 >
                   {isSubmitting ? "Traitement du paiement..." : "Payer et réserver"}
                 </Button>
