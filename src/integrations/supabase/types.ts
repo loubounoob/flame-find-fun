@@ -604,6 +604,10 @@ export type Database = {
           longitude: number | null
           opening_hours: string | null
           phone: string | null
+          stripe_connect_account_id: string | null
+          stripe_connect_charges_enabled: boolean | null
+          stripe_connect_onboarding_completed: boolean | null
+          stripe_connect_payouts_enabled: boolean | null
           study_level: string | null
           university: string | null
           updated_at: string
@@ -628,6 +632,10 @@ export type Database = {
           longitude?: number | null
           opening_hours?: string | null
           phone?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean | null
+          stripe_connect_onboarding_completed?: boolean | null
+          stripe_connect_payouts_enabled?: boolean | null
           study_level?: string | null
           university?: string | null
           updated_at?: string
@@ -652,6 +660,10 @@ export type Database = {
           longitude?: number | null
           opening_hours?: string | null
           phone?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean | null
+          stripe_connect_onboarding_completed?: boolean | null
+          stripe_connect_payouts_enabled?: boolean | null
           study_level?: string | null
           university?: string | null
           updated_at?: string
@@ -716,6 +728,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stripe_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          business_amount: number
+          business_user_id: string
+          created_at: string
+          customer_user_id: string
+          id: string
+          platform_fee: number
+          status: string
+          stripe_fee: number
+          stripe_payment_intent_id: string
+          stripe_transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          business_amount: number
+          business_user_id: string
+          created_at?: string
+          customer_user_id: string
+          id?: string
+          platform_fee?: number
+          status?: string
+          stripe_fee?: number
+          stripe_payment_intent_id: string
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          business_amount?: number
+          business_user_id?: string
+          created_at?: string
+          customer_user_id?: string
+          id?: string
+          platform_fee?: number
+          status?: string
+          stripe_fee?: number
+          stripe_payment_intent_id?: string
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_flames_daily: {
         Row: {

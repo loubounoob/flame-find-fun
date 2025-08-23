@@ -157,15 +157,18 @@ export default function BookingForm() {
     
     // Create payment session first
     try {
+      const bookingDateTime = getBookingDateTime();
+      
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           offerId: offer.id,
           promotionId: promotion?.id,
           amount: Math.round(calculatePrice() * 100), // Convert to cents
           participantCount,
-          bookingDate: getBookingDateTime().date,
-          bookingTime: getBookingDateTime().time,
-          notes
+          bookingDate: bookingDateTime.date,
+          bookingTime: bookingDateTime.time,
+          notes,
+          selectedPricingOptionId: null // Ajoutera plus tard avec la sélection de tarifs
         }
       });
 

@@ -34,11 +34,14 @@ serve(async (req) => {
 
     console.log(`Verifying payment for session: ${sessionId}`);
 
-    // Retrieve the session from Stripe
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    // Retrieve the session from Stripe with payment intent expanded
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['payment_intent']
+    });
 
     if (session.payment_status === "paid") {
       const metadata = session.metadata;
+      const paymentIntent = session.payment_intent as any;
       
       if (!metadata) {
         throw new Error("Missing session metadata");
@@ -103,15 +106,39 @@ serve(async (req) => {
         throw bookingError;
       }
 
+      // Record Stripe transaction for tracking
+      const amount = paymentIntent.amount;
+      const platformFeePercent = 0.05;
+      const platformFee = Math.round(amount * platformFeePercent);
+      const businessAmount = amount - platformFee;
+
+      try {
+        await supabaseClient
+          .from("stripe_transactions")
+          .insert({
+            booking_id: booking.id,
+            business_user_id: metadata.businessUserId,
+            customer_user_id: metadata.userId,
+            stripe_payment_intent_id: paymentIntent.id,
+            amount: amount,
+            business_amount: businessAmount,
+            platform_fee: platformFee,
+            stripe_fee: 0, // Will be updated with actual fees later
+            status: 'completed'
+          });
+      } catch (transactionError) {
+        console.error("Failed to record transaction:", transactionError);
+      }
+
       // Add earnings to business using secure function
-      const bookingAmount = session.amount_total ? session.amount_total / 100 : 0; // Convert from cents
+      const businessAmountInEuros = businessAmount / 100; // Convert from cents
       
       try {
         const { error: earningError } = await supabaseClient.rpc('secure_add_earning', {
           p_business_user_id: metadata.businessUserId,
-          p_amount: bookingAmount,
+          p_amount: businessAmountInEuros,
           p_booking_id: booking.id,
-          p_description: `Réservation confirmée - ${offer.title}`
+          p_description: `Réservation confirmée - ${offer.title} (${metadata.participantCount} participant(s))`
         });
 
         if (earningError) {
@@ -123,12 +150,14 @@ serve(async (req) => {
         // Continue with successful booking
       }
 
-      console.log(`Payment verified and booking created: ${booking.id}`);
+
+      console.log(`Payment verified and booking created: ${booking.id}, business earned: ${businessAmountInEuros}€`);
 
       return new Response(JSON.stringify({ 
         success: true, 
         bookingId: booking.id,
-        amount: bookingAmount 
+        amount: businessAmountInEuros,
+        businessName: metadata.businessName || "Prestataire"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

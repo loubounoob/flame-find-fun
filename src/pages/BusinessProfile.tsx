@@ -260,6 +260,9 @@ export default function BusinessProfile() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigate("/stripe-connect-setup")}>
+              <Settings size={20} />
+            </Button>
             <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
               <Settings size={20} />
             </Button>

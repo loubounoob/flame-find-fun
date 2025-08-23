@@ -37,7 +37,7 @@ serve(async (req) => {
 
     // Parse and validate request body
     const body = await req.json();
-    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes } = body;
+    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes, selectedPricingOptionId } = body;
 
     // Validate required fields
     if (!offerId || !amount || !participantCount || !bookingDate) {
@@ -54,7 +54,7 @@ serve(async (req) => {
       throw new Error("Invalid participant count");
     }
 
-    // Verify offer exists and get details
+    // Verify offer exists and get business details
     const { data: offer, error: offerError } = await supabaseClient
       .from("offers")
       .select("id, business_user_id, title, base_price")
@@ -63,6 +63,37 @@ serve(async (req) => {
 
     if (offerError || !offer) {
       throw new Error("Offer not found");
+    }
+
+    // Get business profile with Stripe Connect info
+    const { data: businessProfile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_charges_enabled, first_name, last_name")
+      .eq("user_id", offer.business_user_id)
+      .single();
+
+    if (profileError || !businessProfile) {
+      throw new Error("Business profile not found");
+    }
+
+    if (!businessProfile.stripe_connect_account_id || !businessProfile.stripe_connect_charges_enabled) {
+      throw new Error("Business has not completed Stripe Connect setup");
+    }
+
+    // Get pricing option details if provided
+    let pricingOption = null;
+    if (selectedPricingOptionId) {
+      const { data: pricing, error: pricingError } = await supabaseClient
+        .from("business_pricing")
+        .select("*")
+        .eq("id", selectedPricingOptionId)
+        .eq("business_user_id", offer.business_user_id)
+        .eq("is_active", true)
+        .single();
+
+      if (!pricingError && pricing) {
+        pricingOption = pricing;
+      }
     }
 
     // If promotion is specified, verify it's valid
@@ -89,6 +120,11 @@ serve(async (req) => {
       }
     }
 
+    // Calculate platform fee (5% of transaction)
+    const platformFeePercent = 0.05;
+    const platformFee = Math.round(amount * platformFeePercent);
+    const businessAmount = amount - platformFee;
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -101,7 +137,29 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Create checkout session with secure metadata
+    // Create payment intent with destination charge for Stripe Connect
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount),
+      currency: "eur",
+      application_fee_amount: platformFee,
+      transfer_data: {
+        destination: businessProfile.stripe_connect_account_id,
+      },
+      metadata: {
+        offerId,
+        promotionId: promotionId || "",
+        userId: user.id,
+        participantCount: participantCount.toString(),
+        bookingDate,
+        bookingTime: bookingTime || "",
+        notes: notes || "",
+        businessUserId: offer.business_user_id,
+        selectedPricingOptionId: selectedPricingOptionId || "",
+        pricingOptionName: pricingOption?.service_name || "",
+      },
+    });
+
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -111,14 +169,26 @@ serve(async (req) => {
             currency: "eur",
             product_data: {
               name: `Réservation: ${offer.title}`,
-              description: `${participantCount} participant(s) • ${bookingDate} à ${bookingTime}`,
+              description: `${participantCount} participant(s) • ${bookingDate} à ${bookingTime}${pricingOption ? ` • ${pricingOption.service_name}` : ""}`,
             },
-            unit_amount: Math.round(amount), // Ensure integer cents
+            unit_amount: Math.round(amount),
           },
           quantity: 1,
         },
       ],
       mode: "payment",
+      payment_intent_data: {
+        application_fee_amount: platformFee,
+        transfer_data: {
+          destination: businessProfile.stripe_connect_account_id,
+        },
+        metadata: {
+          offerId,
+          userId: user.id,
+          participantCount: participantCount.toString(),
+          businessUserId: offer.business_user_id,
+        }
+      },
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/booking/${offerId}`,
       metadata: {
@@ -130,17 +200,12 @@ serve(async (req) => {
         bookingTime: bookingTime || "",
         notes: notes || "",
         businessUserId: offer.business_user_id,
+        selectedPricingOptionId: selectedPricingOptionId || "",
+        businessName: `${businessProfile.first_name} ${businessProfile.last_name}`,
       },
-      payment_intent_data: {
-        metadata: {
-          offerId,
-          userId: user.id,
-          participantCount: participantCount.toString(),
-        }
-      }
     });
 
-    console.log(`Payment session created for user ${user.id}, offer ${offerId}, amount ${amount}`);
+    console.log(`Payment session created for user ${user.id}, offer ${offerId}, amount ${amount}, business gets ${businessAmount}`);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
