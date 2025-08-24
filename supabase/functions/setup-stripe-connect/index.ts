@@ -60,9 +60,15 @@ serve(async (req) => {
     const user = data.user;
     console.log(`👤 User authenticated: ${user.id} (${user.email})`);
 
-    // Check if user is a business user
-    if (user.user_metadata?.account_type !== "business") {
-      console.error("❌ User is not a business user");
+    // Check if user is a business user - check both user_metadata and app_metadata
+    const isBusinessUser = user.user_metadata?.account_type === "business" || 
+                           user.app_metadata?.account_type === "business";
+    
+    if (!isBusinessUser) {
+      console.error("❌ User is not a business user", { 
+        user_metadata: user.user_metadata,
+        app_metadata: user.app_metadata
+      });
       throw new Error("Only business users can create Stripe Connect accounts");
     }
     console.log("✅ Business user verified");
