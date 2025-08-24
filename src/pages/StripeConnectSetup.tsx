@@ -37,33 +37,57 @@ export default function StripeConnectSetup() {
   const handleStripeConnect = async () => {
     setIsLoading(true);
     try {
-      console.log("Calling setup-stripe-connect function...");
+      console.log("🔄 Starting Stripe Connect setup...");
+      
+      const session = await supabase.auth.getSession();
+      if (!session.data.session?.access_token) {
+        throw new Error("Pas de session d'authentification active");
+      }
+
+      console.log("📞 Calling setup-stripe-connect function...");
       
       const { data, error } = await supabase.functions.invoke('setup-stripe-connect', {
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${session.data.session.access_token}`,
         },
       });
       
-      console.log("Function response:", { data, error });
+      console.log("📝 Function response:", { data, error });
       
       if (error) {
-        console.error("Function error:", error);
-        throw error;
+        console.error("❌ Function error:", error);
+        throw new Error(error.message || "Erreur lors de l'appel de la fonction");
+      }
+      
+      if (data?.error) {
+        console.error("❌ Server error:", data.error);
+        throw new Error(data.error);
       }
       
       if (data?.onboarding_url) {
-        console.log("Opening Stripe onboarding URL:", data.onboarding_url);
+        console.log("✅ Opening Stripe onboarding URL:", data.onboarding_url);
         // Open Stripe onboarding in new tab
         window.open(data.onboarding_url, '_blank');
+        
+        toast({
+          title: "Redirection vers Stripe",
+          description: "Une nouvelle fenêtre s'est ouverte pour configurer votre compte Stripe Connect.",
+        });
       } else {
-        throw new Error("Aucune URL d'onboarding reçue");
+        throw new Error("Aucune URL d'onboarding reçue du serveur");
       }
-    } catch (error) {
-      console.error("Stripe Connect setup error:", error);
+    } catch (error: any) {
+      console.error("💥 Stripe Connect setup error:", error);
+      
+      let errorMessage = "Impossible de configurer Stripe Connect. Veuillez réessayer.";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Erreur",
-        description: error.message || "Impossible de configurer Stripe Connect. Veuillez réessayer.",
+        title: "Erreur de configuration",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -75,23 +99,35 @@ export default function StripeConnectSetup() {
     if (!profile?.stripe_connect_account_id) return;
     
     try {
+      console.log("🔍 Checking Stripe status...");
+      
       const { data, error } = await supabase.functions.invoke('check-stripe-connect', {
         body: { accountId: profile.stripe_connect_account_id }
       });
       
-      if (error) throw error;
+      console.log("📝 Status check response:", { data, error });
+      
+      if (error) {
+        console.error("❌ Status check error:", error);
+        return;
+      }
       
       // Refresh profile data
       await refetchProfile();
       
-      if (data.charges_enabled) {
+      if (data?.charges_enabled) {
         toast({
           title: "Configuration terminée !",
           description: "Votre compte Stripe Connect est maintenant actif.",
         });
       }
     } catch (error) {
-      console.error("Error checking Stripe status:", error);
+      console.error("❌ Error checking Stripe status:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de vérifier le statut Stripe",
+        variant: "destructive"
+      });
     }
   };
 
