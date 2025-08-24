@@ -37,19 +37,33 @@ export default function StripeConnectSetup() {
   const handleStripeConnect = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('setup-stripe-connect');
+      console.log("Calling setup-stripe-connect function...");
       
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('setup-stripe-connect', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      console.log("Function response:", { data, error });
+      
+      if (error) {
+        console.error("Function error:", error);
+        throw error;
+      }
       
       if (data?.onboarding_url) {
+        console.log("Opening Stripe onboarding URL:", data.onboarding_url);
         // Open Stripe onboarding in new tab
         window.open(data.onboarding_url, '_blank');
+      } else {
+        throw new Error("Aucune URL d'onboarding reçue");
       }
     } catch (error) {
       console.error("Stripe Connect setup error:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de configurer Stripe Connect. Veuillez réessayer.",
+        description: error.message || "Impossible de configurer Stripe Connect. Veuillez réessayer.",
         variant: "destructive"
       });
     } finally {

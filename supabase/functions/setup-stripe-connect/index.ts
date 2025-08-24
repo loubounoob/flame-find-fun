@@ -13,6 +13,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Setting up Stripe Connect...");
+    
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -21,17 +23,25 @@ serve(async (req) => {
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("No authorization header provided");
       throw new Error("Authorization header required");
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (authError || !data.user?.email) {
-      throw new Error("User not authenticated");
+    if (authError) {
+      console.error("Auth error:", authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+    
+    if (!data.user?.email) {
+      console.error("No user or email found");
+      throw new Error("User not authenticated or email not available");
     }
 
     const user = data.user;
+    console.log(`Processing for user: ${user.id}`);
 
     // Check if user is a business user
     if (user.user_metadata?.account_type !== "business") {
@@ -39,9 +49,16 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY not found in environment");
+      throw new Error("Stripe configuration error");
+    }
+    
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
+    console.log("Stripe initialized successfully");
 
     // Check if user already has a Connect account
     const { data: profile, error: profileError } = await supabaseClient
@@ -51,8 +68,11 @@ serve(async (req) => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      throw new Error("Failed to fetch user profile");
+      console.error("Profile fetch error:", profileError);
+      throw new Error(`Failed to fetch user profile: ${profileError.message}`);
     }
+    
+    console.log("Profile fetched, existing account ID:", profile?.stripe_connect_account_id);
 
     let accountId = profile?.stripe_connect_account_id;
 
