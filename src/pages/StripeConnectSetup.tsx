@@ -39,19 +39,43 @@ export default function StripeConnectSetup() {
     try {
       console.log("🔄 Starting Stripe Connect setup...");
       
-      // Get fresh session
+      // Force sign out and redirect to auth if session issues
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !sessionData.session?.access_token) {
-        console.error("❌ Session issue:", sessionError);
-        throw new Error("Session expirée. Veuillez vous reconnecter.");
+      if (sessionError || !sessionData.session) {
+        console.error("❌ Session issue, forcing re-auth:", sessionError);
+        await supabase.auth.signOut();
+        navigate("/auth");
+        return;
+      }
+
+      // Try to refresh the session if needed
+      if (!sessionData.session.access_token) {
+        console.log("🔄 Refreshing session...");
+        const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession.session) {
+          console.error("❌ Session refresh failed:", refreshError);
+          await supabase.auth.signOut();
+          navigate("/auth");
+          return;
+        }
+      }
+
+      // Get the final session
+      const { data: finalSession } = await supabase.auth.getSession();
+      if (!finalSession.session?.access_token) {
+        console.error("❌ No valid session available");
+        await supabase.auth.signOut();
+        navigate("/auth");
+        return;
       }
 
       console.log("📞 Calling setup-stripe-connect function...");
       
       const { data, error } = await supabase.functions.invoke('setup-stripe-connect', {
         headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Authorization': `Bearer ${finalSession.session.access_token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -83,17 +107,9 @@ export default function StripeConnectSetup() {
       console.error("💥 Stripe Connect setup error:", error);
       
       let errorMessage = "Impossible de configurer Stripe Connect.";
-      let shouldRedirect = false;
       
       if (error.message) {
         errorMessage = error.message;
-        
-        // Check for specific errors that should redirect to support
-        if (error.message.includes("Configuration Stripe manquante") || 
-            error.message.includes("Stripe secret key") ||
-            error.message.includes("Session expirée")) {
-          shouldRedirect = true;
-        }
       }
       
       toast({
@@ -102,12 +118,10 @@ export default function StripeConnectSetup() {
         variant: "destructive"
       });
       
-      // Redirect to business profile with error state
-      if (shouldRedirect) {
-        setTimeout(() => {
-          navigate("/business-profile?error=stripe_config");
-        }, 2000);
-      }
+      // Always redirect to business profile on error
+      setTimeout(() => {
+        navigate("/business-profile?error=stripe_config");
+      }, 2000);
     } finally {
       setIsLoading(false);
     }
