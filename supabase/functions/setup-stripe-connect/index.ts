@@ -15,12 +15,16 @@ serve(async (req) => {
   try {
     console.log("🚀 Starting Stripe Connect setup...");
     
+    // List all available env vars for debugging
+    console.log("🔧 Available env vars:", Object.keys(Deno.env.toObject()));
+    
     // Initialize Stripe first to check the key
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    console.log("🔑 Stripe key status:", stripeKey ? "Present" : "Missing");
+    console.log("🔑 Stripe key status:", stripeKey ? `Present (${stripeKey.substring(0, 7)}...)` : "Missing");
     
     if (!stripeKey) {
-      throw new Error("Stripe secret key is not configured");
+      console.error("❌ All env vars:", Deno.env.toObject());
+      throw new Error("Configuration Stripe manquante. Veuillez contacter le support.");
     }
 
     const stripe = new Stripe(stripeKey, {

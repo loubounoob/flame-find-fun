@@ -82,10 +82,18 @@ export default function StripeConnectSetup() {
     } catch (error: any) {
       console.error("💥 Stripe Connect setup error:", error);
       
-      let errorMessage = "Impossible de configurer Stripe Connect. Veuillez réessayer.";
+      let errorMessage = "Impossible de configurer Stripe Connect.";
+      let shouldRedirect = false;
       
       if (error.message) {
         errorMessage = error.message;
+        
+        // Check for specific errors that should redirect to support
+        if (error.message.includes("Configuration Stripe manquante") || 
+            error.message.includes("Stripe secret key") ||
+            error.message.includes("Session expirée")) {
+          shouldRedirect = true;
+        }
       }
       
       toast({
@@ -93,6 +101,13 @@ export default function StripeConnectSetup() {
         description: errorMessage,
         variant: "destructive"
       });
+      
+      // Redirect to business profile with error state
+      if (shouldRedirect) {
+        setTimeout(() => {
+          navigate("/business-profile?error=stripe_config");
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
