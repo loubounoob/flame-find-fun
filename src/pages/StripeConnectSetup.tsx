@@ -39,11 +39,11 @@ export default function StripeConnectSetup() {
     try {
       console.log("🔄 Starting Stripe Connect setup...");
       
-      // Refresh session to ensure we have a valid token
-      const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
+      // Get fresh session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !sessionData.session?.access_token) {
-        console.error("❌ Session refresh failed:", sessionError);
+        console.error("❌ Session issue:", sessionError);
         throw new Error("Session expirée. Veuillez vous reconnecter.");
       }
 
@@ -51,7 +51,8 @@ export default function StripeConnectSetup() {
       
       const { data, error } = await supabase.functions.invoke('setup-stripe-connect', {
         headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
       
@@ -69,7 +70,6 @@ export default function StripeConnectSetup() {
       
       if (data?.onboarding_url) {
         console.log("✅ Opening Stripe onboarding URL:", data.onboarding_url);
-        // Open Stripe onboarding in new tab
         window.open(data.onboarding_url, '_blank');
         
         toast({

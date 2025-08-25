@@ -15,99 +15,89 @@ serve(async (req) => {
   try {
     console.log("🚀 Starting Stripe Connect setup...");
     
-    // List all available env vars for debugging
-    console.log("🔧 Available env vars:", Object.keys(Deno.env.toObject()));
-    
-    // Initialize Stripe first to check the key
+    // Get Stripe key
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    console.log("🔑 Stripe key status:", stripeKey ? `Present (${stripeKey.substring(0, 7)}...)` : "Missing");
-    
     if (!stripeKey) {
-      console.error("❌ All env vars:", Deno.env.toObject());
-      throw new Error("Configuration Stripe manquante. Veuillez contacter le support.");
+      console.error("❌ Stripe key missing");
+      return new Response(JSON.stringify({ 
+        error: "Configuration Stripe manquante. Contactez le support." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
+    console.log("✅ Stripe key found");
 
+    // Initialize Stripe
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
-    console.log("✅ Stripe initialized successfully");
 
     // Initialize Supabase
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
-    console.log("✅ Supabase client initialized");
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("❌ No authorization header provided");
-      throw new Error("Authorization header required");
+      console.error("❌ No auth header");
+      return new Response(JSON.stringify({ 
+        error: "Authentication requise" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
 
     const token = authHeader.replace("Bearer ", "");
-    console.log("🔍 Extracting user from token...");
-    
     const { data, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (authError) {
-      console.error("❌ Auth error:", authError);
-      throw new Error(`Authentication failed: ${authError.message}`);
-    }
-    
-    if (!data.user?.email) {
-      console.error("❌ No user or email found");
-      throw new Error("User not authenticated or email not available");
+    if (authError || !data.user?.email) {
+      console.error("❌ Auth failed:", authError);
+      return new Response(JSON.stringify({ 
+        error: "Session expirée. Reconnectez-vous." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
 
     const user = data.user;
-    console.log(`👤 User authenticated: ${user.id} (${user.email})`);
+    console.log(`👤 User: ${user.id}`);
 
-    // Check if user is a business user - check both user_metadata and app_metadata
+    // Check if user is business
     const isBusinessUser = user.user_metadata?.account_type === "business" || 
                            user.app_metadata?.account_type === "business";
     
     if (!isBusinessUser) {
-      console.error("❌ User is not a business user", { 
-        user_metadata: user.user_metadata,
-        app_metadata: user.app_metadata
+      console.error("❌ Not a business user");
+      return new Response(JSON.stringify({ 
+        error: "Seuls les comptes entreprise peuvent configurer Stripe Connect" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
       });
-      throw new Error("Only business users can create Stripe Connect accounts");
     }
-    console.log("✅ Business user verified");
 
-    // Check if user already has a Connect account
-    const { data: profile, error: profileError } = await supabaseClient
+    // Get or create profile
+    const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("stripe_connect_account_id, first_name, last_name, email")
+      .select("stripe_connect_account_id, first_name, last_name")
       .eq("user_id", user.id)
-      .single();
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error("❌ Profile fetch error:", profileError);
-      throw new Error(`Failed to fetch user profile: ${profileError.message}`);
-    }
-    
-    console.log("👤 Profile data:", {
-      hasProfile: !!profile,
-      existingAccountId: profile?.stripe_connect_account_id
-    });
+      .maybeSingle();
 
     let accountId = profile?.stripe_connect_account_id;
 
     // Create Stripe Connect account if doesn't exist
     if (!accountId) {
-      console.log("🔨 Creating new Stripe Connect account...");
+      console.log("🔨 Creating Stripe account...");
       
       const account = await stripe.accounts.create({
         type: "express",
-        country: "FR", // France
+        country: "FR",
         email: user.email,
-        business_profile: {
-          name: user.user_metadata?.company_name || `${profile?.first_name} ${profile?.last_name}`,
-          support_email: user.email,
-        },
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
@@ -115,25 +105,19 @@ serve(async (req) => {
       });
 
       accountId = account.id;
-      console.log(`✅ Stripe Connect account created: ${accountId}`);
+      console.log(`✅ Account created: ${accountId}`);
 
-      // Save account ID to profile
-      const { error: updateError } = await supabaseClient
+      // Save account ID
+      await supabaseClient
         .from("profiles")
-        .update({ stripe_connect_account_id: accountId })
-        .eq("user_id", user.id);
-
-      if (updateError) {
-        console.error("⚠️ Failed to save Stripe Connect account ID:", updateError);
-      } else {
-        console.log("✅ Account ID saved to profile");
-      }
-    } else {
-      console.log(`✅ Using existing Stripe Connect account: ${accountId}`);
+        .upsert({ 
+          user_id: user.id,
+          stripe_connect_account_id: accountId,
+          email: user.email
+        });
     }
 
     // Create onboarding link
-    console.log("🔗 Creating onboarding link...");
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
     const accountLink = await stripe.accountLinks.create({
@@ -143,7 +127,7 @@ serve(async (req) => {
       type: "account_onboarding",
     });
 
-    console.log(`✅ Onboarding link created: ${accountLink.url}`);
+    console.log(`✅ Onboarding link created`);
 
     return new Response(JSON.stringify({ 
       account_id: accountId,
@@ -152,11 +136,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error) {
-    console.error("💥 Stripe Connect setup error:", error);
+    console.error("💥 Error:", error);
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: "Check the server logs for more information"
+      error: "Erreur interne. Réessayez plus tard." 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
