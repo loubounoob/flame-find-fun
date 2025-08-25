@@ -39,16 +39,19 @@ export default function StripeConnectSetup() {
     try {
       console.log("🔄 Starting Stripe Connect setup...");
       
-      const session = await supabase.auth.getSession();
-      if (!session.data.session?.access_token) {
-        throw new Error("Pas de session d'authentification active");
+      // Refresh session to ensure we have a valid token
+      const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError || !sessionData.session?.access_token) {
+        console.error("❌ Session refresh failed:", sessionError);
+        throw new Error("Session expirée. Veuillez vous reconnecter.");
       }
 
       console.log("📞 Calling setup-stripe-connect function...");
       
       const { data, error } = await supabase.functions.invoke('setup-stripe-connect', {
         headers: {
-          Authorization: `Bearer ${session.data.session.access_token}`,
+          Authorization: `Bearer ${sessionData.session.access_token}`,
         },
       });
       
@@ -131,7 +134,11 @@ export default function StripeConnectSetup() {
     }
   };
 
-  if (!user || user.user_metadata?.account_type !== "business") {
+  // Check if user is a business user - same logic as edge function
+  const isBusinessUser = user?.user_metadata?.account_type === "business" || 
+                         user?.app_metadata?.account_type === "business";
+  
+  if (!user || !isBusinessUser) {
     navigate("/auth");
     return null;
   }
