@@ -7,23 +7,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotSelector } from "@/components/ui/time-slot-selector";
+import { BookingPayment } from "@/components/BookingPayment";
 import { Calendar, Users, Clock, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookings } from "@/hooks/useBookings";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BookingForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createBooking } = useBookings();
+  const { toast } = useToast();
   const [participantCount, setParticipantCount] = useState(1);
   const [notes, setNotes] = useState("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [customBookingTime, setCustomBookingTime] = useState("");
   const [customBookingDate, setCustomBookingDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
 
   const getBookingDateTime = () => {
     // Si c'est un créneau personnalisé
@@ -155,33 +160,63 @@ export default function BookingForm() {
 
     setIsSubmitting(true);
     
-    // Create payment session first
     try {
       const bookingDateTime = getBookingDateTime();
       
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          offerId: offer.id,
-          promotionId: promotion?.id,
-          amount: Math.round(calculatePrice() * 100), // Convert to cents
-          participantCount,
-          bookingDate: bookingDateTime.date,
-          bookingTime: bookingDateTime.time,
-          notes,
-          selectedPricingOptionId: null // Ajoutera plus tard avec la sélection de tarifs
-        }
+      if (!bookingDateTime.date || !bookingDateTime.time) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez sélectionner une date et une heure",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create the booking first
+      const booking = await createBooking({
+        offerId: offer.id,
+        participantCount,
+        bookingDate: bookingDateTime.date,
+        bookingTime: bookingDateTime.time,
+        notes,
+        businessUserId: offer.business_user_id,
       });
 
-      if (error) throw error;
-      
-      // Redirect to Stripe checkout
-      if (data?.url) {
-        window.location.href = data.url;
+      if (booking?.id) {
+        setCreatedBookingId(booking.id);
+        setShowPayment(true);
+        
+        toast({
+          title: "Réservation créée !",
+          description: "Veuillez procéder au paiement pour confirmer votre réservation.",
+        });
       }
-    } catch (error) {
-      console.error('Payment error:', error);
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création de la réservation",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Paiement effectué !",
+      description: "Votre réservation est confirmée.",
+    });
+    navigate("/booking");
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast({
+      title: "Erreur de paiement",
+      description: error,
+      variant: "destructive"
+    });
   };
 
   return (
@@ -219,92 +254,104 @@ export default function BookingForm() {
           </CardContent>
         </Card>
 
-        {/* Booking Form */}
-        <Card className="bg-gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-foreground">Détails de la réservation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="participants" className="flex items-center gap-2">
-                  <Users size={16} />
-                  Nombre de participants
-                </Label>
-                <Input
-                  id="participants"
-                  type="number"
-                  min="1"
-                  max={offer.max_participants || 10}
-                  value={participantCount}
-                  onChange={(e) => setParticipantCount(parseInt(e.target.value))}
-                  className="w-full"
-                />
-                {offer.max_participants && (
-                  <p className="text-xs text-muted-foreground">
-                    Maximum {offer.max_participants} participants
-                  </p>
-                )}
-              </div>
-
-              <TimeSlotSelector
-                selectedSlot={selectedTimeSlot}
-                onSlotSelect={setSelectedTimeSlot}
-                onCustomSlot={handleCustomSlot}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="flex items-center gap-2">
-                  Notes ou demandes spéciales
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Ajoutez des notes pour votre réservation (optionnel)"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="pt-4 border-t border-border/50">
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Participants:</span>
-                    <span className="font-medium">{participantCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Prix unitaire:</span>
-                    <span className="font-medium">
-                      {promotion ? `${promotion.promotional_price}€` : (offer.base_price ? `${offer.base_price}€` : "À discuter")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total:</span>
-                    <span className="font-bold text-lg text-primary">
-                      {calculatePrice() > 0 ? `${calculatePrice()}€` : "À discuter"}
-                    </span>
-                  </div>
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
-                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-                      💳 Paiement requis avant confirmation
+        {/* Booking Form or Payment */}
+        {!showPayment ? (
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader>
+              <CardTitle className="text-foreground">Détails de la réservation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="participants" className="flex items-center gap-2">
+                    <Users size={16} />
+                    Nombre de participants
+                  </Label>
+                  <Input
+                    id="participants"
+                    type="number"
+                    min="1"
+                    max={offer.max_participants || 10}
+                    value={participantCount}
+                    onChange={(e) => setParticipantCount(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  {offer.max_participants && (
+                    <p className="text-xs text-muted-foreground">
+                      Maximum {offer.max_participants} participants
                     </p>
-                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                      Le paiement sera traité de manière sécurisée via Stripe
-                    </p>
-                  </div>
+                  )}
                 </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-primary hover:opacity-90"
-                  disabled={isSubmitting || !selectedTimeSlot}
-                >
-                  {isSubmitting ? "Traitement du paiement..." : "Payer et réserver"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+
+                <TimeSlotSelector
+                  selectedSlot={selectedTimeSlot}
+                  onSlotSelect={setSelectedTimeSlot}
+                  onCustomSlot={handleCustomSlot}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes" className="flex items-center gap-2">
+                    Notes ou demandes spéciales
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Ajoutez des notes pour votre réservation (optionnel)"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-border/50">
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Participants:</span>
+                      <span className="font-medium">{participantCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Prix unitaire:</span>
+                      <span className="font-medium">
+                        {promotion ? `${promotion.promotional_price}€` : (offer.base_price ? `${offer.base_price}€` : "À discuter")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total:</span>
+                      <span className="font-bold text-lg text-primary">
+                        {calculatePrice() > 0 ? `${calculatePrice()}€` : "À discuter"}
+                      </span>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                        💳 Paiement requis après confirmation
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Le paiement sera traité de manière sécurisée via Stripe
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={isSubmitting || !selectedTimeSlot}
+                  >
+                    {isSubmitting ? "Création de la réservation..." : "Créer la réservation"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        ) : (
+          createdBookingId && (
+            <BookingPayment
+              bookingId={createdBookingId}
+              amount={Math.round(calculatePrice() * 100)} // Convert to cents
+              description={`${offer.title} - ${participantCount} participant(s)`}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentError={handlePaymentError}
+            />
+          )
+        )}
 
       </div>
     </div>

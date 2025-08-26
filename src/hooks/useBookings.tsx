@@ -66,40 +66,49 @@ export function useBookings() {
     }
   };
 
-  const createBooking = async (offerId: string, businessUserId: string, participantCount: number = 1, notes?: string, bookingDate?: string, bookingTime?: string) => {
+  const createBooking = async (bookingData: {
+    offerId: string;
+    businessUserId: string;
+    participantCount: number;
+    notes?: string;
+    bookingDate?: string;
+    bookingTime?: string;
+  }) => {
     if (!user) {
       toast({
         title: "Connexion requise",
         description: "Connectez-vous pour faire une réservation.",
         variant: "destructive"
       });
-      return false;
+      return null;
     }
 
     try {
-      const bookingData = {
+      const bookingInsert = {
         user_id: user.id,
-        offer_id: offerId,
-        business_user_id: businessUserId,
-        participant_count: participantCount,
-        notes: notes,
-        ...(bookingDate && { booking_date: bookingDate }),
-        ...(bookingTime && { booking_time: bookingTime })
+        offer_id: bookingData.offerId,
+        business_user_id: bookingData.businessUserId,
+        participant_count: bookingData.participantCount,
+        notes: bookingData.notes,
+        ...(bookingData.bookingDate && { booking_date: bookingData.bookingDate }),
+        ...(bookingData.bookingTime && { booking_time: bookingData.bookingTime })
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
-        .insert(bookingData);
+        .insert(bookingInsert)
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast({
-        title: "Réservation confirmée !",
-        description: "Votre réservation a été enregistrée avec succès.",
+        title: "Réservation créée !",
+        description: "Votre réservation a été créée avec succès.",
       });
       
       fetchBookings(); // Actualiser la liste
-      return true;
+      return data;
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
@@ -107,7 +116,7 @@ export function useBookings() {
         description: "Impossible de créer la réservation.",
         variant: "destructive"
       });
-      return false;
+      return null;
     }
   };
 

@@ -1,1 +1,7 @@
 project_id = "uxdddiaheswxgkoannri"
+
+[functions.create-booking-payment]
+verify_jwt = true
+
+[functions.verify-booking-payment] 
+verify_jwt = false
