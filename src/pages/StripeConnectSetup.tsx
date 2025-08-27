@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BusinessPricingSetup } from "@/components/ui/business-pricing-setup";
+import { BusinessFinancesDashboard } from "@/components/BusinessFinancesDashboard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -278,12 +279,17 @@ export default function StripeConnectSetup() {
 
         {/* Pricing Setup - Only show if Stripe is connected */}
         {isStripeConnected && (
-          <BusinessPricingSetup 
-            businessUserId={user.id}
-            onPricingComplete={(options) => {
-              console.log("Pricing options configured:", options);
-            }}
-          />
+          <>
+            <BusinessPricingSetup 
+              businessUserId={user.id}
+              onPricingComplete={(options) => {
+                console.log("Pricing options configured:", options);
+              }}
+            />
+
+            {/* Business Finances Dashboard */}
+            <BusinessFinancesDashboard />
+          </>
         )}
 
         {/* Information Card */}

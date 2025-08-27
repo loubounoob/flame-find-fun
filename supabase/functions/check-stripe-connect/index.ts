@@ -13,6 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log("🔍 Checking Stripe Connect status...");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("- Stripe key:", stripeKey ? "✅ Available" : "❌ Missing");
+
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY not available");
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -22,17 +31,21 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     const { accountId } = await req.json();
 
+    console.log(`🔍 Checking account: ${accountId}`);
+
     if (!accountId) {
       throw new Error("Account ID required");
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
     // Get account status
     const account = await stripe.accounts.retrieve(accountId);
+
+    console.log(`📊 Account status: charges_enabled=${account.charges_enabled}, payouts_enabled=${account.payouts_enabled}`);
 
     // Update profile with current status
     if (authHeader) {
@@ -40,7 +53,7 @@ serve(async (req) => {
       const { data } = await supabaseClient.auth.getUser(token);
       
       if (data.user) {
-        await supabaseClient
+        const { error } = await supabaseClient
           .from("profiles")
           .update({
             stripe_connect_onboarding_completed: account.details_submitted,
@@ -48,6 +61,12 @@ serve(async (req) => {
             stripe_connect_payouts_enabled: account.payouts_enabled
           })
           .eq("user_id", data.user.id);
+
+        if (error) {
+          console.error("❌ Error updating profile:", error);
+        } else {
+          console.log("✅ Profile updated successfully");
+        }
       }
     }
 

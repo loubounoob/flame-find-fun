@@ -20,6 +20,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+    console.log("🔧 Environment check:");
+    console.log("- Stripe key:", stripeKey ? "✅ Available" : "❌ Missing");
+    console.log("- Supabase URL:", supabaseUrl ? "✅ Available" : "❌ Missing");
+    console.log("- Service key:", supabaseServiceKey ? "✅ Available" : "❌ Missing");
+
     if (!stripeKey) {
       console.error("❌ STRIPE_SECRET_KEY missing");
       return new Response(

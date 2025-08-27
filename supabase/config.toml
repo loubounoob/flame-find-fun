@@ -1,7 +1,58 @@
 project_id = "uxdddiaheswxgkoannri"
 
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+port = 54327
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+port = 54328
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://uxdddiaheswxgkoannri.supabase.co"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+security_update_password_require_reauthentication = true
+
+[rest]
+enabled = true
+port = 54329
+
+[realtime]
+enabled = true
+port = 54330
+
+[functions.setup-stripe-connect]
+verify_jwt = true
+
+[functions.check-stripe-connect]
+verify_jwt = false
+
 [functions.create-booking-payment]
 verify_jwt = true
 
-[functions.verify-booking-payment] 
+[functions.verify-booking-payment]
 verify_jwt = false
+
+[functions.secure-withdrawal]
+verify_jwt = true

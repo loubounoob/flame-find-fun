@@ -12,60 +12,125 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client with service role
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    console.log("💰 Processing withdrawal request...");
 
-    // Get user from auth header
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("❌ Missing environment variables");
+      return new Response(
+        JSON.stringify({ error: "Configuration manquante" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
+      );
+    }
+
+    // Get user from authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("Authorization header required");
+      return new Response(
+        JSON.stringify({ error: "Non autorisé" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401
+        }
+      );
     }
 
+    // Initialize Supabase with anon key for auth, service role for operations
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "");
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user with the auth token
     const token = authHeader.replace("Bearer ", "");
-    const anonClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-    
-    const { data: userData } = await anonClient.auth.getUser(token);
-    const user = userData.user;
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
 
-    if (!user) {
-      throw new Error("User not authenticated");
+    if (userError || !user) {
+      console.error("❌ Invalid user token:", userError);
+      return new Response(
+        JSON.stringify({ error: "Session invalide" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401
+        }
+      );
     }
 
-    const { amount } = await req.json();
+    console.log("✅ User authenticated:", user.id);
 
-    // Validate amount
+    // Get request body
+    const { businessUserId, amount } = await req.json();
+
+    // Verify user matches business user ID
+    if (user.id !== businessUserId) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé pour cette entreprise" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403
+        }
+      );
+    }
+
     if (!amount || amount <= 0) {
-      throw new Error("Invalid withdrawal amount");
+      return new Response(
+        JSON.stringify({ error: "Montant invalide" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
+        }
+      );
     }
 
-    // Call secure database function
-    const { data, error } = await supabaseClient.rpc('secure_request_withdrawal', {
-      p_business_user_id: user.id,
-      p_amount: amount
-    });
+    console.log(`💸 Processing withdrawal of €${amount} for user ${businessUserId}`);
 
-    if (error) {
-      console.error("Database error:", error);
-      throw new Error(error.message);
+    // Call the secure withdrawal function
+    const { data: withdrawalResult, error: withdrawalError } = await supabaseService
+      .rpc('secure_request_withdrawal', {
+        p_business_user_id: businessUserId,
+        p_amount: amount
+      });
+
+    if (withdrawalError) {
+      console.error("❌ Withdrawal error:", withdrawalError);
+      return new Response(
+        JSON.stringify({ 
+          error: withdrawalError.message || "Erreur lors de la demande de retrait"
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
+        }
+      );
     }
 
-    console.log(`Withdrawal requested successfully for user ${user.id}, amount: ${amount}€`);
+    console.log("✅ Withdrawal processed successfully");
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `Demande de retrait de €${amount} traitée avec succès`
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+
   } catch (error) {
-    console.error("Withdrawal error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("💥 Unexpected error:", error);
+    return new Response(
+      JSON.stringify({ 
+        error: "Une erreur inattendue s'est produite",
+        details: error.message 
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });
