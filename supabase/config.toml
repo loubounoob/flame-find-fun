@@ -54,5 +54,5 @@ verify_jwt = true
 [functions.verify-booking-payment]
 verify_jwt = false
 
-[functions.secure-withdrawal]
+[functions.process-withdrawal]
 verify_jwt = true

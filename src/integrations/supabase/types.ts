@@ -103,6 +103,42 @@ export type Database = {
         }
         Relationships: []
       }
+      business_earnings: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          business_user_id: string
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          business_user_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          business_user_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_finances: {
         Row: {
           available_balance: number | null
@@ -809,6 +845,33 @@ export type Database = {
           offer_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          amount: number
+          business_user_id: string
+          created_at: string
+          id: string
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          business_user_id: string
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          business_user_id?: string
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
         }
         Relationships: []
       }
