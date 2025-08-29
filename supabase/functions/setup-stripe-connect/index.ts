@@ -85,15 +85,21 @@ serve(async (req) => {
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Get or create profile
-    let { data: profile, error: profileError } = await supabase
+    // Get or create profile - use upsert approach
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .upsert({
+        user_id: user.id,
+        email: user.email || null,
+        account_type: "business"
+      }, { 
+        onConflict: 'user_id' 
+      })
+      .select()
+      .single();
 
     if (profileError) {
-      console.error("❌ Error fetching profile:", profileError);
+      console.error("❌ Error creating/updating profile:", profileError);
       return new Response(
         JSON.stringify({ error: "Erreur de profil utilisateur" }),
         { 
@@ -103,30 +109,7 @@ serve(async (req) => {
       );
     }
 
-    if (!profile) {
-      // Create profile if it doesn't exist
-      const { data: newProfile, error: createError } = await supabase
-        .from("profiles")
-        .insert({
-          user_id: user.id,
-          email: user.email,
-          account_type: "business"
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("❌ Error creating profile:", createError);
-        return new Response(
-          JSON.stringify({ error: "Erreur de création de profil" }),
-          { 
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500
-          }
-        );
-      }
-      profile = newProfile;
-    }
+    console.log("✅ Profile ready:", profile.id);
 
     // Create or get Stripe Connect account
     let accountId = profile.stripe_connect_account_id;
@@ -136,7 +119,7 @@ serve(async (req) => {
       
       const account = await stripe.accounts.create({
         type: "express",
-        email: user.email,
+        email: user.email || undefined,
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
@@ -167,19 +150,23 @@ serve(async (req) => {
     }
 
     // Create account link for onboarding
-    const origin = req.headers.get("origin") || "http://localhost:8080";
+    const origin = req.headers.get("origin") || req.headers.get("referer") || "https://uxdddiaheswxgkoannri.supabase.co";
+    const baseUrl = origin.replace(/\/$/, ''); // Remove trailing slash
+    
+    console.log("🔗 Creating account link with origin:", baseUrl);
     
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/stripe-connect-setup`,
-      return_url: `${origin}/stripe-connect-setup`,
+      refresh_url: `${baseUrl}/stripe-connect-setup`,
+      return_url: `${baseUrl}/stripe-connect-setup`,
       type: "account_onboarding",
     });
 
-    console.log("✅ Created onboarding link");
+    console.log("✅ Created onboarding link:", accountLink.url);
 
     return new Response(
       JSON.stringify({
+        success: true,
         account_id: accountId,
         onboarding_url: accountLink.url,
       }),
@@ -191,10 +178,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("💥 Unexpected error:", error);
+    console.error("Error stack:", error.stack);
+    
     return new Response(
       JSON.stringify({ 
         error: "Une erreur inattendue s'est produite",
-        details: error.message 
+        details: error.message,
+        type: error.constructor.name
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
