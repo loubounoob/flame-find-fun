@@ -21,15 +21,16 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    console.log("🔧 Environment check:");
-    console.log("- Stripe key:", stripeKey ? "✅ Available" : "❌ Missing");
-    console.log("- Supabase URL:", supabaseUrl ? "✅ Available" : "❌ Missing");
-    console.log("- Service key:", supabaseServiceKey ? "✅ Available" : "❌ Missing");
+    console.log("🔧 Environment variables check:");
+    console.log("- Stripe key:", stripeKey ? `✅ Available (${stripeKey.substring(0, 7)}...${stripeKey.substring(stripeKey.length - 4)})` : "❌ Missing");
+    console.log("- Supabase URL:", supabaseUrl ? `✅ Available (${supabaseUrl})` : "❌ Missing");
+    console.log("- Service key:", supabaseServiceKey ? `✅ Available (${supabaseServiceKey.substring(0, 10)}...${supabaseServiceKey.substring(supabaseServiceKey.length - 4)})` : "❌ Missing");
 
     if (!stripeKey) {
       console.error("❌ STRIPE_SECRET_KEY manquante");
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: "Configuration Stripe manquante",
           details: "Veuillez configurer votre clé secrète Stripe dans les paramètres des Edge Functions"
         }),
@@ -43,7 +44,10 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("❌ Configuration Supabase manquante");
       return new Response(
-        JSON.stringify({ error: "Configuration serveur manquante" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Configuration serveur manquante" 
+        }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500
@@ -55,10 +59,15 @@ serve(async (req) => {
 
     // Authenticate user from Authorization header
     const authHeader = req.headers.get("Authorization");
+    console.log("🔐 Header Authorization:", authHeader ? `✅ Token présent (Bearer ${authHeader.substring(7, 15)}...${authHeader.substring(authHeader.length - 8)})` : "❌ Manquant");
+    
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error("❌ Header Authorization manquant ou invalide");
       return new Response(
-        JSON.stringify({ error: "Non autorisé - token manquant" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Non autorisé - token manquant" 
+        }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401
@@ -71,12 +80,23 @@ serve(async (req) => {
 
     // Extract and validate user token
     const token = authHeader.replace("Bearer ", "");
+    console.log("🔍 Validation du token utilisateur...");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    console.log("👤 Résultat auth.getUser:", {
+      success: !!user,
+      userId: user?.id || null,
+      email: user?.email || null,
+      error: userError?.message || null
+    });
 
     if (userError || !user) {
       console.error("❌ Token invalide:", userError?.message);
       return new Response(
-        JSON.stringify({ error: "Session invalide ou expirée" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Session invalide ou expirée" 
+        }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401
@@ -110,6 +130,7 @@ serve(async (req) => {
       console.error("❌ Erreur profil utilisateur:", profileError);
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: "Erreur lors de la gestion du profil utilisateur",
           details: profileError.message
         }),
@@ -129,6 +150,7 @@ serve(async (req) => {
       console.log("📝 Création d'un nouveau compte Stripe Connect Express...");
       
       try {
+        console.log("🔄 Appel Stripe: stripe.accounts.create()");
         const account = await stripe.accounts.create({
           type: "express",
           email: user.email || undefined,
@@ -145,10 +167,17 @@ serve(async (req) => {
           }
         });
 
+        console.log("✅ Réponse Stripe: compte créé avec succès", {
+          accountId: account.id,
+          type: account.type,
+          created: account.created
+        });
+
         accountId = account.id;
         console.log("✅ Compte Stripe créé:", accountId);
 
         // Save Stripe account ID to user profile
+        console.log("💾 Sauvegarde de l'account ID dans Supabase...");
         const { error: updateError } = await supabase
           .from("profiles")
           .update({ stripe_connect_account_id: accountId })
@@ -158,6 +187,7 @@ serve(async (req) => {
           console.error("❌ Erreur sauvegarde account ID:", updateError);
           return new Response(
             JSON.stringify({ 
+              success: false,
               error: "Erreur lors de la sauvegarde du compte Stripe",
               details: updateError.message
             }),
@@ -168,13 +198,19 @@ serve(async (req) => {
           );
         }
 
+        console.log("✅ Account ID sauvegardé dans Supabase");
+
       } catch (stripeError: any) {
         console.error("❌ Erreur création compte Stripe:", stripeError);
+        console.error("- Message:", stripeError.message);
+        console.error("- Type:", stripeError.type);
+        console.error("- Code:", stripeError.code);
         
         // Handle specific Stripe platform configuration error
         if (stripeError.message?.includes("platform-profile")) {
           return new Response(
             JSON.stringify({ 
+              success: false,
               error: "Configuration de plateforme Stripe requise",
               details: "Votre compte Stripe doit être configuré pour accepter les comptes Connect. Consultez https://dashboard.stripe.com/settings/connect/platform-profile",
               action_required: "platform_setup"
@@ -188,6 +224,7 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({ 
+            success: false,
             error: "Erreur lors de la création du compte Stripe",
             details: stripeError.message
           }),
@@ -209,11 +246,17 @@ serve(async (req) => {
     
     try {
       // Create Stripe account onboarding link
+      console.log("🔄 Appel Stripe: stripe.accountLinks.create()");
       const accountLink = await stripe.accountLinks.create({
         account: accountId,
         refresh_url: `${baseUrl}/stripe-connect-setup`,
         return_url: `${baseUrl}/stripe-connect-setup`,
         type: "account_onboarding",
+      });
+
+      console.log("✅ Réponse Stripe: lien créé avec succès", {
+        url: accountLink.url,
+        expires_at: accountLink.expires_at
       });
 
       console.log("✅ Lien d'onboarding créé:", accountLink.url);
@@ -232,8 +275,13 @@ serve(async (req) => {
 
     } catch (linkError: any) {
       console.error("❌ Erreur création lien onboarding:", linkError);
+      console.error("- Message:", linkError.message);
+      console.error("- Type:", linkError.type);
+      console.error("- Code:", linkError.code);
+      
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: "Erreur lors de la création du lien d'onboarding",
           details: linkError.message
         }),
@@ -246,10 +294,13 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("💥 Erreur inattendue:", error);
-    console.error("Stack trace:", error.stack);
+    console.error("- Message:", error.message);
+    console.error("- Stack trace:", error.stack);
+    console.error("- Constructor:", error.constructor?.name);
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: "Une erreur inattendue s'est produite",
         details: error.message || "Erreur inconnue",
         type: error.constructor?.name || "Error"
