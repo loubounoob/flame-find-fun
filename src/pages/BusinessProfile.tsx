@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Settings,
   LogOut,
@@ -18,8 +17,7 @@ import {
   MapPin,
   Phone,
   Globe,
-  Clock,
-  AlertTriangle
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +30,6 @@ export default function BusinessProfile() {
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [searchParams] = useSearchParams();
   const [stats, setStats] = useState({
     activeOffers: 0,
     totalBookings: 0,
@@ -50,8 +47,6 @@ export default function BusinessProfile() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check for error parameters
-  const hasStripeError = searchParams.get('error') === 'stripe_config';
 
   useEffect(() => {
     checkAuth();
@@ -266,9 +261,6 @@ export default function BusinessProfile() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigate("/stripe-connect-setup")}>
-              <Settings size={20} />
-            </Button>
             <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
               <Settings size={20} />
             </Button>
@@ -280,28 +272,6 @@ export default function BusinessProfile() {
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Stripe Configuration Error Alert */}
-        {hasStripeError && (
-          <Alert className="border-destructive/50 bg-destructive/10">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">Configuration Stripe requise</p>
-                <p className="text-sm text-muted-foreground">
-                  La configuration de votre compte Stripe Connect a échoué. 
-                  Veuillez contacter le support technique pour résoudre ce problème.
-                </p>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => navigate("/stripe-connect-setup")}
-                >
-                  Réessayer la configuration
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Profile Header */}
         <Card className="bg-gradient-card border-border/50">
