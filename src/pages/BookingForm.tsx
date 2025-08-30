@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotSelector } from "@/components/ui/time-slot-selector";
-import { BookingPayment } from "@/components/BookingPayment";
+
 import { Calendar, Users, Clock, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +27,6 @@ export default function BookingForm() {
   const [customBookingTime, setCustomBookingTime] = useState("");
   const [customBookingDate, setCustomBookingDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
-  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
 
   const getBookingDateTime = () => {
     // Si c'est un créneau personnalisé
@@ -183,13 +181,11 @@ export default function BookingForm() {
       });
 
       if (booking?.id) {
-        setCreatedBookingId(booking.id);
-        setShowPayment(true);
-        
         toast({
           title: "Réservation créée !",
-          description: "Veuillez procéder au paiement pour confirmer votre réservation.",
+          description: "Votre réservation a été confirmée avec succès.",
         });
+        navigate("/booking");
       }
     } catch (error: any) {
       console.error('Booking error:', error);
@@ -203,21 +199,6 @@ export default function BookingForm() {
     }
   };
 
-  const handlePaymentSuccess = () => {
-    toast({
-      title: "Paiement effectué !",
-      description: "Votre réservation est confirmée.",
-    });
-    navigate("/booking");
-  };
-
-  const handlePaymentError = (error: string) => {
-    toast({
-      title: "Erreur de paiement",
-      description: error,
-      variant: "destructive"
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -254,8 +235,7 @@ export default function BookingForm() {
           </CardContent>
         </Card>
 
-        {/* Booking Form or Payment */}
-        {!showPayment ? (
+        {/* Booking Form */}
           <Card className="bg-gradient-card border-border/50">
             <CardHeader>
               <CardTitle className="text-foreground">Détails de la réservation</CardTitle>
@@ -320,14 +300,6 @@ export default function BookingForm() {
                         {calculatePrice() > 0 ? `${calculatePrice()}€` : "À discuter"}
                       </span>
                     </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
-                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-                        💳 Paiement requis après confirmation
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                        Le paiement sera traité de manière sécurisée via Stripe
-                      </p>
-                    </div>
                   </div>
                   
                   <Button 
@@ -341,17 +313,6 @@ export default function BookingForm() {
               </form>
             </CardContent>
           </Card>
-        ) : (
-          createdBookingId && (
-            <BookingPayment
-              bookingId={createdBookingId}
-              amount={Math.round(calculatePrice() * 100)} // Convert to cents
-              description={`${offer.title} - ${participantCount} participant(s)`}
-              onPaymentSuccess={handlePaymentSuccess}
-              onPaymentError={handlePaymentError}
-            />
-          )
-        )}
 
       </div>
     </div>

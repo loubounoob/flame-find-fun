@@ -19,7 +19,7 @@ import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessProfile from "./pages/BusinessProfile";
 import PaymentSuccess from "./pages/PaymentSuccess";
-import StripeConnectSetup from "./pages/StripeConnectSetup";
+
 import { RouteTracker } from "./components/RouteTracker";
 
 const queryClient = new QueryClient();
@@ -46,7 +46,7 @@ const App = () => (
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
            <Route path="/business-profile" element={<ProtectedRoute businessOnly><BusinessProfile /></ProtectedRoute>} />
-           <Route path="/stripe-connect-setup" element={<ProtectedRoute businessOnly><StripeConnectSetup /></ProtectedRoute>} />
+           
            <Route path="/payment-success" element={<PaymentSuccess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
