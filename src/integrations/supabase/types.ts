@@ -27,6 +27,7 @@ export type Database = {
           offer_id: string
           participant_count: number
           status: string
+          total_price: number | null
           updated_at: string
           user_id: string
         }
@@ -42,6 +43,7 @@ export type Database = {
           offer_id: string
           participant_count?: number
           status?: string
+          total_price?: number | null
           updated_at?: string
           user_id: string
         }
@@ -57,6 +59,7 @@ export type Database = {
           offer_id?: string
           participant_count?: number
           status?: string
+          total_price?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -253,6 +256,51 @@ export type Database = {
         }
         Relationships: []
       }
+      business_pricing_rules: {
+        Row: {
+          business_user_id: string
+          conditions: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          is_percentage: boolean
+          offer_id: string | null
+          price_modifier: number
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          offer_id?: string | null
+          price_modifier?: number
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          offer_id?: string | null
+          price_modifier?: number
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_ratings: {
         Row: {
           average_rating: number
@@ -279,6 +327,42 @@ export type Database = {
           id?: string
           total_rating?: number
           total_reviews?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_revenue_stats: {
+        Row: {
+          average_booking_value: number | null
+          booking_count: number | null
+          business_user_id: string
+          created_at: string
+          daily_revenue: number | null
+          id: string
+          stat_date: string
+          top_offer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          average_booking_value?: number | null
+          booking_count?: number | null
+          business_user_id: string
+          created_at?: string
+          daily_revenue?: number | null
+          id?: string
+          stat_date?: string
+          top_offer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          average_booking_value?: number | null
+          booking_count?: number | null
+          business_user_id?: string
+          created_at?: string
+          daily_revenue?: number | null
+          id?: string
+          stat_date?: string
+          top_offer_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -887,6 +971,16 @@ export type Database = {
       auto_mark_old_notifications_read: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      calculate_booking_price: {
+        Args: {
+          p_booking_date: string
+          p_booking_time: string
+          p_business_user_id: string
+          p_offer_id: string
+          p_participant_count: number
+        }
+        Returns: number
       }
       check_rate_limit: {
         Args: {

@@ -11,6 +11,7 @@ import { Plus, X, Euro, Clock, Users, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PricingRulesManager } from "@/components/PricingRulesManager";
 
 interface PricingOption {
   id?: string;
@@ -286,7 +287,7 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full bg-gradient-card border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Euro size={20} />
@@ -511,6 +512,9 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
           )}
         </CardContent>
       </Card>
+
+      {/* Advanced Pricing Rules */}
+      <PricingRulesManager className="mt-6" />
     </div>
   );
 }

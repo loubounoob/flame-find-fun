@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromotionManager } from "@/components/ui/promotion-manager";
+import { BusinessRevenueDashboard } from "@/components/BusinessRevenueDashboard";
 import { 
   Plus, 
   BarChart3, 
@@ -462,9 +463,10 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="offers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="offers">Mes Offres</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
+            <TabsTrigger value="revenue">Revenus</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
 
@@ -741,6 +743,10 @@ export default function BusinessDashboard() {
 
           <TabsContent value="promotions" className="space-y-4">
             <PromotionManager />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-4">
+            <BusinessRevenueDashboard />
           </TabsContent>
 
           <TabsContent value="bookings" className="space-y-4">

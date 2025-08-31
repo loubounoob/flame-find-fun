@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookings } from "@/hooks/useBookings";
 import { useToast } from "@/hooks/use-toast";
+import { DynamicPriceCalculator } from "@/components/DynamicPriceCalculator";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -263,10 +264,19 @@ export default function BookingForm() {
                   )}
                 </div>
 
-                <TimeSlotSelector
+                 <TimeSlotSelector
                   selectedSlot={selectedTimeSlot}
                   onSlotSelect={setSelectedTimeSlot}
                   onCustomSlot={handleCustomSlot}
+                />
+
+                {/* Dynamic Price Calculator */}
+                <DynamicPriceCalculator
+                  offerId={id!}
+                  businessUserId={offer.business_user_id}
+                  participantCount={participantCount}
+                  bookingDate={getBookingDateTime().date}
+                  bookingTime={getBookingDateTime().time}
                 />
 
                 <div className="space-y-2">
