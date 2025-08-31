@@ -51,6 +51,7 @@ export default function BusinessDashboard() {
     image_file: null,
     custom_category: ""
   });
+  const [isCreateOfferOpen, setIsCreateOfferOpen] = useState(false);
   const [showPricingSetup, setShowPricingSetup] = useState(false);
   const [pricingOptions, setPricingOptions] = useState([]);
   const navigate = useNavigate();
@@ -232,13 +233,26 @@ export default function BusinessDashboard() {
   const createOffer = async () => {
     if (!user) return;
 
+    // Validate pricing options before creating offer
+    if (pricingOptions.length === 0) {
+      toast({
+        title: "Configuration incomplète",
+        description: "Veuillez configurer au moins une option tarifaire avant de créer l'offre.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       let imageUrl = null;
       if (formData.image_file) {
         imageUrl = await handleImageUpload(formData.image_file);
       }
 
-      const { error } = await supabase
+      // Create the offer with base price from first pricing option
+      const basePrice = pricingOptions[0]?.price_amount || 0;
+
+      const { data: offerData, error } = await supabase
         .from('offers')
         .insert({
           business_user_id: user.id,
@@ -248,23 +262,55 @@ export default function BusinessDashboard() {
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-          image_url: imageUrl
-        });
+          image_url: imageUrl,
+          base_price: basePrice,
+          status: 'active'
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Create offer-specific pricing options if needed
+      if (offerData && pricingOptions.length > 0) {
+        const offerPricingOptions = pricingOptions.map(option => ({
+          offer_id: offerData.id,
+          option_name: option.service_name,
+          price: option.price_amount,
+          description: option.description,
+          duration_minutes: option.duration_minutes,
+          is_default: option === pricingOptions[0] // First option is default
+        }));
+
+        await supabase
+          .from('offer_pricing_options')
+          .insert(offerPricingOptions);
+      }
+
       toast({
-        title: "Offre créée",
-        description: "Votre offre a été créée avec succès !",
+        title: "Offre créée !",
+        description: "Votre offre a été publiée avec succès."
       });
-      
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        category: "",
+        address: "",
+        max_participants: "",
+        image_file: null,
+        custom_category: ""
+      });
+      setPricingOptions([]);
       setShowCreateForm(false);
-      resetForm();
+      
       loadOffers();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating offer:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer l'offre. Veuillez réessayer.",
+        description: error.message || "Erreur lors de la création de l'offre",
         variant: "destructive"
       });
     }

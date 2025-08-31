@@ -39,28 +39,44 @@ export function useDynamicPricing(
   const calculatePrice = async () => {
     setIsCalculating(true);
     try {
-      // Get base price from offer
-      const { data: offer, error: offerError } = await supabase
-        .from('offers')
-        .select('base_price, pricing_options')
-        .eq('id', offerId)
+      // First try to get base price from business pricing
+      const { data: businessPricing, error: businessPricingError } = await supabase
+        .from('business_pricing')
+        .select('price_amount, price_type')
+        .eq('business_user_id', businessUserId)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(1)
         .single();
 
-      if (offerError) throw offerError;
-
-      let basePrice = offer.base_price || 0;
-
-      // If no base price, get from pricing options
-      if (basePrice === 0) {
-        const { data: pricingOptions, error: pricingError } = await supabase
-          .from('offer_pricing_options')
-          .select('price')
-          .eq('offer_id', offerId)
-          .eq('is_default', true)
+      let basePrice = 0;
+      
+      if (!businessPricingError && businessPricing) {
+        basePrice = businessPricing.price_amount;
+      } else {
+        // Fallback to offer-specific pricing
+        const { data: offer, error: offerError } = await supabase
+          .from('offers')
+          .select('base_price, pricing_options')
+          .eq('id', offerId)
           .single();
 
-        if (!pricingError && pricingOptions) {
-          basePrice = pricingOptions.price;
+        if (offerError) throw offerError;
+
+        basePrice = offer.base_price || 0;
+
+        // If still no base price, get from pricing options
+        if (basePrice === 0) {
+          const { data: pricingOptions, error: pricingError } = await supabase
+            .from('offer_pricing_options')
+            .select('price')
+            .eq('offer_id', offerId)
+            .eq('is_default', true)
+            .single();
+
+          if (!pricingError && pricingOptions) {
+            basePrice = pricingOptions.price;
+          }
         }
       }
 
