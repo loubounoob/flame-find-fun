@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookings } from "@/hooks/useBookings";
 import { useToast } from "@/hooks/use-toast";
-import { DynamicPriceCalculator } from "@/components/DynamicPriceCalculator";
+import { RealtimePriceDisplay } from "@/components/RealtimePriceDisplay";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -144,12 +144,7 @@ export default function BookingForm() {
   }
 
   const calculatePrice = () => {
-    if (promotion) {
-      return promotion.promotional_price * participantCount;
-    }
-    if (offer?.base_price) {
-      return offer.base_price * participantCount;
-    }
+    // Now handled by DynamicPriceCalculator
     return 0;
   };
 
@@ -223,15 +218,15 @@ export default function BookingForm() {
               <div className="w-16 h-16 bg-gradient-primary rounded-lg flex-shrink-0 bg-cover bg-center"
                    style={{ backgroundImage: offer.image_url ? `url(${offer.image_url})` : undefined }}>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">{offer.title}</h3>
-                <p className="text-sm text-muted-foreground">{offer.category}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {offer.price ? `${offer.price}` : "Prix sur demande"}
-                  </Badge>
-                </div>
-              </div>
+               <div className="flex-1">
+                 <h3 className="font-semibold text-foreground">{offer.title}</h3>
+                 <p className="text-sm text-muted-foreground">{offer.category}</p>
+                 <div className="flex gap-2 mt-1">
+                   <Badge variant="secondary" className="text-xs">
+                     {offer.category}
+                   </Badge>
+                 </div>
+               </div>
             </div>
           </CardContent>
         </Card>
@@ -270,14 +265,15 @@ export default function BookingForm() {
                   onCustomSlot={handleCustomSlot}
                 />
 
-                {/* Dynamic Price Calculator */}
-                <DynamicPriceCalculator
-                  offerId={id!}
-                  businessUserId={offer.business_user_id}
-                  participantCount={participantCount}
-                  bookingDate={getBookingDateTime().date}
-                  bookingTime={getBookingDateTime().time}
-                />
+                 {/* Real-time Price Display */}
+                 <RealtimePriceDisplay
+                   offerId={id!}
+                   businessUserId={offer.business_user_id}
+                   participantCount={participantCount}
+                   bookingDate={getBookingDateTime().date}
+                   bookingTime={getBookingDateTime().time}
+                   showBreakdown={true}
+                 />
 
                 <div className="space-y-2">
                   <Label htmlFor="notes" className="flex items-center gap-2">
@@ -292,34 +288,15 @@ export default function BookingForm() {
                   />
                 </div>
 
-                <div className="pt-4 border-t border-border/50">
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Participants:</span>
-                      <span className="font-medium">{participantCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Prix unitaire:</span>
-                      <span className="font-medium">
-                        {promotion ? `${promotion.promotional_price}€` : (offer.base_price ? `${offer.base_price}€` : "À discuter")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total:</span>
-                      <span className="font-bold text-lg text-primary">
-                        {calculatePrice() > 0 ? `${calculatePrice()}€` : "À discuter"}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={isSubmitting || !selectedTimeSlot}
-                  >
-                    {isSubmitting ? "Création de la réservation..." : "Créer la réservation"}
-                  </Button>
-                </div>
+                 <div className="pt-4 border-t border-border/50">
+                   <Button 
+                     type="submit" 
+                     className="w-full bg-gradient-primary hover:opacity-90"
+                     disabled={isSubmitting || !selectedTimeSlot}
+                   >
+                     {isSubmitting ? "Création de la réservation..." : "Créer la réservation"}
+                   </Button>
+                 </div>
               </form>
             </CardContent>
           </Card>

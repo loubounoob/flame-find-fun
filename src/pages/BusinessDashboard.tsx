@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromotionManager } from "@/components/ui/promotion-manager";
 import { BusinessRevenueDashboard } from "@/components/BusinessRevenueDashboard";
+import { BusinessPricingSetup } from "@/components/ui/business-pricing-setup";
 import { 
   Plus, 
   BarChart3, 
@@ -45,12 +46,13 @@ export default function BusinessDashboard() {
     title: "",
     description: "",
     category: "",
-    price: "",
     address: "",
     max_participants: "",
     image_file: null,
     custom_category: ""
   });
+  const [showPricingSetup, setShowPricingSetup] = useState(false);
+  const [pricingOptions, setPricingOptions] = useState([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -243,7 +245,6 @@ export default function BusinessDashboard() {
           title: formData.title,
           description: formData.description,
           category: formData.category === "Autre" ? formData.custom_category : formData.category,
-          price: formData.price,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
@@ -284,7 +285,6 @@ export default function BusinessDashboard() {
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          price: formData.price,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
@@ -344,8 +344,6 @@ export default function BusinessDashboard() {
       title: offer.title || "",
       description: offer.description || "",
       category: offer.category || "",
-      price: offer.price || "",
-      
       address: offer.address || "",
       max_participants: offer.max_participants?.toString() || "",
       image_file: null,
@@ -361,8 +359,6 @@ export default function BusinessDashboard() {
       title: "",
       description: "",
       category: "",
-      price: "",
-      
       address: "",
       max_participants: "",
       image_file: null,
@@ -462,15 +458,17 @@ export default function BusinessDashboard() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="offers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="offers">Mes Offres</TabsTrigger>
-            <TabsTrigger value="promotions">Promotions</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="revenue">Revenus</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="offers" className="space-y-4">
+          <TabsContent value="dashboard" className="space-y-4">
+            {/* Dashboard Content: Mes Offres + Promotions */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-poppins font-bold text-foreground">Mes Offres</h2>
             {/* Create Offer Button */}
             <Card className="bg-gradient-card border-border/50">
               <CardContent className="p-6 text-center">
@@ -546,27 +544,78 @@ export default function BusinessDashboard() {
                     />
                   </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Prix (€)</Label>
-                      <Input
-                        id="price"
-                        value={formData.price}
-                        onChange={(e) => setFormData({...formData, price: e.target.value})}
-                        placeholder="15€"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="max_participants">Participants max</Label>
-                      <Input
-                        id="max_participants"
-                        type="number"
-                        value={formData.max_participants}
-                        onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
-                        placeholder="8"
-                      />
-                    </div>
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="max_participants">Participants max</Label>
+                     <Input
+                       id="max_participants"
+                       type="number"
+                       value={formData.max_participants}
+                       onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
+                       placeholder="8"
+                     />
+                   </div>
+
+                   {/* Pricing Configuration */}
+                   <div className="space-y-4">
+                     <div className="flex items-center justify-between">
+                       <Label>Configuration des tarifs</Label>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="sm"
+                         onClick={() => setShowPricingSetup(!showPricingSetup)}
+                       >
+                         <Zap size={16} className="mr-2" />
+                         {showPricingSetup ? "Masquer tarifs" : "Configurer tarifs"}
+                       </Button>
+                     </div>
+                     
+                     {pricingOptions.length === 0 && !showPricingSetup && (
+                       <div className="p-4 border border-dashed border-border rounded-lg text-center">
+                         <p className="text-sm text-muted-foreground mb-2">
+                           Aucune option tarifaire configurée
+                         </p>
+                         <Button
+                           type="button"
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setShowPricingSetup(true)}
+                         >
+                           Ajouter une option de tarif
+                         </Button>
+                       </div>
+                     )}
+
+                     {pricingOptions.length > 0 && !showPricingSetup && (
+                       <div className="space-y-2">
+                         <p className="text-sm text-muted-foreground">
+                           {pricingOptions.length} option{pricingOptions.length > 1 ? 's' : ''} configurée{pricingOptions.length > 1 ? 's' : ''}
+                         </p>
+                         <div className="flex flex-wrap gap-2">
+                           {pricingOptions.slice(0, 3).map((option, index) => (
+                             <Badge key={index} variant="secondary" className="text-xs">
+                               {option.service_name}: {option.price_amount}€
+                             </Badge>
+                           ))}
+                           {pricingOptions.length > 3 && (
+                             <Badge variant="outline" className="text-xs">
+                               +{pricingOptions.length - 3} autres
+                             </Badge>
+                           )}
+                         </div>
+                       </div>
+                     )}
+
+                     {showPricingSetup && user && (
+                       <BusinessPricingSetup
+                         businessUserId={user.id}
+                         onPricingComplete={(options) => {
+                           setPricingOptions(options);
+                           setShowPricingSetup(false);
+                         }}
+                       />
+                     )}
+                   </div>
 
 
                   <div className="space-y-2">
@@ -696,53 +745,56 @@ export default function BusinessDashboard() {
                   <p className="text-muted-foreground">Aucune offre créée pour le moment.</p>
                 </div>
               ) : (
-                offers.map((offer) => (
-                  <Card key={offer.id} className="bg-gradient-card border-border/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{offer.title}</h3>
-                          <p className="text-sm text-muted-foreground">{offer.category}</p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <div className="flex items-center gap-1">
-                              <Flame size={14} className="text-flame fill-current" />
-                              <span className="text-sm">{offer.flames || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Eye size={14} className="text-info" />
-                              <span className="text-sm">{offer.views || 0}</span>
-                            </div>
-                            <Badge variant={offer.status === "active" ? "default" : "secondary"}>
-                              {offer.status === "active" ? "Actif" : "Inactif"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => startEditing(offer)}
-                          >
-                            <Edit size={16} />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => deleteOffer(offer.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+                 offers.map((offer) => (
+                   <Card key={offer.id} className="bg-gradient-card border-border/50">
+                     <CardContent className="p-4">
+                       <div className="flex items-center justify-between">
+                         <div className="flex-1">
+                           <h3 className="font-semibold text-foreground">{offer.title}</h3>
+                           <p className="text-sm text-muted-foreground">{offer.category}</p>
+                           <div className="flex items-center gap-4 mt-2">
+                             <div className="flex items-center gap-1">
+                               <Flame size={14} className="text-flame fill-current" />
+                               <span className="text-sm">{offer.flames || 0}</span>
+                             </div>
+                             <div className="flex items-center gap-1">
+                               <Eye size={14} className="text-info" />
+                               <span className="text-sm">{offer.views || 0}</span>
+                             </div>
+                             <Badge variant={offer.status === "active" ? "default" : "secondary"}>
+                               {offer.status === "active" ? "Actif" : "Inactif"}
+                             </Badge>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <Button 
+                             variant="outline" 
+                             size="icon"
+                             onClick={() => startEditing(offer)}
+                           >
+                             <Edit size={16} />
+                           </Button>
+                           <Button 
+                             variant="outline" 
+                             size="icon"
+                             onClick={() => deleteOffer(offer.id)}
+                           >
+                             <Trash2 size={16} />
+                           </Button>
+                         </div>
+                       </div>
+                     </CardContent>
+                   </Card>
+                 ))
+               )}
             </div>
-          </TabsContent>
 
-          <TabsContent value="promotions" className="space-y-4">
-            <PromotionManager />
+            {/* Promotions Section */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-poppins font-bold text-foreground">Promotions</h2>
+              <PromotionManager />
+            </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="revenue" className="space-y-4">
@@ -793,15 +845,6 @@ export default function BusinessDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="map" className="space-y-4">
-            <div className="text-center p-8">
-              <h2 className="text-lg font-semibold mb-4">Carte des entreprises</h2>
-              <p className="text-muted-foreground mb-4">Visualisez toutes les entreprises de notre réseau</p>
-              <Button onClick={() => navigate("/map")} className="bg-gradient-primary">
-                Voir la carte complète
-              </Button>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
 
