@@ -30,9 +30,10 @@ interface PricingOption {
 interface BusinessPricingSetupProps {
   businessUserId: string;
   onPricingComplete?: (options: PricingOption[]) => void;
+  onClose?: () => void;
 }
 
-export function BusinessPricingSetup({ businessUserId, onPricingComplete }: BusinessPricingSetupProps) {
+export function BusinessPricingSetup({ businessUserId, onPricingComplete, onClose }: BusinessPricingSetupProps) {
   const [options, setOptions] = useState<PricingOption[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -88,9 +89,9 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
   useEffect(() => {
     if (existingOptions.length > 0) {
       setOptions(existingOptions);
-      onPricingComplete?.(existingOptions);
+      // Ne pas appeler onPricingComplete lors du chargement pour éviter la fermeture automatique
     }
-  }, [existingOptions, onPricingComplete]);
+  }, [existingOptions]);
 
   // Save pricing option
   const savePricingMutation = useMutation({
@@ -208,7 +209,6 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
 
     // Reset form
     resetForm();
-    onPricingComplete?.([...options, option]);
   };
 
   const resetForm = () => {
@@ -243,8 +243,6 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
     if (optionToRemove.id) {
       deletePricingMutation.mutate(optionToRemove.id);
     }
-    
-    onPricingComplete?.(updatedOptions);
   };
 
   const applyTemplate = (template: any) => {
@@ -460,6 +458,22 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
                 </div>
               </CardContent>
             </Card>
+          )}
+          
+          {/* Bouton Terminé pour fermer l'interface */}
+          {options.length > 0 && (
+            <div className="pt-4 border-t border-border/50">
+              <Button
+                variant="default"
+                onClick={() => {
+                  onPricingComplete?.(options);
+                  onClose?.();
+                }}
+                className="w-full"
+              >
+                Terminé - Fermer la configuration
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

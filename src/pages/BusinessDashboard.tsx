@@ -658,18 +658,20 @@ export default function BusinessDashboard() {
                        </div>
                      )}
 
-                      {showPricingSetup && user && (
-                        <div className="mt-4">
-                          <BusinessPricingSetup
-                            businessUserId={user.id}
-                            onPricingComplete={(options) => {
-                              console.log("Pricing complete, options:", options);
-                              setPricingOptions(options);
-                              setShowPricingSetup(false);
-                            }}
-                          />
-                        </div>
-                      )}
+                       {showPricingSetup && user && (
+                         <div className="mt-4">
+                           <BusinessPricingSetup
+                             businessUserId={user.id}
+                             onPricingComplete={(options) => {
+                               console.log("Pricing complete, options:", options);
+                               setPricingOptions(options);
+                             }}
+                             onClose={() => {
+                               setShowPricingSetup(false);
+                             }}
+                           />
+                         </div>
+                       )}
                    </div>
 
 
