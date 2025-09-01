@@ -52,8 +52,22 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Templates vides pour démarrer
-  const pricingTemplates: any[] = [];
+  // Interface par défaut pour nouveau tarif
+  const initializePricingForm = () => {
+    setIsEditing(true);
+    setNewOption({
+      service_name: "",
+      price_amount: 0,
+      price_type: "par_personne",
+      duration_minutes: 60,
+      max_participants: undefined,
+      min_participants: 1,
+      description: "",
+      special_conditions: "",
+      is_active: true,
+      display_order: 0
+    });
+  };
 
   // Fetch existing pricing options
   const { data: existingOptions = [], isLoading } = useQuery({
@@ -333,7 +347,7 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
           {!isEditing ? (
             <Button
               variant="outline"
-              onClick={() => setIsEditing(true)}
+              onClick={initializePricingForm}
               className="w-full"
             >
               <Plus size={16} className="mr-2" />

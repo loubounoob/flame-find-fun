@@ -605,15 +605,18 @@ export default function BusinessDashboard() {
                    <div className="space-y-4">
                      <div className="flex items-center justify-between">
                        <Label>Configuration des tarifs</Label>
-                       <Button
-                         type="button"
-                         variant="outline"
-                         size="sm"
-                         onClick={() => setShowPricingSetup(!showPricingSetup)}
-                       >
-                         <Zap size={16} className="mr-2" />
-                         {showPricingSetup ? "Masquer tarifs" : "Configurer tarifs"}
-                       </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            console.log("Bouton configurer tarifs cliqué, showPricingSetup:", showPricingSetup);
+                            setShowPricingSetup(!showPricingSetup);
+                          }}
+                        >
+                          <Zap size={16} className="mr-2" />
+                          {showPricingSetup ? "Masquer tarifs" : "Configurer tarifs"}
+                        </Button>
                      </div>
                      
                      {pricingOptions.length === 0 && !showPricingSetup && (
@@ -621,14 +624,17 @@ export default function BusinessDashboard() {
                          <p className="text-sm text-muted-foreground mb-2">
                            Aucune option tarifaire configurée
                          </p>
-                         <Button
-                           type="button"
-                           variant="outline"
-                           size="sm"
-                           onClick={() => setShowPricingSetup(true)}
-                         >
-                           Ajouter une option de tarif
-                         </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              console.log("Bouton ajouter tarif cliqué");
+                              setShowPricingSetup(true);
+                            }}
+                          >
+                            Ajouter une option de tarif
+                          </Button>
                        </div>
                      )}
 
@@ -652,15 +658,18 @@ export default function BusinessDashboard() {
                        </div>
                      )}
 
-                     {showPricingSetup && user && (
-                       <BusinessPricingSetup
-                         businessUserId={user.id}
-                         onPricingComplete={(options) => {
-                           setPricingOptions(options);
-                           setShowPricingSetup(false);
-                         }}
-                       />
-                     )}
+                      {showPricingSetup && user && (
+                        <div className="mt-4">
+                          <BusinessPricingSetup
+                            businessUserId={user.id}
+                            onPricingComplete={(options) => {
+                              console.log("Pricing complete, options:", options);
+                              setPricingOptions(options);
+                              setShowPricingSetup(false);
+                            }}
+                          />
+                        </div>
+                      )}
                    </div>
 
 
