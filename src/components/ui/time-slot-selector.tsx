@@ -184,6 +184,7 @@ export function TimeSlotSelector({ selectedSlot, onSlotSelect, onCustomSlot }: T
                       value={customDate}
                       onChange={(e) => setCustomDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
+                      max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     />
                   </div>
                   <div className="space-y-2">

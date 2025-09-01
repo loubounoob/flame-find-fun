@@ -86,7 +86,7 @@ export default function AdvancedMapInterface() {
     },
   });
 
-  // Enhanced filtering logic
+  // Enhanced filtering logic  
   const filteredOffers = offers.filter(offer => {
     // Search filter
     if (filters.search && !offer.title.toLowerCase().includes(filters.search.toLowerCase()) && 
@@ -94,9 +94,22 @@ export default function AdvancedMapInterface() {
       return false;
     }
 
-    // Category filter
-    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
-      return false;
+    // Category filter - check if offer category contains or matches filter category
+    if (filters.category !== "all") {
+      const offerCategory = offer.category?.toLowerCase() || '';
+      const filterCategory = filters.category.toLowerCase();
+      if (!offerCategory.includes(filterCategory) && offerCategory !== filterCategory) {
+        return false;
+      }
+    }
+
+    // Distance filter (if user location available)
+    if (filters.maxDistance && userLocation && offer.latitude && offer.longitude) {
+      const distance = calculateDistance(
+        userLocation.lat, userLocation.lng, 
+        Number(offer.latitude), Number(offer.longitude)
+      );
+      if (distance > filters.maxDistance) return false;
     }
 
     // Price filter
@@ -126,6 +139,19 @@ export default function AdvancedMapInterface() {
 
     return true;
   });
+
+  // Calculate distance between two points using Haversine formula
+  function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
 
   const handleLocationUpdate = (location: { lat: number; lng: number }) => {
     setUserLocation(location);
@@ -180,8 +206,8 @@ export default function AdvancedMapInterface() {
   };
 
   const categories = [
-    "all", "Sport", "Culture", "Restauration", "Wellness", "Divertissement", 
-    "Formation", "Aventure", "Art", "Technologie"
+    "all", "bowling", "billard", "padel", "escape-game", "karting", "laser-game", "paintball", 
+    "tennis", "badminton", "squash", "cinema", "restaurant", "bar"
   ];
 
   return (
@@ -225,7 +251,21 @@ export default function AdvancedMapInterface() {
                 onClick={() => setFilters({...filters, category})}
                 className="whitespace-nowrap"
               >
-                {category === "all" ? "Tous" : category}
+                {category === "all" ? "Tous" : 
+                 category === "bowling" ? "Bowling" :
+                 category === "billard" ? "Billard" :
+                 category === "padel" ? "Padel" :
+                 category === "escape-game" ? "Escape Game" :
+                 category === "karting" ? "Karting" :
+                 category === "laser-game" ? "Laser Game" :
+                 category === "paintball" ? "Paintball" :
+                 category === "tennis" ? "Tennis" :
+                 category === "badminton" ? "Badminton" :
+                 category === "squash" ? "Squash" :
+                 category === "cinema" ? "Cinéma" :
+                 category === "restaurant" ? "Restaurant" :
+                 category === "bar" ? "Bar" :
+                 category}
               </Button>
             ))}
           </div>

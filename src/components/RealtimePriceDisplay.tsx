@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDynamicPricing } from "@/hooks/useDynamicPricing";
-import { TrendingUp, TrendingDown, Euro, Info } from "lucide-react";
+import { Euro, Info } from "lucide-react";
 
 interface RealtimePriceDisplayProps {
   offerId: string;
@@ -32,31 +32,6 @@ export function RealtimePriceDisplay({
     bookingTime
   );
 
-  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
-  const [priceChange, setPriceChange] = useState<'up' | 'down' | null>(null);
-
-  useEffect(() => {
-    if (priceCalculation && previousPrice !== null) {
-      if (priceCalculation.finalPrice > previousPrice) {
-        setPriceChange('up');
-      } else if (priceCalculation.finalPrice < previousPrice) {
-        setPriceChange('down');
-      } else {
-        setPriceChange(null);
-      }
-    }
-    if (priceCalculation) {
-      setPreviousPrice(priceCalculation.finalPrice);
-    }
-  }, [priceCalculation?.finalPrice]);
-
-  // Reset animation after 2 seconds
-  useEffect(() => {
-    if (priceChange) {
-      const timer = setTimeout(() => setPriceChange(null), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [priceChange]);
 
   if (isCalculating) {
     return (
@@ -107,15 +82,9 @@ export function RealtimePriceDisplay({
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className={`text-2xl font-bold transition-colors duration-500 ${
-                  priceChange === 'up' ? 'text-red-500' : 
-                  priceChange === 'down' ? 'text-green-500' : 
-                  'text-primary'
-                }`}>
+                <span className="text-2xl font-bold text-primary">
                   {formatCurrency(priceCalculation.finalPrice)}
                 </span>
-                {priceChange === 'up' && <TrendingUp size={20} className="text-red-500" />}
-                {priceChange === 'down' && <TrendingDown size={20} className="text-green-500" />}
               </div>
               <p className="text-sm text-muted-foreground">
                 Prix total pour {participantCount} participant{participantCount > 1 ? 's' : ''}
@@ -175,23 +144,20 @@ export function RealtimePriceDisplay({
             </div>
           )}
 
-          {/* Economic Tips */}
-          {participantCount < 5 && priceCalculation.basePrice > 0 && (
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <div className="flex items-start gap-2">
-                <Info size={14} className="text-blue-600 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-blue-700">
-                    💡 Conseil économique
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    Ajoutez {5 - participantCount} participant{5 - participantCount > 1 ? 's' : ''} pour 
-                    potentiellement bénéficier de tarifs de groupe !
-                  </p>
-                </div>
+          {/* Payment Info */}
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-start gap-2">
+              <Info size={14} className="text-primary mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-primary">
+                  💳 Modalité de paiement
+                </p>
+                <p className="text-xs text-primary/80">
+                  Paiement sur place - Pas de règlement sur l'app
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </CardContent>
     </Card>

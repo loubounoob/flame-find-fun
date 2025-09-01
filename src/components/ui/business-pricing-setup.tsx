@@ -52,47 +52,8 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Templates populaires
-  const pricingTemplates = [
-    {
-      name: "Cours individuel",
-      service_name: "Cours particulier",
-      price_amount: 50,
-      price_type: "par_session",
-      duration_minutes: 60,
-      max_participants: 1,
-      min_participants: 1,
-      description: "Cours personnalisé en one-to-one"
-    },
-    {
-      name: "Cours de groupe",
-      service_name: "Cours collectif",
-      price_amount: 25,
-      price_type: "par_personne",
-      duration_minutes: 60,
-      max_participants: 8,
-      min_participants: 3,
-      description: "Cours en petit groupe"
-    },
-    {
-      name: "Stage demi-journée",
-      service_name: "Stage intensif",
-      price_amount: 120,
-      price_type: "par_personne",
-      duration_minutes: 240,
-      max_participants: 12,
-      min_participants: 5,
-      description: "Formation intensive de 4 heures"
-    },
-    {
-      name: "Location d'équipement",
-      service_name: "Location matériel",
-      price_amount: 15,
-      price_type: "par_heure",
-      duration_minutes: 60,
-      description: "Location d'équipement professionnel"
-    }
-  ];
+  // Templates vides pour démarrer
+  const pricingTemplates: any[] = [];
 
   // Fetch existing pricing options
   const { data: existingOptions = [], isLoading } = useQuery({
@@ -367,30 +328,6 @@ export function BusinessPricingSetup({ businessUserId, onPricingComplete }: Busi
             </div>
           )}
 
-          {/* Templates */}
-          {!isEditing && (
-            <div className="space-y-3">
-              <Label>Templates populaires :</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {pricingTemplates.map((template) => (
-                  <Button
-                    key={template.name}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => applyTemplate(template)}
-                    className="text-left h-auto p-3"
-                  >
-                    <div>
-                      <div className="font-medium text-sm">{template.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {template.price_amount}€ {template.price_type.replace('_', ' ')}
-                      </div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Add new option */}
           {!isEditing ? (

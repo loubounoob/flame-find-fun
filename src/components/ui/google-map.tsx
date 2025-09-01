@@ -96,7 +96,7 @@ export function GoogleMap({ onLocationUpdate, onMapLoad }: GoogleMapProps) {
         center: defaultCenter,
         zoom: 14,
         disableDefaultUI: true, // Interface complètement simplifiée
-        gestureHandling: 'cooperative',
+        gestureHandling: 'greedy',
           styles: [
             {
               featureType: 'poi',
@@ -124,9 +124,57 @@ export function GoogleMap({ onLocationUpdate, onMapLoad }: GoogleMapProps) {
       mapInstanceRef.current = map;
       onMapLoad?.(map);
 
-      // Ajouter des marqueurs pour toutes les offres/entreprises
+      // Ajouter des marqueurs pour toutes les offres/entreprises avec photos de profil
+      const profilePhotos = {};
+      
+      // Récupérer les photos de profil des entreprises
+      for (const offer of businesses) {
+        if (offer.business_user_id && !profilePhotos[offer.business_user_id]) {
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("avatar_url, business_name")
+              .eq("user_id", offer.business_user_id)
+              .single();
+            
+            if (profile) {
+              profilePhotos[offer.business_user_id] = profile;
+            }
+          } catch (error) {
+            console.log("Could not fetch profile for", offer.business_user_id);
+          }
+        }
+      }
+
       businesses.forEach(offer => {
         if (offer.latitude && offer.longitude) {
+          const profile = profilePhotos[offer.business_user_id];
+          const businessName = profile?.business_name || "Entreprise";
+          
+          let iconUrl;
+          if (profile?.avatar_url) {
+            // Use profile photo as marker icon
+            iconUrl = {
+              url: profile.avatar_url,
+              scaledSize: new google.maps.Size(50, 50),
+              anchor: new google.maps.Point(25, 25)
+            };
+          } else {
+            // Fallback to custom icon
+            iconUrl = {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="25" cy="25" r="22" fill="#ff6b35" stroke="white" stroke-width="4"/>
+                  <circle cx="25" cy="25" r="18" fill="#ff6b35"/>
+                  <circle cx="25" cy="25" r="10" fill="white"/>
+                  <circle cx="25" cy="25" r="5" fill="#ff6b35"/>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(50, 50),
+              anchor: new google.maps.Point(25, 25)
+            };
+          }
+
           const marker = new google.maps.Marker({
             position: { 
               lat: Number(offer.latitude), 
@@ -134,52 +182,63 @@ export function GoogleMap({ onLocationUpdate, onMapLoad }: GoogleMapProps) {
             },
             map: map,
             title: offer.title,
-            icon: {
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="22.5" cy="22.5" r="20" fill="#ff6b35" stroke="white" stroke-width="4"/>
-                  <circle cx="22.5" cy="22.5" r="16" fill="#ff6b35"/>
-                  <circle cx="22.5" cy="22.5" r="8" fill="white"/>
-                  <circle cx="22.5" cy="22.5" r="4" fill="#ff6b35"/>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(45, 45),
-              anchor: new google.maps.Point(22.5, 22.5)
-            }
+            icon: iconUrl
           });
 
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 16px; max-width: 280px; font-family: Arial, sans-serif;">
-                <h3 style="margin: 0 0 12px 0; font-weight: bold; color: #333; font-size: 16px;">
-                  ${offer.title}
-                </h3>
-                <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${offer.category}</p>
+              <div style="padding: 20px; max-width: 300px; font-family: Arial, sans-serif;">
+                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                  ${profile?.avatar_url ? 
+                    `<img src="${profile.avatar_url}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px;">` : 
+                    ''
+                  }
+                  <div>
+                    <h3 style="margin: 0; font-weight: bold; color: #333; font-size: 16px;">
+                      ${offer.title}
+                    </h3>
+                    <p style="margin: 0; color: #666; font-size: 12px;">${businessName}</p>
+                  </div>
+                </div>
+                
+                <div style="margin-bottom: 8px;">
+                  <span style="background: #ff6b35; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                    ${offer.category}
+                  </span>
+                </div>
+                
                 ${offer.location ? `<p style="margin: 0 0 8px 0; color: #333; font-size: 14px;">📍 ${offer.location}</p>` : ''}
-                ${offer.price ? `<p style="margin: 0 0 12px 0; color: #ff6b35; font-size: 14px; font-weight: bold;">${offer.price}</p>` : ''}
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                ${offer.price ? `<p style="margin: 0 0 12px 0; color: #ff6b35; font-size: 16px; font-weight: bold;">${offer.price}</p>` : ''}
+                
+                <div style="display: flex; gap: 8px; margin-top: 16px;">
                   <button onclick="window.location.href='/offer/${offer.id}'" style="
                     background: #ff6b35; 
                     color: white; 
                     border: none; 
-                    padding: 8px 16px; 
-                    border-radius: 6px; 
-                    font-size: 12px; 
+                    padding: 10px 16px; 
+                    border-radius: 8px; 
+                    font-size: 14px; 
                     font-weight: bold;
                     cursor: pointer;
                     flex: 1;
-                  ">Voir l'offre</button>
+                    transition: all 0.2s;
+                  " onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                    Voir l'offre
+                  </button>
                   <button onclick="window.location.href='/business-profile?id=${offer.business_user_id}'" style="
                     background: transparent; 
                     color: #ff6b35; 
-                    border: 1px solid #ff6b35; 
-                    padding: 8px 16px; 
-                    border-radius: 6px; 
-                    font-size: 12px; 
+                    border: 2px solid #ff6b35; 
+                    padding: 10px 16px; 
+                    border-radius: 8px; 
+                    font-size: 14px; 
                     font-weight: bold;
                     cursor: pointer;
                     flex: 1;
-                  ">Profil</button>
+                    transition: all 0.2s;
+                  " onmouseover="this.style.background='#ff6b35'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#ff6b35'">
+                    Profil
+                  </button>
                 </div>
               </div>
             `
