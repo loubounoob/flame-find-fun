@@ -106,9 +106,9 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
     switch (newRule.rule_type) {
       case 'participant_tiers':
         return (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="min_participants">Minimum participants</Label>
+              <Label htmlFor="min_participants" className="text-sm font-medium">Minimum participants</Label>
               <Input
                 id="min_participants"
                 type="number"
@@ -120,10 +120,11 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                     min_participants: parseInt(e.target.value) || 0
                   }
                 })}
+                className="h-10"
               />
             </div>
             <div>
-              <Label htmlFor="max_participants">Maximum participants</Label>
+              <Label htmlFor="max_participants" className="text-sm font-medium">Maximum participants</Label>
               <Input
                 id="max_participants"
                 type="number"
@@ -135,6 +136,7 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                     max_participants: parseInt(e.target.value) || 999
                   }
                 })}
+                className="h-10"
               />
             </div>
           </div>
@@ -142,9 +144,9 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
 
       case 'time_slots':
         return (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="start_time">Heure de début</Label>
+              <Label htmlFor="start_time" className="text-sm font-medium">Heure de début</Label>
               <Input
                 id="start_time"
                 type="time"
@@ -156,10 +158,11 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                     start_time: e.target.value
                   }
                 })}
+                className="h-10"
               />
             </div>
             <div>
-              <Label htmlFor="end_time">Heure de fin</Label>
+              <Label htmlFor="end_time" className="text-sm font-medium">Heure de fin</Label>
               <Input
                 id="end_time"
                 type="time"
@@ -171,6 +174,7 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                     end_time: e.target.value
                   }
                 })}
+                className="h-10"
               />
             </div>
           </div>
@@ -179,8 +183,8 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
       case 'day_of_week':
         return (
           <div>
-            <Label>Jours de la semaine</Label>
-            <div className="grid grid-cols-3 gap-2 mt-2">
+            <Label className="text-sm font-medium">Jours de la semaine</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
               {DAYS_OF_WEEK.map((day) => (
                 <div key={day.value} className="flex items-center space-x-2">
                   <input
@@ -201,8 +205,9 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                         }
                       });
                     }}
+                    className="rounded"
                   />
-                  <Label htmlFor={`day-${day.value}`} className="text-sm">
+                  <Label htmlFor={`day-${day.value}`} className="text-sm cursor-pointer">
                     {day.label}
                   </Label>
                 </div>
@@ -228,43 +233,43 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
 
   return (
     <Card className={`bg-gradient-card border-border/50 ${className}`}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Euro className="h-5 w-5" />
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Euro className="h-4 w-4 sm:h-5 sm:w-5" />
             Règles de tarification dynamique
           </CardTitle>
           <Button 
             onClick={() => setShowCreateForm(true)}
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             Nouvelle règle
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6">
         {/* Existing Rules */}
         <div className="space-y-3">
           {pricingRules.map((rule) => {
             const IconComponent = RULE_TYPE_ICONS[rule.rule_type];
             return (
-              <div key={rule.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <IconComponent className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{rule.rule_name}</p>
+              <div key={rule.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-muted/50 rounded-lg gap-3">
+                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                  <IconComponent className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5 sm:mt-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{rule.rule_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {RULE_TYPE_LABELS[rule.rule_type]}
                     </p>
                   </div>
-                  <Badge variant={rule.is_active ? "default" : "secondary"}>
+                  <Badge variant={rule.is_active ? "default" : "secondary"} className="shrink-0">
                     {rule.is_active ? "Actif" : "Inactif"}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  <div className="text-left sm:text-right">
                     <p className="font-medium flex items-center gap-1">
                       {rule.is_percentage ? (
                         <>
@@ -282,11 +287,12 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       Priorité: {rule.priority}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => startEdit(rule)}
+                      className="h-8 w-8 p-0"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -294,6 +300,7 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       variant="ghost"
                       size="sm"
                       onClick={() => deleteRule(rule.id)}
+                      className="h-8 w-8 p-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -304,7 +311,7 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
           })}
           
           {pricingRules.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               Aucune règle de tarification configurée
             </div>
           )}
@@ -318,19 +325,20 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                 {editingRule ? 'Modifier la règle' : 'Nouvelle règle de tarification'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-4 p-3 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rule_name">Nom de la règle</Label>
+                  <Label htmlFor="rule_name" className="text-sm font-medium">Nom de la règle</Label>
                   <Input
                     id="rule_name"
                     value={newRule.rule_name || ''}
                     onChange={(e) => setNewRule({ ...newRule, rule_name: e.target.value })}
                     placeholder="ex: Tarif groupe"
+                    className="h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rule_type">Type de règle</Label>
+                  <Label htmlFor="rule_type" className="text-sm font-medium">Type de règle</Label>
                   <Select
                     value={newRule.rule_type}
                     onValueChange={(value) => setNewRule({ 
@@ -339,7 +347,7 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       conditions: {} // Reset conditions when type changes
                     })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -355,9 +363,9 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
 
               {renderConditionsForm()}
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="price_modifier">Modification du prix</Label>
+                  <Label htmlFor="price_modifier" className="text-sm font-medium">Modification du prix</Label>
                   <Input
                     id="price_modifier"
                     type="number"
@@ -367,10 +375,11 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       ...newRule, 
                       price_modifier: parseFloat(e.target.value) || 0 
                     })}
+                    className="h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="priority">Priorité</Label>
+                  <Label htmlFor="priority" className="text-sm font-medium">Priorité</Label>
                   <Input
                     id="priority"
                     type="number"
@@ -379,9 +388,10 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       ...newRule, 
                       priority: parseInt(e.target.value) || 0 
                     })}
+                    className="h-10"
                   />
                 </div>
-                <div className="flex items-center space-x-2 mt-6">
+                <div className="flex items-center space-x-3 sm:col-span-2 lg:col-span-1 lg:mt-6">
                   <Switch
                     id="is_percentage"
                     checked={newRule.is_percentage}
@@ -390,11 +400,11 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                       is_percentage: checked 
                     })}
                   />
-                  <Label htmlFor="is_percentage">En pourcentage</Label>
+                  <Label htmlFor="is_percentage" className="text-sm font-medium cursor-pointer">En pourcentage</Label>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="is_active"
                   checked={newRule.is_active}
@@ -403,15 +413,15 @@ export function PricingRulesManager({ offerId, className = "" }: PricingRulesMan
                     is_active: checked 
                   })}
                 />
-                <Label htmlFor="is_active">Règle active</Label>
+                <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer">Règle active</Label>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetForm}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-border/30">
+                <Button variant="outline" onClick={resetForm} className="w-full sm:w-auto">
                   <X className="h-4 w-4 mr-2" />
                   Annuler
                 </Button>
-                <Button onClick={handleSaveRule}>
+                <Button onClick={handleSaveRule} className="w-full sm:w-auto">
                   <Save className="h-4 w-4 mr-2" />
                   {editingRule ? 'Modifier' : 'Créer'}
                 </Button>
