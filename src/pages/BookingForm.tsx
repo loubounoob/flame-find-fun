@@ -2,19 +2,19 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotSelector } from "@/components/ui/time-slot-selector";
+import { ActivityBookingManager } from "@/components/booking/ActivityBookingManager";
+import { SimpleRealtimePriceDisplay } from "@/components/SimpleRealtimePriceDisplay";
 
-import { Calendar, Users, Clock, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookings } from "@/hooks/useBookings";
 import { useToast } from "@/hooks/use-toast";
-import { RealtimePriceDisplay } from "@/components/RealtimePriceDisplay";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -22,12 +22,21 @@ export default function BookingForm() {
   const { user } = useAuth();
   const { createBooking } = useBookings();
   const { toast } = useToast();
-  const [participantCount, setParticipantCount] = useState(1);
   const [notes, setNotes] = useState("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [customBookingTime, setCustomBookingTime] = useState("");
   const [customBookingDate, setCustomBookingDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingData, setBookingData] = useState({
+    participants: 1,
+    units: 1,
+    unitType: 'participant',
+    extras: []
+  });
+
+  const handleBookingDataChange = (data: any) => {
+    setBookingData(data);
+  };
 
   const getBookingDateTime = () => {
     // Si c'est un créneau personnalisé
@@ -169,7 +178,7 @@ export default function BookingForm() {
       // Create the booking first
       const booking = await createBooking({
         offerId: offer.id,
-        participantCount,
+        participantCount: bookingData.participants,
         bookingDate: bookingDateTime.date,
         bookingTime: bookingDateTime.time,
         notes,
@@ -238,26 +247,12 @@ export default function BookingForm() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="participants" className="flex items-center gap-2">
-                    <Users size={16} />
-                    Nombre de participants
-                  </Label>
-                  <Input
-                    id="participants"
-                    type="number"
-                    min="1"
-                    max={offer.max_participants || 10}
-                    value={participantCount}
-                    onChange={(e) => setParticipantCount(parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                  {offer.max_participants && (
-                    <p className="text-xs text-muted-foreground">
-                      Maximum {offer.max_participants} participants
-                    </p>
-                  )}
-                </div>
+                {/* Activity-specific booking form */}
+                <ActivityBookingManager
+                  category={offer.category}
+                  maxParticipants={offer.max_participants}
+                  onBookingDataChange={handleBookingDataChange}
+                />
 
                  <TimeSlotSelector
                   selectedSlot={selectedTimeSlot}
@@ -266,12 +261,12 @@ export default function BookingForm() {
                 />
 
                  {/* Real-time Price Display */}
-                 <RealtimePriceDisplay
+                 <SimpleRealtimePriceDisplay
                    offerId={id!}
                    businessUserId={offer.business_user_id}
-                   participantCount={participantCount}
-                   bookingDate={getBookingDateTime().date}
-                   bookingTime={getBookingDateTime().time}
+                   participantCount={bookingData.participants}
+                   unitsCount={bookingData.units}
+                   unitType={bookingData.unitType}
                    showBreakdown={true}
                  />
 
