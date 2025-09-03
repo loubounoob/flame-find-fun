@@ -2,27 +2,17 @@ import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { UnifiedFilterSystem } from "@/components/UnifiedFilterSystem";
 import { 
   MapPin, 
   Navigation, 
-  Filter, 
-  Search, 
   Star, 
-  Clock, 
   Euro,
   Users,
   Heart,
   Flame,
-  Phone,
-  Globe,
   MapIcon,
-  X,
-  ChevronLeft,
-  ChevronRight
+  X
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { GoogleMap } from "@/components/ui/google-map";
@@ -30,7 +20,7 @@ import { BusinessMapMarkers } from "@/components/BusinessMapMarkers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface AdvancedFilters {
+interface UnifiedFilters {
   search: string;
   category: string;
   maxDistance: number;
@@ -39,6 +29,7 @@ interface AdvancedFilters {
   openNow: boolean;
   hasPromotion: boolean;
   participants: number;
+  timeSlot: string;
 }
 
 export default function AdvancedMapInterface() {
@@ -46,11 +37,9 @@ export default function AdvancedMapInterface() {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<any>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [showBusinessPanel, setShowBusinessPanel] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  
-  const [filters, setFilters] = useState<AdvancedFilters>({
+  const [filters, setFilters] = useState<UnifiedFilters>({
     search: "",
     category: "all",
     maxDistance: 10,
@@ -58,14 +47,15 @@ export default function AdvancedMapInterface() {
     rating: 0,
     openNow: false,
     hasPromotion: false,
-    participants: 1
+    participants: 1,
+    timeSlot: "all"
   });
 
-  // Fetch offers and businesses with enhanced data
+  // Fetch offers with business pricing data for better filtering
   const { data: offers = [], isLoading } = useQuery({
-    queryKey: ["enhanced-offers-map"],
+    queryKey: ["enhanced-offers-map", filters],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: offersData, error: offersError } = await supabase
         .from("offers")
         .select(`
           *,
@@ -81,9 +71,30 @@ export default function AdvancedMapInterface() {
         `)
         .eq("status", "active");
       
-      if (error) throw error;
-      return data;
+      if (offersError) throw offersError;
+
+      // Enrich with business pricing data
+      const enrichedOffers = await Promise.all(
+        (offersData || []).map(async (offer) => {
+          const { data: pricing } = await supabase
+            .from("business_pricing")
+            .select("price_amount, price_type")
+            .eq("business_user_id", offer.business_user_id)
+            .eq("is_active", true)
+            .order("display_order", { ascending: true })
+            .limit(1)
+            .single();
+
+          return {
+            ...offer,
+            pricing_info: pricing
+          };
+        })
+      );
+      
+      return enrichedOffers;
     },
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   // Enhanced filtering logic  
@@ -112,9 +123,10 @@ export default function AdvancedMapInterface() {
       if (distance > filters.maxDistance) return false;
     }
 
-    // Price filter
-    if (offer.base_price) {
-      if (offer.base_price < filters.priceRange[0] || offer.base_price > filters.priceRange[1]) {
+    // Price filter - now uses business pricing data
+    if (offer.pricing_info?.price_amount) {
+      const price = Number(offer.pricing_info.price_amount);
+      if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
         return false;
       }
     }
@@ -205,161 +217,33 @@ export default function AdvancedMapInterface() {
     }
   };
 
-  const categories = [
-    "all", "bowling", "billard", "padel", "escape-game", "karting", "laser-game", "paintball", 
-    "tennis", "badminton", "squash", "cinema", "restaurant", "bar"
-  ];
+  const handleFiltersChange = (newFilters: UnifiedFilters) => {
+    setFilters(newFilters);
+  };
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Enhanced Header with Search */}
+      {/* Enhanced Header with Unified Filter System */}
       <header className="absolute top-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/50">
-        <div className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-gradient-primary">Découvrir</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-              >
-                <Filter size={16} />
-                Filtres
-              </Button>
+            <div className="text-sm text-muted-foreground">
+              {filteredOffers.length} résultat{filteredOffers.length > 1 ? 's' : ''}
             </div>
           </div>
           
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-            <Input
-              placeholder="Rechercher une activité, entreprise..."
-              value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Quick Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => (
-              <Button
-                key={category}
-                variant={filters.category === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilters({...filters, category})}
-                className="whitespace-nowrap"
-              >
-                {category === "all" ? "Tous" : 
-                 category === "bowling" ? "Bowling" :
-                 category === "billard" ? "Billard" :
-                 category === "padel" ? "Padel" :
-                 category === "escape-game" ? "Escape Game" :
-                 category === "karting" ? "Karting" :
-                 category === "laser-game" ? "Laser Game" :
-                 category === "paintball" ? "Paintball" :
-                 category === "tennis" ? "Tennis" :
-                 category === "badminton" ? "Badminton" :
-                 category === "squash" ? "Squash" :
-                 category === "cinema" ? "Cinéma" :
-                 category === "restaurant" ? "Restaurant" :
-                 category === "bar" ? "Bar" :
-                 category}
-              </Button>
-            ))}
-          </div>
+          <UnifiedFilterSystem 
+            onFiltersChange={handleFiltersChange}
+            showQuickCategories={true}
+            showAdvancedToggle={true}
+          />
         </div>
       </header>
 
-      {/* Advanced Filters Panel */}
-      {showFilters && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 z-40 bg-background/95 backdrop-blur-md">
-          <div className="p-4 h-full overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Filtres avancés</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
-                <X size={20} />
-              </Button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Distance */}
-              <div className="space-y-3">
-                <Label>Distance maximale: {filters.maxDistance}km</Label>
-                <Slider
-                  value={[filters.maxDistance]}
-                  onValueChange={(value) => setFilters({...filters, maxDistance: value[0]})}
-                  max={50}
-                  step={1}
-                />
-              </div>
-
-              {/* Price Range */}
-              <div className="space-y-3">
-                <Label>Gamme de prix: {filters.priceRange[0]}€ - {filters.priceRange[1]}€</Label>
-                <Slider
-                  value={filters.priceRange}
-                  onValueChange={(value) => setFilters({...filters, priceRange: value as [number, number]})}
-                  max={500}
-                  step={10}
-                />
-              </div>
-
-              {/* Rating */}
-              <div className="space-y-3">
-                <Label>Note minimum: {filters.rating} étoiles</Label>
-                <Slider
-                  value={[filters.rating]}
-                  onValueChange={(value) => setFilters({...filters, rating: value[0]})}
-                  max={5}
-                  step={0.5}
-                />
-              </div>
-
-              {/* Participants */}
-              <div className="space-y-3">
-                <Label>Nombre de participants: {filters.participants}</Label>
-                <Slider
-                  value={[filters.participants]}
-                  onValueChange={(value) => setFilters({...filters, participants: value[0]})}
-                  max={20}
-                  step={1}
-                  min={1}
-                />
-              </div>
-
-              {/* Toggles */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Ouvert maintenant</Label>
-                  <Switch 
-                    checked={filters.openNow}
-                    onCheckedChange={(checked) => setFilters({...filters, openNow: checked})}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label>Avec promotions</Label>
-                  <Switch 
-                    checked={filters.hasPromotion}
-                    onCheckedChange={(checked) => setFilters({...filters, hasPromotion: checked})}
-                  />
-                </div>
-              </div>
-
-              {/* Results Count */}
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {filteredOffers.length} résultat(s) trouvé(s)
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Map Container */}
-      <div className="h-screen pt-32">
+      <div className="h-screen pt-40">
         <GoogleMap 
           onLocationUpdate={handleLocationUpdate}
           onMapLoad={handleMapLoad}
@@ -372,7 +256,7 @@ export default function AdvancedMapInterface() {
         />
 
         {/* Floating Controls */}
-        <div className="absolute top-40 right-4 z-20 space-y-2">
+        <div className="absolute top-48 right-4 z-20 space-y-2">
           <Button
             variant="outline"
             size="icon"
@@ -439,12 +323,15 @@ export default function AdvancedMapInterface() {
                   </div>
                 )}
 
-                {/* Price Info */}
-                {selectedBusiness.base_price && (
+                {/* Price Info - Now uses business pricing */}
+                {selectedBusiness.pricing_info?.price_amount && (
                   <div className="flex items-center gap-2 mb-4">
                     <Euro size={16} className="text-primary" />
                     <span className="font-semibold text-lg">
-                      À partir de {selectedBusiness.base_price}€
+                      À partir de {selectedBusiness.pricing_info.price_amount}€
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedBusiness.pricing_info.price_type}
                     </span>
                   </div>
                 )}
@@ -462,8 +349,8 @@ export default function AdvancedMapInterface() {
             {/* Action Buttons */}
             <div className="flex gap-2">
               <Button asChild className="flex-1">
-                <Link to={`/offer/${selectedBusiness.id}`}>
-                  Voir détails
+                <Link to={`/storefront/${selectedBusiness.id}`}>
+                  Voir la boutique
                 </Link>
               </Button>
               <Button 
