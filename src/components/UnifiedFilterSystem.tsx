@@ -131,35 +131,18 @@ export function UnifiedFilterSystem({
         </div>
       )}
 
-      {/* Advanced Filters Toggle */}
-      {showAdvancedToggle && (
-        <div className="flex items-center justify-between">
+      {/* Reset Filters Button */}
+      {activeFiltersCount > 0 && (
+        <div className="flex justify-end">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="gap-2"
+            onClick={resetFilters}
+            className="gap-1 text-muted-foreground"
           >
-            <Filter size={16} />
-            Filtres avancés
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">
-                {activeFiltersCount}
-              </Badge>
-            )}
+            <X size={14} />
+            Effacer les filtres
           </Button>
-          
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="gap-1 text-muted-foreground"
-            >
-              <X size={14} />
-              Effacer
-            </Button>
-          )}
         </div>
       )}
 

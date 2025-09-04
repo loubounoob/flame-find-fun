@@ -40,6 +40,7 @@ const App = () => (
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/offer/:id" element={<OfferDetail />} />
           <Route path="/storefront/:id" element={<BusinessStorefront />} />
+          <Route path="/booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
           <Route path="/shopify-booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
           <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
           <Route path="/booking-form/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />

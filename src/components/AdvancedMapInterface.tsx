@@ -15,8 +15,7 @@ import {
   X
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { GoogleMap } from "@/components/ui/google-map";
-import { BusinessMapMarkers } from "@/components/BusinessMapMarkers";
+import { UltraGoogleMap } from "@/components/ui/ultra-google-map";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -34,7 +33,7 @@ interface UnifiedFilters {
 
 export default function AdvancedMapInterface() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [map, setMap] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<any>(null);
   const [showBusinessPanel, setShowBusinessPanel] = useState(false);
@@ -169,7 +168,7 @@ export default function AdvancedMapInterface() {
     setUserLocation(location);
   };
 
-  const handleMapLoad = useCallback((mapInstance: google.maps.Map) => {
+  const handleMapLoad = useCallback((mapInstance: any) => {
     setMap(mapInstance);
     setIsLoaded(true);
     
@@ -244,29 +243,12 @@ export default function AdvancedMapInterface() {
 
       {/* Map Container */}
       <div className="h-screen pt-40">
-        <GoogleMap 
+        <UltraGoogleMap 
           onLocationUpdate={handleLocationUpdate}
           onMapLoad={handleMapLoad}
+          filteredOffers={filteredOffers}
+          selectedBusiness={selectedBusiness}
         />
-        
-        <BusinessMapMarkers 
-          map={map}
-          isLoaded={isLoaded}
-          onMarkerClick={handleBusinessSelect}
-        />
-
-        {/* Floating Controls */}
-        <div className="absolute top-48 right-4 z-20 space-y-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={recenterMap}
-            disabled={!userLocation}
-            className="bg-background/90 backdrop-blur-sm shadow-lg"
-          >
-            <Navigation size={16} />
-          </Button>
-        </div>
       </div>
 
       {/* Business Detail Panel */}
