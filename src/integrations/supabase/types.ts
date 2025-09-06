@@ -205,6 +205,77 @@ export type Database = {
         }
         Relationships: []
       }
+      business_page_elements: {
+        Row: {
+          created_at: string
+          element_config: Json
+          element_type: string
+          id: string
+          is_visible: boolean
+          position_order: number
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          element_config?: Json
+          element_type: string
+          id?: string
+          is_visible?: boolean
+          position_order?: number
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          element_config?: Json
+          element_type?: string
+          id?: string
+          is_visible?: boolean
+          position_order?: number
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_page_elements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "business_page_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_page_templates: {
+        Row: {
+          business_user_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          template_config: Json
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          template_config?: Json
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          template_config?: Json
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_pricing: {
         Row: {
           business_user_id: string

@@ -647,18 +647,14 @@ export function UltraGoogleMap({
     }
   };
 
-  // Effects
+  // Effects - Fixed flickering by separating initialization from updates
   useEffect(() => {
-    if (apiKey && businesses.length >= 0) {
+    if (apiKey) {
       initializeMap();
     }
-  }, [businesses, position, mapType, isDarkMode]);
+  }, [apiKey]);
 
-  useEffect(() => {
-    getCurrentPosition();
-  }, []);
-
-  // Update markers when filtered offers change
+  // Separate effect for updating existing map
   useEffect(() => {
     if (mapInstanceRef.current && businesses.length > 0) {
       // Clear existing markers
@@ -672,7 +668,39 @@ export function UltraGoogleMap({
         }
       });
     }
-  }, [filteredOffers]);
+  }, [businesses, position]);
+
+  // Separate effect for style updates
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      // Update map styles without recreating the map
+      const currentStyles = isDarkMode ? ULTRA_MAP_STYLES.dark : ULTRA_MAP_STYLES.light;
+      mapInstanceRef.current.setOptions({ 
+        styles: currentStyles,
+        mapTypeId: mapType
+      });
+    }
+  }, [mapType, isDarkMode]);
+
+  useEffect(() => {
+    getCurrentPosition();
+  }, []);
+
+  // Remove duplicate markers effect - keep only one
+  useEffect(() => {
+    if (mapInstanceRef.current && businesses.length > 0) {
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+      
+      // Add new markers
+      businesses.forEach(offer => {
+        if (offer.latitude && offer.longitude) {
+          createUltraMarker(offer, mapInstanceRef.current!, (window as any).google);
+        }
+      });
+    }
+  }, [businesses, filteredOffers]);
 
   return (
     <div className="relative w-full h-full">
