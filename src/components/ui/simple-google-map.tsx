@@ -50,7 +50,7 @@ const CATEGORY_COLORS = {
   creative: '#e74c3c'
 };
 
-export function UltraGoogleMap({ 
+export function SimpleGoogleMap({ 
   onLocationUpdate, 
   onMapLoad, 
   filteredOffers = [],

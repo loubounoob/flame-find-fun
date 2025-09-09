@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromotionManager } from "@/components/ui/promotion-manager";
 import { BusinessRevenueDashboard } from "@/components/BusinessRevenueDashboard";
 import { BusinessPricingSetup } from "@/components/ui/business-pricing-setup";
+import BusinessPageCustomizer from "@/components/BusinessPageCustomizer";
 import { 
   Plus, 
   BarChart3, 
@@ -26,7 +27,8 @@ import {
   Bell,
   Camera,
   MapPin,
-  Zap
+  Zap,
+  Palette
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -505,8 +507,9 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="customizer">Personnalisation</TabsTrigger>
             <TabsTrigger value="revenue">Revenus</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
@@ -518,7 +521,15 @@ export default function BusinessDashboard() {
             {/* Create Offer Button */}
             <Card className="bg-gradient-card border-border/50">
               <CardContent className="p-6 text-center">
-                <Button 
+                  <Button 
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => navigate('/business-customizer')}
+                  >
+                    <Palette size={16} />
+                    Personnaliser ma page
+                  </Button>
+                  <Button
                   onClick={() => showCreateForm ? resetForm() : setShowCreateForm(true)}
                   className="bg-gradient-primary hover:opacity-90"
                   size="lg"
@@ -852,6 +863,10 @@ export default function BusinessDashboard() {
               <PromotionManager />
             </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="customizer" className="space-y-4">
+            {user && <BusinessPageCustomizer businessUserId={user.id} />}
           </TabsContent>
 
           <TabsContent value="revenue" className="space-y-4">

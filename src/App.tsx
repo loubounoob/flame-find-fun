@@ -21,6 +21,7 @@ import BusinessProfile from "./pages/BusinessProfile";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import BusinessStorefront from "./components/BusinessStorefront";
 import ShopifyBookingInterface from "./components/ShopifyBookingInterface";
+import BusinessCustomizer from "./pages/BusinessCustomizer";
 
 import { RouteTracker } from "./components/RouteTracker";
 
@@ -49,7 +50,8 @@ const App = () => (
           
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
+           <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
+           <Route path="/business-customizer" element={<ProtectedRoute businessOnly><BusinessCustomizer /></ProtectedRoute>} />
            <Route path="/business-profile" element={<ProtectedRoute businessOnly><BusinessProfile /></ProtectedRoute>} />
            
            <Route path="/payment-success" element={<PaymentSuccess />} />
