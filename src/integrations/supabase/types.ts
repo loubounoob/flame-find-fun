@@ -205,35 +205,89 @@ export type Database = {
         }
         Relationships: []
       }
+      business_media_library: {
+        Row: {
+          alt_text: string | null
+          business_user_id: string
+          created_at: string
+          file_size: number | null
+          id: string
+          is_active: boolean
+          media_type: string
+          media_url: string
+          mime_type: string | null
+          original_name: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          business_user_id: string
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          media_type: string
+          media_url: string
+          mime_type?: string | null
+          original_name?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          business_user_id?: string
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          media_type?: string
+          media_url?: string
+          mime_type?: string | null
+          original_name?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_page_elements: {
         Row: {
           created_at: string
+          custom_styles: Json | null
           element_config: Json
+          element_data: Json | null
           element_type: string
           id: string
           is_visible: boolean
           position_order: number
           template_id: string
+          theme_colors: Json | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          custom_styles?: Json | null
           element_config?: Json
+          element_data?: Json | null
           element_type: string
           id?: string
           is_visible?: boolean
           position_order?: number
           template_id: string
+          theme_colors?: Json | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          custom_styles?: Json | null
           element_config?: Json
+          element_data?: Json | null
           element_type?: string
           id?: string
           is_visible?: boolean
           position_order?: number
           template_id?: string
+          theme_colors?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -435,6 +489,42 @@ export type Database = {
           stat_date?: string
           top_offer_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      business_themes: {
+        Row: {
+          color_palette: Json
+          created_at: string
+          id: string
+          is_premium: boolean | null
+          layout_config: Json
+          preview_image_url: string | null
+          theme_category: string
+          theme_name: string
+          typography: Json
+        }
+        Insert: {
+          color_palette: Json
+          created_at?: string
+          id?: string
+          is_premium?: boolean | null
+          layout_config: Json
+          preview_image_url?: string | null
+          theme_category: string
+          theme_name: string
+          typography: Json
+        }
+        Update: {
+          color_palette?: Json
+          created_at?: string
+          id?: string
+          is_premium?: boolean | null
+          layout_config?: Json
+          preview_image_url?: string | null
+          theme_category?: string
+          theme_name?: string
+          typography?: Json
         }
         Relationships: []
       }
