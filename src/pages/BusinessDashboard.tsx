@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromotionManager } from "@/components/ui/promotion-manager";
 import { BusinessRevenueDashboard } from "@/components/BusinessRevenueDashboard";
 import { BusinessPricingSetup } from "@/components/ui/business-pricing-setup";
-import BusinessPageCustomizer from "@/components/BusinessPageCustomizer";
+
 import { 
   Plus, 
   BarChart3, 
@@ -507,9 +507,8 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="customizer">Personnalisation</TabsTrigger>
             <TabsTrigger value="revenue">Revenus</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
@@ -865,9 +864,6 @@ export default function BusinessDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="customizer" className="space-y-4">
-            {user && <BusinessPageCustomizer businessUserId={user.id} />}
-          </TabsContent>
 
           <TabsContent value="revenue" className="space-y-4">
             <BusinessRevenueDashboard />

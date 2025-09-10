@@ -515,229 +515,223 @@ export default function BusinessPageCustomizer({ businessUserId }: { businessUse
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Personnaliser ma page</h1>
-            <p className="text-muted-foreground">Créez une page unique pour votre entreprise</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setPreviewMode(previewMode === 'desktop' ? 'mobile' : 'desktop')}
-            >
-              {previewMode === 'desktop' ? <Smartphone size={16} /> : <Monitor size={16} />}
-            </Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-              <Save size={16} className="mr-2" />
-              {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
-            </Button>
-          </div>
+    <div className="container mx-auto p-4">
+      {/* Control Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setPreviewMode(previewMode === 'desktop' ? 'mobile' : 'desktop')}
+          >
+            {previewMode === 'desktop' ? <Smartphone size={16} /> : <Monitor size={16} />}
+          </Button>
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <Save size={16} className="mr-2" />
+            {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Panel des éléments - Hidden on mobile, drawer on tablet */}
+        <div className="lg:col-span-3">
+          <Tabs defaultValue="elements" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="elements">Éléments</TabsTrigger>
+              <TabsTrigger value="themes">Thèmes</TabsTrigger>
+              <TabsTrigger value="media">Médias</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="elements" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Ajouter un élément</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {ELEMENT_TYPES.map((elementType) => (
+                    <Button
+                      key={elementType.type}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => addElement(elementType.type)}
+                    >
+                      <elementType.icon size={16} className="mr-2" />
+                      {elementType.label}
+                    </Button>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="themes" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Thèmes prédéfinis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {themes.map((theme) => (
+                    <div 
+                      key={theme.id} 
+                      className="p-3 border rounded cursor-pointer hover:bg-muted"
+                      onClick={() => applyTheme(theme)}
+                    >
+                      <div className="font-medium text-sm">{theme.theme_name}</div>
+                      <div className="text-xs text-muted-foreground">{theme.theme_category}</div>
+                      <div className="flex gap-1 mt-2">
+                        {Object.values(theme.color_palette).slice(0, 4).map((color, idx) => (
+                          <div 
+                            key={idx} 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: color as string }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="media" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Bibliothèque média</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {mediaLibrary.slice(0, 6).map((media) => (
+                      <div key={media.id} className="relative">
+                        <img 
+                          src={media.media_url} 
+                          alt={media.alt_text || ''}
+                          className="w-full h-16 object-cover rounded"
+                        />
+                        <Badge 
+                          variant="secondary" 
+                          className="absolute top-1 right-1 text-xs"
+                        >
+                          {media.media_type}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full mt-2">
+                    <Upload size={16} className="mr-2" />
+                    Ajouter des médias
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
-          {/* Panel des éléments */}
-          <div className="col-span-3">
-            <Tabs defaultValue="elements" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="elements">Éléments</TabsTrigger>
-                <TabsTrigger value="themes">Thèmes</TabsTrigger>
-                <TabsTrigger value="media">Médias</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="elements" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Ajouter un élément</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {ELEMENT_TYPES.map((elementType) => (
-                      <Button
-                        key={elementType.type}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => addElement(elementType.type)}
-                      >
-                        <elementType.icon size={16} className="mr-2" />
-                        {elementType.label}
-                      </Button>
-                    ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="themes" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Thèmes prédéfinis</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {themes.map((theme) => (
-                      <div 
-                        key={theme.id} 
-                        className="p-3 border rounded cursor-pointer hover:bg-muted"
-                        onClick={() => applyTheme(theme)}
-                      >
-                        <div className="font-medium text-sm">{theme.theme_name}</div>
-                        <div className="text-xs text-muted-foreground">{theme.theme_category}</div>
-                        <div className="flex gap-1 mt-2">
-                          {Object.values(theme.color_palette).slice(0, 4).map((color, idx) => (
-                            <div 
-                              key={idx} 
-                              className="w-4 h-4 rounded-full" 
-                              style={{ backgroundColor: color as string }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="media" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Bibliothèque média</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      {mediaLibrary.slice(0, 6).map((media) => (
-                        <div key={media.id} className="relative">
-                          <img 
-                            src={media.media_url} 
-                            alt={media.alt_text || ''}
-                            className="w-full h-16 object-cover rounded"
-                          />
-                          <Badge 
-                            variant="secondary" 
-                            className="absolute top-1 right-1 text-xs"
-                          >
-                            {media.media_type}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2">
-                      <Upload size={16} className="mr-2" />
-                      Ajouter des médias
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Centre - Structure de la page */}
-          <div className="col-span-6">
-            <Card className="h-full">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Structure de la page</CardTitle>
-                  <Input 
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    className="max-w-xs"
-                    placeholder="Nom du template"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable droppableId="elements">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                        {elements.map((element, index) => {
-                          const elementType = ELEMENT_TYPES.find(et => et.type === element.type);
-                          return (
-                            <Draggable key={element.id} draggableId={element.id} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`
-                                    p-3 border rounded-lg cursor-pointer transition-all
-                                    ${selectedElement?.id === element.id ? 'bg-primary/5 border-primary' : 'hover:bg-muted'}
-                                    ${snapshot.isDragging ? 'shadow-lg' : ''}
-                                  `}
-                                  onClick={() => setSelectedElement(element)}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div {...provided.dragHandleProps}>
-                                        <GripVertical size={16} className="text-muted-foreground" />
-                                      </div>
-                                      {elementType?.icon && <elementType.icon size={16} />}
-                                      <span className="font-medium">{elementType?.label}</span>
+        {/* Centre - Structure de la page */}
+        <div className="lg:col-span-6">
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Structure de la page</CardTitle>
+                <Input 
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  className="max-w-xs"
+                  placeholder="Nom du template"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="elements">
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                      {elements.map((element, index) => {
+                        const elementType = ELEMENT_TYPES.find(et => et.type === element.type);
+                        return (
+                          <Draggable key={element.id} draggableId={element.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`
+                                  p-3 border rounded-lg cursor-pointer transition-all
+                                  ${selectedElement?.id === element.id ? 'bg-primary/5 border-primary' : 'hover:bg-muted'}
+                                  ${snapshot.isDragging ? 'shadow-lg' : ''}
+                                `}
+                                onClick={() => setSelectedElement(element)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div {...provided.dragHandleProps}>
+                                      <GripVertical size={16} className="text-muted-foreground" />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <Switch 
-                                        checked={element.visible} 
-                                        onCheckedChange={(checked) => 
-                                          setElements(elements.map(el => 
-                                            el.id === element.id ? { ...el, visible: checked } : el
-                                          ))
-                                        }
-                                      />
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          removeElement(element.id);
-                                        }}
-                                      >
-                                        <Trash2 size={14} />
-                                      </Button>
-                                    </div>
+                                    {elementType?.icon && <elementType.icon size={16} />}
+                                    <span className="font-medium">{elementType?.label}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Switch 
+                                      checked={element.visible} 
+                                      onCheckedChange={(checked) => 
+                                        setElements(elements.map(el => 
+                                          el.id === element.id ? { ...el, visible: checked } : el
+                                        ))
+                                      }
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeElement(element.id);
+                                      }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
                                   </div>
                                 </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                        {provided.placeholder}
-                        
-                        {elements.length === 0 && (
-                          <div className="text-center py-12 text-muted-foreground">
-                            <Layout size={48} className="mx-auto mb-4 opacity-50" />
-                            <p>Ajoutez des éléments pour construire votre page</p>
-                            <p className="text-sm">Utilisez le panneau de gauche pour commencer</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </CardContent>
-            </Card>
-          </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                      
+                      {elements.length === 0 && (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <Layout size={48} className="mx-auto mb-4 opacity-50" />
+                          <p>Ajoutez des éléments pour construire votre page</p>
+                          <p className="text-sm">Utilisez le panneau de gauche pour commencer</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Panel de configuration */}
-          <div className="col-span-3">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-sm">
-                  {selectedElement ? `Configurer ${ELEMENT_TYPES.find(et => et.type === selectedElement.type)?.label}` : 'Configuration'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedElement ? (
-                  renderElementConfig()
-                ) : (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Settings size={48} className="mx-auto mb-4 opacity-50" />
-                    <p>Sélectionnez un élément</p>
-                    <p className="text-sm">Cliquez sur un élément pour le configurer</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+        {/* Panel de configuration */}
+        <div className="lg:col-span-3">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-sm">
+                {selectedElement ? `Configurer ${ELEMENT_TYPES.find(et => et.type === selectedElement.type)?.label}` : 'Configuration'}
+              </CardTitle>
+            </CardHeader>          
+            <CardContent>
+              {selectedElement ? (
+                renderElementConfig()
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  <Settings size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>Sélectionnez un élément</p>
+                  <p className="text-sm">Cliquez sur un élément pour le configurer</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
