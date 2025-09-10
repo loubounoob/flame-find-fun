@@ -7,175 +7,177 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[VERIFY-PAYMENT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Initialize clients with service role for secure operations
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+  // Service role client for database operations
+  const supabaseService = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
 
+  try {
+    logStep("Function started");
+
+    // Parse request body
+    const { sessionId, bookingId } = await req.json();
+    
+    if (!sessionId) {
+      throw new Error("Session ID is required");
+    }
+
+    logStep("Request data received", { sessionId, bookingId });
+
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Parse request body
-    const body = await req.json();
-    const { sessionId } = body;
-
-    if (!sessionId) {
-      throw new Error("Session ID required");
-    }
-
-    console.log(`Verifying payment for session: ${sessionId}`);
-
-    // Retrieve the session from Stripe with payment intent expanded
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['payment_intent']
+    // Retrieve the checkout session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    logStep("Stripe session retrieved", { 
+      sessionId, 
+      paymentStatus: session.payment_status,
+      status: session.status 
     });
 
-    if (session.payment_status === "paid") {
-      const metadata = session.metadata;
-      const paymentIntent = session.payment_intent as any;
-      
-      if (!metadata) {
-        throw new Error("Missing session metadata");
-      }
-
-      // Validate metadata
-      if (!metadata.offerId || !metadata.userId || !metadata.businessUserId) {
-        throw new Error("Invalid session metadata");
-      }
-
-      // Verify the offer still exists
-      const { data: offer, error: offerError } = await supabaseClient
-        .from("offers")
-        .select("id, business_user_id, title")
-        .eq("id", metadata.offerId)
-        .single();
-
-      if (offerError || !offer) {
-        throw new Error("Offer not found");
-      }
-
-      // Verify business user matches
-      if (offer.business_user_id !== metadata.businessUserId) {
-        throw new Error("Business user mismatch");
-      }
-
-      // Check if booking already exists to prevent duplicates
-      const { data: existingBooking } = await supabaseClient
-        .from("bookings")
-        .select("id")
-        .eq("user_id", metadata.userId)
-        .eq("offer_id", metadata.offerId)
-        .eq("booking_date", metadata.bookingDate)
-        .maybeSingle();
-
-      if (existingBooking) {
-        console.log(`Booking already exists for user ${metadata.userId}, offer ${metadata.offerId}`);
-        return new Response(JSON.stringify({ success: true, bookingId: existingBooking.id }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-
-      // Create booking atomically
-      const { data: booking, error: bookingError } = await supabaseClient
-        .from("bookings")
-        .insert({
-          user_id: metadata.userId,
-          offer_id: metadata.offerId,
-          business_user_id: metadata.businessUserId,
-          participant_count: parseInt(metadata.participantCount),
-          booking_date: metadata.bookingDate,
-          booking_time: metadata.bookingTime || null,
-          notes: metadata.notes || null,
-          status: "confirmed",
-        })
-        .select("id")
-        .single();
-
-      if (bookingError) {
-        console.error("Booking creation error:", bookingError);
-        throw bookingError;
-      }
-
-      // Record Stripe transaction for tracking
-      const amount = paymentIntent.amount;
-      const platformFeePercent = 0.05;
-      const platformFee = Math.round(amount * platformFeePercent);
-      const businessAmount = amount - platformFee;
-
-      try {
-        await supabaseClient
-          .from("stripe_transactions")
-          .insert({
-            booking_id: booking.id,
-            business_user_id: metadata.businessUserId,
-            customer_user_id: metadata.userId,
-            stripe_payment_intent_id: paymentIntent.id,
-            amount: amount,
-            business_amount: businessAmount,
-            platform_fee: platformFee,
-            stripe_fee: 0, // Will be updated with actual fees later
-            status: 'completed'
-          });
-      } catch (transactionError) {
-        console.error("Failed to record transaction:", transactionError);
-      }
-
-      // Add earnings to business using secure function
-      const businessAmountInEuros = businessAmount / 100; // Convert from cents
-      
-      try {
-        const { error: earningError } = await supabaseClient.rpc('secure_add_earning', {
-          p_business_user_id: metadata.businessUserId,
-          p_amount: businessAmountInEuros,
-          p_booking_id: booking.id,
-          p_description: `Réservation confirmée - ${offer.title} (${metadata.participantCount} participant(s))`
-        });
-
-        if (earningError) {
-          console.error("Error adding earnings:", earningError);
-          // Don't fail the whole transaction for earning recording issues
-        }
-      } catch (earningErr) {
-        console.error("Failed to record earnings:", earningErr);
-        // Continue with successful booking
-      }
-
-
-      console.log(`Payment verified and booking created: ${booking.id}, business earned: ${businessAmountInEuros}€`);
-
+    if (session.payment_status !== 'paid') {
       return new Response(JSON.stringify({ 
-        success: true, 
-        bookingId: booking.id,
-        amount: businessAmountInEuros,
-        businessName: metadata.businessName || "Prestataire"
+        success: false, 
+        status: session.payment_status,
+        message: 'Payment not completed' 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    console.log(`Payment not completed for session: ${sessionId}, status: ${session.payment_status}`);
+    // Get booking details
+    const actualBookingId = bookingId || session.metadata?.booking_id;
+    if (!actualBookingId) {
+      throw new Error("Booking ID not found");
+    }
+
+    const { data: booking, error: bookingError } = await supabaseService
+      .from('bookings')
+      .select('*')
+      .eq('id', actualBookingId)
+      .single();
+
+    if (bookingError) {
+      logStep("ERROR fetching booking", bookingError);
+      throw new Error(`Failed to fetch booking: ${bookingError.message}`);
+    }
+
+    logStep("Booking retrieved", { bookingId: actualBookingId, currentStatus: booking.status });
+
+    // If already processed, return success
+    if (booking.status === 'confirmed' && booking.payment_confirmed) {
+      logStep("Payment already processed");
+      return new Response(JSON.stringify({ 
+        success: true, 
+        status: 'already_processed',
+        booking: booking 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Update booking status to confirmed and mark payment as confirmed
+    const { error: updateBookingError } = await supabaseService
+      .from('bookings')
+      .update({ 
+        status: 'confirmed',
+        payment_confirmed: true,
+        stripe_payment_intent_id: session.payment_intent,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', actualBookingId);
+
+    if (updateBookingError) {
+      logStep("ERROR updating booking", updateBookingError);
+      throw new Error(`Failed to update booking: ${updateBookingError.message}`);
+    }
+
+    logStep("Booking confirmed");
+
+    // Add earning to business finances
+    const amount = session.amount_total ? session.amount_total / 100 : booking.total_price || 0;
+    
+    try {
+      // Call the secure_add_earning function
+      const { data: earningResult, error: earningError } = await supabaseService
+        .rpc('secure_add_earning', {
+          p_business_user_id: booking.business_user_id,
+          p_amount: amount,
+          p_booking_id: actualBookingId,
+          p_description: `Paiement réservation - ${booking.participant_count} personne(s)`
+        });
+
+      if (earningError) {
+        logStep("ERROR adding earning", earningError);
+        // Don't throw here, just log the error as the booking is already confirmed
+        console.error('Failed to add earning:', earningError);
+      } else {
+        logStep("Earning added successfully", { amount });
+      }
+    } catch (earningError) {
+      logStep("ERROR in earning process", earningError);
+      console.error('Earning process failed:', earningError);
+    }
+
+    // Update revenue stats
+    try {
+      // Trigger revenue stats update
+      const { error: statsError } = await supabaseService
+        .from('business_revenue_stats')
+        .upsert({
+          business_user_id: booking.business_user_id,
+          stat_date: new Date().toISOString().split('T')[0],
+          daily_revenue: 0, // Will be calculated by trigger
+          booking_count: 0,  // Will be calculated by trigger
+          average_booking_value: 0, // Will be calculated by trigger
+        }, {
+          onConflict: 'business_user_id,stat_date'
+        });
+
+      if (!statsError) {
+        logStep("Revenue stats updated");
+      }
+    } catch (statsError) {
+      logStep("Revenue stats update failed", statsError);
+    }
+
+    logStep("Payment verification completed successfully");
 
     return new Response(JSON.stringify({ 
-      success: false, 
-      status: session.payment_status 
+      success: true, 
+      status: 'confirmed',
+      booking: booking,
+      amount: amount
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status: 200,
     });
+
   } catch (error) {
-    console.error("Payment verification error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR in verify-payment", { message: errorMessage });
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: errorMessage 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -157,6 +157,8 @@ export default function BookingForm() {
     return 0;
   };
 
+  const [priceData, setPriceData] = useState<any>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!offer) return;
@@ -175,22 +177,56 @@ export default function BookingForm() {
         return;
       }
 
-      // Create the booking first
-      const booking = await createBooking({
-        offerId: offer.id,
-        participantCount: bookingData.participants,
-        bookingDate: bookingDateTime.date,
-        bookingTime: bookingDateTime.time,
-        notes,
-        businessUserId: offer.business_user_id,
-      });
+      if (!priceData || !priceData.finalPrice || priceData.finalPrice <= 0) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de calculer le prix de la réservation",
+          variant: "destructive"
+        });
+        return;
+      }
+
+        // Create the booking first with pending_payment status
+        const booking = await createBooking({
+          offerId: offer.id,
+          participantCount: bookingData.participants,
+          bookingDate: bookingDateTime.date,
+          bookingTime: bookingDateTime.time,
+          notes,
+          businessUserId: offer.business_user_id
+        });
 
       if (booking?.id) {
-        toast({
-          title: "Réservation créée !",
-          description: "Votre réservation a été confirmée avec succès.",
+        // Create Stripe payment session
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
+          body: {
+            bookingId: booking.id,
+            offerId: offer.id,
+            businessUserId: offer.business_user_id,
+            amount: priceData.finalPrice,
+            participantCount: bookingData.participants,
+            bookingDate: bookingDateTime.date,
+            bookingTime: bookingDateTime.time,
+            description: `Réservation ${offer.title} - ${bookingData.participants} personne(s)`
+          }
         });
-        navigate("/booking");
+
+        if (paymentError) {
+          console.error('Payment error:', paymentError);
+          toast({
+            title: "Erreur de paiement",
+            description: "Impossible de créer la session de paiement",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (paymentData?.url) {
+          // Redirect to Stripe Checkout
+          window.location.href = paymentData.url;
+        } else {
+          throw new Error("URL de paiement non reçue");
+        }
       }
     } catch (error: any) {
       console.error('Booking error:', error);
@@ -268,6 +304,7 @@ export default function BookingForm() {
                    unitsCount={bookingData.units}
                    unitType={bookingData.unitType}
                    showBreakdown={true}
+                   onPriceChange={setPriceData}
                  />
 
                 <div className="space-y-2">
@@ -287,9 +324,9 @@ export default function BookingForm() {
                    <Button 
                      type="submit" 
                      className="w-full bg-gradient-primary hover:opacity-90"
-                     disabled={isSubmitting || !selectedTimeSlot}
+                     disabled={isSubmitting || !selectedTimeSlot || !priceData?.finalPrice}
                    >
-                     {isSubmitting ? "Création de la réservation..." : "Créer la réservation"}
+                     {isSubmitting ? "Redirection vers le paiement..." : `Payer ${priceData?.finalPrice ? `${priceData.finalPrice}€` : ''} et réserver`}
                    </Button>
                  </div>
               </form>

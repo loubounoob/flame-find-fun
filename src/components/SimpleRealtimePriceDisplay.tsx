@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSimplePricing } from "@/hooks/useSimplePricing";
 import { Euro, Info } from "lucide-react";
+import React from "react";
 
 interface SimpleRealtimePriceDisplayProps {
   offerId: string;
@@ -12,6 +13,7 @@ interface SimpleRealtimePriceDisplayProps {
   unitType: string;
   className?: string;
   showBreakdown?: boolean;
+  onPriceChange?: (priceData: any) => void;
 }
 
 export function SimpleRealtimePriceDisplay({
@@ -21,7 +23,8 @@ export function SimpleRealtimePriceDisplay({
   unitsCount,
   unitType,
   className,
-  showBreakdown = true
+  showBreakdown = true,
+  onPriceChange
 }: SimpleRealtimePriceDisplayProps) {
   const { priceCalculation, isCalculating } = useSimplePricing(
     offerId,
@@ -29,6 +32,13 @@ export function SimpleRealtimePriceDisplay({
     participantCount,
     unitsCount
   );
+
+  // Notify parent component of price changes
+  React.useEffect(() => {
+    if (priceCalculation && onPriceChange) {
+      onPriceChange(priceCalculation);
+    }
+  }, [priceCalculation, onPriceChange]);
 
   if (isCalculating) {
     return (
@@ -151,10 +161,10 @@ export function SimpleRealtimePriceDisplay({
               <Info size={14} className="text-primary mt-0.5" />
               <div className="space-y-1">
                 <p className="text-xs font-medium text-primary">
-                  💳 Modalité de paiement
+                  💳 Paiement sécurisé
                 </p>
                 <p className="text-xs text-primary/80">
-                  Paiement sur place - Pas de règlement sur l'app
+                  Paiement en ligne via Stripe - Paiement immédiat
                 </p>
               </div>
             </div>

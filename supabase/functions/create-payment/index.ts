@@ -7,159 +7,95 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-PAYMENT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+  // Create Supabase client using the anon key for user authentication
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
 
-    // Get user from auth header
+  // Service role client for database operations
+  const supabaseService = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
+  try {
+    logStep("Function started");
+
+    // Retrieve authenticated user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Authorization header required");
-    }
+    if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data, error: authError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
     
-    if (authError || !data.user?.email) {
-      throw new Error("User not authenticated");
+    const user = userData.user;
+    if (!user?.email) throw new Error("User not authenticated or email not available");
+    logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Parse request body
+    const { 
+      bookingId, 
+      offerId, 
+      businessUserId, 
+      amount, 
+      participantCount, 
+      bookingDate, 
+      bookingTime, 
+      description 
+    } = await req.json();
+
+    logStep("Request data received", { 
+      bookingId, 
+      offerId, 
+      businessUserId, 
+      amount, 
+      participantCount 
+    });
+
+    if (!bookingId || !offerId || !businessUserId || !amount) {
+      throw new Error("Missing required parameters");
     }
-
-    const user = data.user;
-
-    // Parse and validate request body
-    const body = await req.json();
-    const { offerId, promotionId, amount, participantCount, bookingDate, bookingTime, notes, selectedPricingOptionId } = body;
-
-    // Validate required fields
-    if (!offerId || !amount || !participantCount || !bookingDate) {
-      throw new Error("Missing required fields");
-    }
-
-    // Validate amount is positive
-    if (amount <= 0) {
-      throw new Error("Invalid amount");
-    }
-
-    // Validate participant count
-    if (participantCount <= 0) {
-      throw new Error("Invalid participant count");
-    }
-
-    // Verify offer exists and get business details
-    const { data: offer, error: offerError } = await supabaseClient
-      .from("offers")
-      .select("id, business_user_id, title, base_price")
-      .eq("id", offerId)
-      .single();
-
-    if (offerError || !offer) {
-      throw new Error("Offer not found");
-    }
-
-    // Get business profile with Stripe Connect info
-    const { data: businessProfile, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_charges_enabled, first_name, last_name")
-      .eq("user_id", offer.business_user_id)
-      .single();
-
-    if (profileError || !businessProfile) {
-      throw new Error("Business profile not found");
-    }
-
-    if (!businessProfile.stripe_connect_account_id || !businessProfile.stripe_connect_charges_enabled) {
-      throw new Error("Business has not completed Stripe Connect setup");
-    }
-
-    // Get pricing option details if provided
-    let pricingOption = null;
-    if (selectedPricingOptionId) {
-      const { data: pricing, error: pricingError } = await supabaseClient
-        .from("business_pricing")
-        .select("*")
-        .eq("id", selectedPricingOptionId)
-        .eq("business_user_id", offer.business_user_id)
-        .eq("is_active", true)
-        .single();
-
-      if (!pricingError && pricing) {
-        pricingOption = pricing;
-      }
-    }
-
-    // If promotion is specified, verify it's valid
-    if (promotionId) {
-      const { data: promotion, error: promoError } = await supabaseClient
-        .from("promotions")
-        .select("*")
-        .eq("id", promotionId)
-        .eq("offer_id", offerId)
-        .eq("is_active", true)
-        .single();
-
-      if (promoError || !promotion) {
-        throw new Error("Invalid promotion");
-      }
-
-      // Check if promotion is within valid date range
-      const now = new Date();
-      const startDate = new Date(promotion.start_date);
-      const endDate = new Date(promotion.end_date);
-      
-      if (now < startDate || now > endDate) {
-        throw new Error("Promotion is not active");
-      }
-    }
-
-    // Calculate platform fee (5% of transaction)
-    const platformFeePercent = 0.05;
-    const platformFee = Math.round(amount * platformFeePercent);
-    const businessAmount = amount - platformFee;
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Check if customer exists
+    // Check if a Stripe customer record exists for this user
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      logStep("Existing customer found", { customerId });
+    } else {
+      logStep("No existing customer found");
     }
 
-    // Create payment intent with destination charge for Stripe Connect
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount),
-      currency: "eur",
-      application_fee_amount: platformFee,
-      transfer_data: {
-        destination: businessProfile.stripe_connect_account_id,
-      },
-      metadata: {
-        offerId,
-        promotionId: promotionId || "",
-        userId: user.id,
-        participantCount: participantCount.toString(),
-        bookingDate,
-        bookingTime: bookingTime || "",
-        notes: notes || "",
-        businessUserId: offer.business_user_id,
-        selectedPricingOptionId: selectedPricingOptionId || "",
-        pricingOptionName: pricingOption?.service_name || "",
-      },
-    });
+    // Get offer details for the payment description
+    const { data: offer } = await supabaseService
+      .from('offers')
+      .select('title, category')
+      .eq('id', offerId)
+      .single();
 
-    // Create checkout session
+    const productName = offer ? `${offer.title} - ${offer.category}` : 'Réservation';
+    
+    // Create a one-time payment session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -167,53 +103,56 @@ serve(async (req) => {
         {
           price_data: {
             currency: "eur",
-            product_data: {
-              name: `Réservation: ${offer.title}`,
-              description: `${participantCount} participant(s) • ${bookingDate} à ${bookingTime}${pricingOption ? ` • ${pricingOption.service_name}` : ""}`,
+            product_data: { 
+              name: productName,
+              description: description || `Réservation pour ${participantCount} personne(s)`
             },
-            unit_amount: Math.round(amount),
+            unit_amount: Math.round(amount * 100), // Convert to cents
           },
           quantity: 1,
         },
       ],
       mode: "payment",
-      payment_intent_data: {
-        application_fee_amount: platformFee,
-        transfer_data: {
-          destination: businessProfile.stripe_connect_account_id,
-        },
-        metadata: {
-          offerId,
-          userId: user.id,
-          participantCount: participantCount.toString(),
-          businessUserId: offer.business_user_id,
-        }
-      },
-      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/booking/${offerId}`,
+      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+      cancel_url: `${req.headers.get("origin")}/booking-form/${offerId}`,
       metadata: {
-        offerId,
-        promotionId: promotionId || "",
-        userId: user.id,
-        participantCount: participantCount.toString(),
-        bookingDate,
-        bookingTime: bookingTime || "",
-        notes: notes || "",
-        businessUserId: offer.business_user_id,
-        selectedPricingOptionId: selectedPricingOptionId || "",
-        businessName: `${businessProfile.first_name} ${businessProfile.last_name}`,
-      },
+        booking_id: bookingId,
+        offer_id: offerId,
+        business_user_id: businessUserId,
+        user_id: user.id,
+        participant_count: participantCount.toString(),
+        booking_date: bookingDate,
+        booking_time: bookingTime
+      }
     });
 
-    console.log(`Payment session created for user ${user.id}, offer ${offerId}, amount ${amount}, business gets ${businessAmount}`);
+    logStep("Stripe session created", { sessionId: session.id });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    // Update booking with payment session ID and set status to pending_payment
+    const { error: updateError } = await supabaseService
+      .from('bookings')
+      .update({ 
+        status: 'pending_payment',
+        stripe_session_id: session.id 
+      })
+      .eq('id', bookingId);
+
+    if (updateError) {
+      logStep("ERROR updating booking", updateError);
+      throw new Error(`Failed to update booking: ${updateError.message}`);
+    }
+
+    logStep("Booking updated with session ID");
+
+    return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error) {
-    console.error("Payment creation error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR in create-payment", { message: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
