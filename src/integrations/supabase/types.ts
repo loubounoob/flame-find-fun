@@ -26,7 +26,10 @@ export type Database = {
           notes: string | null
           offer_id: string
           participant_count: number
+          payment_confirmed: boolean | null
           status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
           total_price: number | null
           updated_at: string
           user_id: string
@@ -42,7 +45,10 @@ export type Database = {
           notes?: string | null
           offer_id: string
           participant_count?: number
+          payment_confirmed?: boolean | null
           status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           total_price?: number | null
           updated_at?: string
           user_id: string
@@ -58,7 +64,10 @@ export type Database = {
           notes?: string | null
           offer_id?: string
           participant_count?: number
+          payment_confirmed?: boolean | null
           status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           total_price?: number | null
           updated_at?: string
           user_id?: string
