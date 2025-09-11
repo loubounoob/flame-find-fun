@@ -71,10 +71,47 @@ export function useSimplePricing(
         if (!businessError && businessPricing) {
           basePrice = businessPricing.price_amount;
           pricingType = businessPricing.price_type;
+        } else {
+          // Last fallback: extract price from offer.price field
+          const { data: offer, error: offerError } = await supabase
+            .from('offers')
+            .select('price, base_price, category')
+            .eq('id', offerId)
+            .single();
+
+          if (!offerError && offer) {
+            // Use base_price if available
+            if (offer.base_price) {
+              basePrice = offer.base_price;
+            } else if (offer.price) {
+              // Extract numeric value from price string (e.g., "10€" -> 10)
+              const priceMatch = offer.price.match(/(\d+(?:\.\d+)?)/);
+              if (priceMatch) {
+                basePrice = parseFloat(priceMatch[1]);
+              }
+            }
+
+            // Determine pricing type based on category
+            const category = offer.category?.toLowerCase() || '';
+            if (category.includes('bowling') || category.includes('billard')) {
+              pricingType = 'per_game';
+            } else if (category.includes('padel') || category.includes('tennis')) {
+              pricingType = 'per_hour';
+            } else if (category.includes('escape')) {
+              pricingType = 'per_session';
+            } else {
+              pricingType = 'per_person';
+            }
+          }
         }
       }
 
-      // Calculate final price based on pricing type
+      // Validate that we have a valid base price
+      if (basePrice <= 0) {
+        console.warn('No valid price found for offer:', offerId);
+        setPriceCalculation(null);
+        return;
+      }
       let finalPrice = 0;
       let pricePerUnit = basePrice;
       let totalUnits = unitsCount;

@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSimplePricing } from "@/hooks/useSimplePricing";
-import { Euro, Info } from "lucide-react";
+import { Euro, Info, AlertCircle } from "lucide-react";
 import React from "react";
 
 interface SimpleRealtimePriceDisplayProps {
@@ -64,9 +64,13 @@ export function SimpleRealtimePriceDisplay({
       <Card className={`bg-gradient-card border-border/50 ${className}`}>
         <CardContent className="p-4 text-center">
           <div className="space-y-2">
-            <Euro size={24} className="mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Prix en cours de calcul...
+            <AlertCircle size={24} className="mx-auto text-destructive" />
+            <p className="text-sm font-medium text-destructive">
+              Prix non configuré
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Cette activité n'a pas encore de tarification définie. 
+              Contactez le prestataire pour plus d'informations.
             </p>
           </div>
         </CardContent>
