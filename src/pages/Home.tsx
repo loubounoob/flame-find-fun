@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
-import { usePromotions } from "@/hooks/usePromotions";
 import { useOfferScoring } from "@/hooks/useOfferScoring";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
@@ -109,7 +108,6 @@ export default function Home() {
   const queryClient = useQueryClient();
   
   const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
-  const { activePromotions } = usePromotions();
   const { scoredOffers } = useOfferScoring();
 
   const { data: offers = [], isLoading } = useQuery({
@@ -133,40 +131,11 @@ export default function Home() {
       return false;
     }
     
-    // Price filter - extract numeric value from price string
-    if (offer.price) {
-      const priceMatch = offer.price.match(/\d+/);
-      if (priceMatch) {
-        const price = parseInt(priceMatch[0]);
-        if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
-          return false;
-        }
-      }
-    }
-    
     return true;
   });
 
   // Apply filters to active promotions as well
-  const filteredPromotions = activePromotions.filter(promotion => {
-    const offer = offers.find(o => o.id === promotion.offer_id);
-    if (!offer) return false;
-    
-    // Category filter
-    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
-      return false;
-    }
-    
-    // Price filter - use promotional price
-    if (promotion.promotional_price) {
-      const price = promotion.promotional_price;
-      if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
-        return false;
-      }
-    }
-    
-    return true;
-  });
+  const filteredPromotions = [];
 
   // Sort offers based on scoring algorithm
   const sortedOffers = user && scoredOffers.length > 0 
@@ -272,44 +241,12 @@ export default function Home() {
         
         {/* Promotional Offers */}
         <div className="space-y-4">
-          {filteredPromotions.map((promotion) => {
-            // Find the corresponding offer
-            const offer = offers.find(o => o.id === promotion.offer_id);
-            if (!offer) return null;
-            
-            return (
-              <PromoCard
-                key={promotion.id}
-                id={promotion.id}
-                promotionId={promotion.id}
-                offerId={promotion.offer_id}
-                businessUserId={promotion.business_user_id}
-                title={promotion.title}
-                description={promotion.description || offer.description}
-                location={offer.location}
-                category={offer.category}
-                image={offer.image_url}
-                video={offer.video_url}
-                originalPrice={promotion.original_price}
-                promotionalPrice={promotion.promotional_price}
-                discountText={promotion.discount_text}
-                endDate={promotion.end_date}
-                flames={flamesCounts[offer.id] || 0}
-                maxParticipants={promotion.max_participants || offer.max_participants}
-                latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
-                longitude={offer.longitude ? parseFloat(offer.longitude.toString()) : undefined}
-              />
-            );
-          })}
-          
           {/* Show message if no promotions */}
-          {filteredPromotions.length === 0 && (
-            <div className="text-center py-8">
-              <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
-              <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
-            </div>
-          )}
+          <div className="text-center py-8">
+            <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
+            <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+          </div>
         </div>
       </section>
 
@@ -323,11 +260,7 @@ export default function Home() {
         </div>
         
         <div className="space-y-4">
-          {sortedOffers.map((offer) => {
-            // Skip offers that have active promotions (already shown in flash section)
-            const hasActivePromo = activePromotions.some(p => p.offer_id === offer.id);
-            if (hasActivePromo) return null;
-            
+          {sortedOffers.map((offer) => {            
             return (
               <OfferCard
                 key={offer.id}
@@ -337,7 +270,6 @@ export default function Home() {
                 location={offer.location}
                 category={offer.category}
                 image={offer.image_url}
-                price={offer.price}
                 description={offer.description}
                 flames={flamesCounts[offer.id] || 0}
                 latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
@@ -346,7 +278,7 @@ export default function Home() {
             );
           })}
           
-          {sortedOffers.filter(offer => !activePromotions.some(p => p.offer_id === offer.id)).length === 0 && (
+          {sortedOffers.length === 0 && (
             <div className="text-center py-8">
               <Star className="mx-auto text-4xl text-muted-foreground mb-2" />
               <p className="text-muted-foreground">Aucune activité disponible pour le moment.</p>

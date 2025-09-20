@@ -5,67 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { TimeSlotSelector } from "@/components/ui/time-slot-selector";
-import { ActivityBookingManager } from "@/components/booking/ActivityBookingManager";
-import { SimpleRealtimePriceDisplay } from "@/components/SimpleRealtimePriceDisplay";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useBookings } from "@/hooks/useBookings";
 import { useToast } from "@/hooks/use-toast";
 
 export default function BookingForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { createBooking } = useBookings();
   const { toast } = useToast();
   const [notes, setNotes] = useState("");
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
-  const [customBookingTime, setCustomBookingTime] = useState("");
-  const [customBookingDate, setCustomBookingDate] = useState("");
+  const [participantCount, setParticipantCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bookingData, setBookingData] = useState({
-    participants: 1,
-    units: 1,
-    unitType: 'participant',
-    extras: []
-  });
-
-  const handleBookingDataChange = (data: any) => {
-    setBookingData(data);
-  };
-
-  const getBookingDateTime = () => {
-    // Si c'est un créneau personnalisé
-    if (selectedTimeSlot === "custom" && customBookingTime && customBookingDate) {
-      return { date: customBookingDate, time: customBookingTime };
-    }
-    
-    // Sinon, extraire de l'ID du slot sélectionné
-    if (!selectedTimeSlot) return { date: "", time: "" };
-    
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    if (selectedTimeSlot.includes("today")) {
-      const time = selectedTimeSlot.split("-")[1] + ":00";
-      return { date: today, time };
-    } else if (selectedTimeSlot.includes("tomorrow")) {
-      const time = selectedTimeSlot.split("-")[1] + ":00";
-      return { date: tomorrow, time };
-    }
-    
-    return { date: "", time: "" };
-  };
-
-  const handleCustomSlot = (time: string, date: string) => {
-    setCustomBookingTime(time);
-    setCustomBookingDate(date);
-    setSelectedTimeSlot("custom");
-  };
 
   // Check if this is a promotion booking
   const { data: promotion } = useQuery({
@@ -134,106 +88,50 @@ export default function BookingForm() {
     );
   }
 
-  if (existingBooking) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Déjà réservé</h2>
-            <p className="text-muted-foreground mb-4">
-              Vous avez déjà réservé cette offre.
-            </p>
-            <Button onClick={() => navigate("/booking")} className="w-full">
-              Voir mes réservations
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const calculatePrice = () => {
-    // Now handled by DynamicPriceCalculator
-    return 0;
-  };
-
-  const [priceData, setPriceData] = useState<any>(null);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!offer) return;
-
-    setIsSubmitting(true);
     
-    try {
-      const bookingDateTime = getBookingDateTime();
-      
-      if (!bookingDateTime.date || !bookingDateTime.time) {
-        toast({
-          title: "Erreur",
-          description: "Veuillez sélectionner une date et une heure",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!priceData || !priceData.finalPrice || priceData.finalPrice <= 0) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de calculer le prix de la réservation",
-          variant: "destructive"
-        });
-        return;
-      }
-
-        // Create the booking first with pending_payment status
-        const booking = await createBooking({
-          offerId: offer.id,
-          participantCount: bookingData.participants,
-          bookingDate: bookingDateTime.date,
-          bookingTime: bookingDateTime.time,
-          notes,
-          businessUserId: offer.business_user_id
-        });
-
-      if (booking?.id) {
-        // Create Stripe payment session
-        const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
-          body: {
-            bookingId: booking.id,
-            offerId: offer.id,
-            businessUserId: offer.business_user_id,
-            amount: priceData.finalPrice,
-            participantCount: bookingData.participants,
-            bookingDate: bookingDateTime.date,
-            bookingTime: bookingDateTime.time,
-            description: `Réservation ${offer.title} - ${bookingData.participants} personne(s)`
-          }
-        });
-
-        if (paymentError) {
-          console.error('Payment error:', paymentError);
-          toast({
-            title: "Erreur de paiement",
-            description: "Impossible de créer la session de paiement",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (paymentData?.url) {
-          // Redirect to Stripe Checkout
-          window.location.href = paymentData.url;
-        } else {
-          throw new Error("URL de paiement non reçue");
-        }
-      }
-    } catch (error: any) {
-      console.error('Booking error:', error);
+    if (!user || !offer) {
       toast({
         title: "Erreur",
-        description: error.message || "Erreur lors de la création de la réservation",
-        variant: "destructive"
+        description: "Informations manquantes pour effectuer la réservation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Create booking
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          user_id: user.id,
+          offer_id: offer.id,
+          business_user_id: offer.business_user_id,
+          participant_count: participantCount,
+          notes: notes || null,
+          status: 'confirmed'
+        });
+
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError);
+        throw bookingError;
+      }
+
+      toast({
+        title: "Réservation confirmée !",
+        description: "Votre réservation a été créée avec succès. L'entreprise va vous contacter prochainement.",
+      });
+
+      navigate('/booking');
+    } catch (error) {
+      console.error('Error in booking submission:', error);
+      toast({
+        title: "Erreur lors de la réservation",
+        description: "Une erreur est survenue. Veuillez réessayer.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -283,29 +181,33 @@ export default function BookingForm() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Activity-specific booking form */}
-                <ActivityBookingManager
-                  category={offer.category}
-                  maxParticipants={offer.max_participants}
-                  onBookingDataChange={handleBookingDataChange}
-                />
-
-                 <TimeSlotSelector
-                  selectedSlot={selectedTimeSlot}
-                  onSlotSelect={setSelectedTimeSlot}
-                  onCustomSlot={handleCustomSlot}
-                />
-
-                 {/* Real-time Price Display */}
-                 <SimpleRealtimePriceDisplay
-                   offerId={id!}
-                   businessUserId={offer.business_user_id}
-                   participantCount={bookingData.participants}
-                   unitsCount={bookingData.units}
-                   unitType={bookingData.unitType}
-                   showBreakdown={true}
-                   onPriceChange={setPriceData}
-                 />
+                {/* Participant Count */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Nombre de participants
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setParticipantCount(Math.max(1, participantCount - 1))}
+                      disabled={participantCount <= 1}
+                    >
+                      -
+                    </Button>
+                    <span className="w-12 text-center font-medium">{participantCount}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setParticipantCount(participantCount + 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="notes" className="flex items-center gap-2">
@@ -324,15 +226,31 @@ export default function BookingForm() {
                    <Button 
                      type="submit" 
                      className="w-full bg-gradient-primary hover:opacity-90"
-                     disabled={isSubmitting || !selectedTimeSlot || !priceData?.finalPrice}
+                     disabled={isSubmitting}
                    >
-                     {isSubmitting ? "Redirection vers le paiement..." : `Payer ${priceData?.finalPrice ? `${priceData.finalPrice}€` : ''} et réserver`}
+                     {isSubmitting ? "Réservation en cours..." : "Confirmer la réservation"}
                    </Button>
                  </div>
               </form>
             </CardContent>
           </Card>
 
+        {/* Info Card */}
+        <Card className="mt-6 bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <h3 className="font-medium text-blue-900">📞 Prochaines étapes</h3>
+              <p className="text-sm text-blue-800">
+                Après votre réservation, l'entreprise vous contactera directement pour :
+              </p>
+              <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                <li>Confirmer les détails (date, heure, prix)</li>
+                <li>Organiser le paiement</li>
+                <li>Vous donner toutes les informations pratiques</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

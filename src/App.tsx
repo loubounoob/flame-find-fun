@@ -18,10 +18,7 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessProfile from "./pages/BusinessProfile";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import BusinessStorefront from "./components/BusinessStorefront";
 import ShopifyBookingInterface from "./components/ShopifyBookingInterface";
-import BusinessCustomizer from "./pages/BusinessCustomizer";
 
 import { RouteTracker } from "./components/RouteTracker";
 
@@ -39,22 +36,17 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/offer/:id" element={<OfferDetail />} />
-          <Route path="/storefront/:id" element={<BusinessStorefront />} />
-          <Route path="/booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
-          <Route path="/shopify-booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
-          <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
-          <Route path="/booking-form/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
-          
-          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-           <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
-           <Route path="/business-customizer" element={<ProtectedRoute businessOnly><BusinessCustomizer /></ProtectedRoute>} />
-           <Route path="/business-profile" element={<ProtectedRoute businessOnly><BusinessProfile /></ProtectedRoute>} />
+           <Route path="/offer/:id" element={<OfferDetail />} />
+           <Route path="/booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
+           <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+           <Route path="/booking-form/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
+           <Route path="/auth" element={<Auth />} />
+           <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
            
-           <Route path="/payment-success" element={<PaymentSuccess />} />
+           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/business-dashboard" element={<ProtectedRoute businessOnly><BusinessDashboard /></ProtectedRoute>} />
+            <Route path="/business-profile" element={<ProtectedRoute businessOnly><BusinessProfile /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

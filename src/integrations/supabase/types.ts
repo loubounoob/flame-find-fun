@@ -18,7 +18,6 @@ export type Database = {
         Row: {
           archived_at: string | null
           booking_date: string
-          booking_time: string | null
           business_user_id: string
           created_at: string
           id: string
@@ -26,18 +25,13 @@ export type Database = {
           notes: string | null
           offer_id: string
           participant_count: number
-          payment_confirmed: boolean | null
           status: string
-          stripe_payment_intent_id: string | null
-          stripe_session_id: string | null
-          total_price: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           archived_at?: string | null
           booking_date?: string
-          booking_time?: string | null
           business_user_id: string
           created_at?: string
           id?: string
@@ -45,18 +39,13 @@ export type Database = {
           notes?: string | null
           offer_id: string
           participant_count?: number
-          payment_confirmed?: boolean | null
           status?: string
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          total_price?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           archived_at?: string | null
           booking_date?: string
-          booking_time?: string | null
           business_user_id?: string
           created_at?: string
           id?: string
@@ -64,11 +53,7 @@ export type Database = {
           notes?: string | null
           offer_id?: string
           participant_count?: number
-          payment_confirmed?: boolean | null
           status?: string
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          total_price?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -151,39 +136,6 @@ export type Database = {
         }
         Relationships: []
       }
-      business_finances: {
-        Row: {
-          available_balance: number | null
-          business_user_id: string
-          created_at: string
-          id: string
-          total_boost_spent: number | null
-          total_earnings: number | null
-          total_withdrawn: number | null
-          updated_at: string
-        }
-        Insert: {
-          available_balance?: number | null
-          business_user_id: string
-          created_at?: string
-          id?: string
-          total_boost_spent?: number | null
-          total_earnings?: number | null
-          total_withdrawn?: number | null
-          updated_at?: string
-        }
-        Update: {
-          available_balance?: number | null
-          business_user_id?: string
-          created_at?: string
-          id?: string
-          total_boost_spent?: number | null
-          total_earnings?: number | null
-          total_withdrawn?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       business_media: {
         Row: {
           business_user_id: string
@@ -259,182 +211,6 @@ export type Database = {
         }
         Relationships: []
       }
-      business_page_elements: {
-        Row: {
-          created_at: string
-          custom_styles: Json | null
-          element_config: Json
-          element_data: Json | null
-          element_type: string
-          id: string
-          is_visible: boolean
-          position_order: number
-          template_id: string
-          theme_colors: Json | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          custom_styles?: Json | null
-          element_config?: Json
-          element_data?: Json | null
-          element_type: string
-          id?: string
-          is_visible?: boolean
-          position_order?: number
-          template_id: string
-          theme_colors?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          custom_styles?: Json | null
-          element_config?: Json
-          element_data?: Json | null
-          element_type?: string
-          id?: string
-          is_visible?: boolean
-          position_order?: number
-          template_id?: string
-          theme_colors?: Json | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_page_elements_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "business_page_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      business_page_templates: {
-        Row: {
-          business_user_id: string
-          created_at: string
-          id: string
-          is_active: boolean
-          template_config: Json
-          template_name: string
-          updated_at: string
-        }
-        Insert: {
-          business_user_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          template_config?: Json
-          template_name: string
-          updated_at?: string
-        }
-        Update: {
-          business_user_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          template_config?: Json
-          template_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      business_pricing: {
-        Row: {
-          business_user_id: string
-          created_at: string
-          description: string | null
-          display_order: number | null
-          duration_minutes: number | null
-          id: string
-          is_active: boolean | null
-          max_participants: number | null
-          min_participants: number | null
-          price_amount: number
-          price_type: string
-          service_name: string
-          special_conditions: string | null
-          updated_at: string
-        }
-        Insert: {
-          business_user_id: string
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          duration_minutes?: number | null
-          id?: string
-          is_active?: boolean | null
-          max_participants?: number | null
-          min_participants?: number | null
-          price_amount: number
-          price_type: string
-          service_name: string
-          special_conditions?: string | null
-          updated_at?: string
-        }
-        Update: {
-          business_user_id?: string
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          duration_minutes?: number | null
-          id?: string
-          is_active?: boolean | null
-          max_participants?: number | null
-          min_participants?: number | null
-          price_amount?: number
-          price_type?: string
-          service_name?: string
-          special_conditions?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      business_pricing_rules: {
-        Row: {
-          business_user_id: string
-          conditions: Json
-          created_at: string
-          id: string
-          is_active: boolean
-          is_percentage: boolean
-          offer_id: string | null
-          price_modifier: number
-          priority: number | null
-          rule_name: string
-          rule_type: string
-          updated_at: string
-        }
-        Insert: {
-          business_user_id: string
-          conditions?: Json
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_percentage?: boolean
-          offer_id?: string | null
-          price_modifier?: number
-          priority?: number | null
-          rule_name: string
-          rule_type: string
-          updated_at?: string
-        }
-        Update: {
-          business_user_id?: string
-          conditions?: Json
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_percentage?: boolean
-          offer_id?: string | null
-          price_modifier?: number
-          priority?: number | null
-          rule_name?: string
-          rule_type?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       business_ratings: {
         Row: {
           average_rating: number
@@ -462,105 +238,6 @@ export type Database = {
           total_rating?: number
           total_reviews?: number
           updated_at?: string
-        }
-        Relationships: []
-      }
-      business_revenue_stats: {
-        Row: {
-          average_booking_value: number | null
-          booking_count: number | null
-          business_user_id: string
-          created_at: string
-          daily_revenue: number | null
-          id: string
-          stat_date: string
-          top_offer_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          average_booking_value?: number | null
-          booking_count?: number | null
-          business_user_id: string
-          created_at?: string
-          daily_revenue?: number | null
-          id?: string
-          stat_date?: string
-          top_offer_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          average_booking_value?: number | null
-          booking_count?: number | null
-          business_user_id?: string
-          created_at?: string
-          daily_revenue?: number | null
-          id?: string
-          stat_date?: string
-          top_offer_id?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      business_themes: {
-        Row: {
-          color_palette: Json
-          created_at: string
-          id: string
-          is_premium: boolean | null
-          layout_config: Json
-          preview_image_url: string | null
-          theme_category: string
-          theme_name: string
-          typography: Json
-        }
-        Insert: {
-          color_palette: Json
-          created_at?: string
-          id?: string
-          is_premium?: boolean | null
-          layout_config: Json
-          preview_image_url?: string | null
-          theme_category: string
-          theme_name: string
-          typography: Json
-        }
-        Update: {
-          color_palette?: Json
-          created_at?: string
-          id?: string
-          is_premium?: boolean | null
-          layout_config?: Json
-          preview_image_url?: string | null
-          theme_category?: string
-          theme_name?: string
-          typography?: Json
-        }
-        Relationships: []
-      }
-      financial_rate_limits: {
-        Row: {
-          business_user_id: string
-          created_at: string | null
-          id: string
-          operation_count: number | null
-          operation_type: string
-          window_start: string | null
-        }
-        Insert: {
-          business_user_id: string
-          created_at?: string | null
-          id?: string
-          operation_count?: number | null
-          operation_type: string
-          window_start?: string | null
-        }
-        Update: {
-          business_user_id?: string
-          created_at?: string | null
-          id?: string
-          operation_count?: number | null
-          operation_type?: string
-          window_start?: string | null
         }
         Relationships: []
       }
@@ -659,94 +336,6 @@ export type Database = {
         }
         Relationships: []
       }
-      offer_boosts: {
-        Row: {
-          amount_paid: number
-          boost_score: number | null
-          boost_type: string
-          business_user_id: string
-          created_at: string
-          end_date: string
-          id: string
-          is_active: boolean | null
-          offer_id: string
-          start_date: string
-        }
-        Insert: {
-          amount_paid: number
-          boost_score?: number | null
-          boost_type: string
-          business_user_id: string
-          created_at?: string
-          end_date: string
-          id?: string
-          is_active?: boolean | null
-          offer_id: string
-          start_date?: string
-        }
-        Update: {
-          amount_paid?: number
-          boost_score?: number | null
-          boost_type?: string
-          business_user_id?: string
-          created_at?: string
-          end_date?: string
-          id?: string
-          is_active?: boolean | null
-          offer_id?: string
-          start_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_offer_boosts_offer"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      offer_pricing_options: {
-        Row: {
-          created_at: string
-          description: string | null
-          duration_minutes: number | null
-          id: string
-          is_default: boolean | null
-          offer_id: string
-          option_name: string
-          price: number
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          duration_minutes?: number | null
-          id?: string
-          is_default?: boolean | null
-          offer_id: string
-          option_name: string
-          price: number
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          duration_minutes?: number | null
-          id?: string
-          is_default?: boolean | null
-          offer_id?: string
-          option_name?: string
-          price?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_offer_pricing_options_offer"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       offer_ratings: {
         Row: {
           comment: string | null
@@ -809,7 +398,6 @@ export type Database = {
       offers: {
         Row: {
           address: string | null
-          base_price: number | null
           business_user_id: string
           category: string
           created_at: string
@@ -820,8 +408,6 @@ export type Database = {
           latitude: number | null
           location: string
           longitude: number | null
-          max_participants: number | null
-          price: string | null
           pricing_options: Json | null
           requires_images: boolean | null
           status: string
@@ -831,7 +417,6 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          base_price?: number | null
           business_user_id: string
           category: string
           created_at?: string
@@ -842,8 +427,6 @@ export type Database = {
           latitude?: number | null
           location: string
           longitude?: number | null
-          max_participants?: number | null
-          price?: string | null
           pricing_options?: Json | null
           requires_images?: boolean | null
           status?: string
@@ -853,7 +436,6 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          base_price?: number | null
           business_user_id?: string
           category?: string
           created_at?: string
@@ -864,8 +446,6 @@ export type Database = {
           latitude?: number | null
           location?: string
           longitude?: number | null
-          max_participants?: number | null
-          price?: string | null
           pricing_options?: Json | null
           requires_images?: boolean | null
           status?: string
@@ -1018,62 +598,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      stripe_transactions: {
-        Row: {
-          amount: number
-          booking_id: string | null
-          business_amount: number
-          business_user_id: string
-          created_at: string
-          customer_user_id: string
-          id: string
-          platform_fee: number
-          status: string
-          stripe_fee: number
-          stripe_payment_intent_id: string
-          stripe_transfer_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          booking_id?: string | null
-          business_amount: number
-          business_user_id: string
-          created_at?: string
-          customer_user_id: string
-          id?: string
-          platform_fee?: number
-          status?: string
-          stripe_fee?: number
-          stripe_payment_intent_id: string
-          stripe_transfer_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          booking_id?: string | null
-          business_amount?: number
-          business_user_id?: string
-          created_at?: string
-          customer_user_id?: string
-          id?: string
-          platform_fee?: number
-          status?: string
-          stripe_fee?: number
-          stripe_payment_intent_id?: string
-          stripe_transfer_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_flames_daily: {
         Row: {
