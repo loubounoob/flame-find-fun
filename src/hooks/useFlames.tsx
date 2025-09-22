@@ -4,82 +4,45 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface DailyFlame {
+interface UserFlame {
   id: string;
   user_id: string;
-  flame_date: string;
-  offer_id: string | null;
+  offer_id: string;
   created_at: string;
-  updated_at: string;
 }
 
 export function useFlames() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [dailyFlame, setDailyFlame] = useState<DailyFlame | null>(null);
+  const [userFlames, setUserFlames] = useState<UserFlame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchDailyFlame();
+      fetchUserFlames();
     } else {
-      setDailyFlame(null);
+      setUserFlames([]);
       setIsLoading(false);
     }
   }, [user]);
 
-  // Listen for flame updates to sync across components
-  useEffect(() => {
-    const handleFlameUpdate = () => {
-      if (user) {
-        fetchDailyFlame();
-      }
-    };
-
-    window.addEventListener('flameUpdated', handleFlameUpdate);
-    return () => window.removeEventListener('flameUpdated', handleFlameUpdate);
-  }, [user]);
-
-  const fetchDailyFlame = async () => {
+  const fetchUserFlames = async () => {
     if (!user) return;
     
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
       const { data, error } = await supabase
-        .from('user_flames_daily')
+        .from('flames')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('flame_date', today)
-        .maybeSingle();
+        .eq('user_id', user.id);
 
       if (error) throw error;
-
-      if (!data) {
-        // Create today's flame entry with ON CONFLICT handling
-        const { data: newFlame, error: createError } = await supabase
-          .from('user_flames_daily')
-          .upsert({
-            user_id: user.id,
-            flame_date: today,
-            offer_id: null
-          }, {
-            onConflict: 'user_id,flame_date'
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setDailyFlame(newFlame);
-      } else {
-        setDailyFlame(data);
-      }
+      setUserFlames(data || []);
     } catch (error) {
-      console.error('Error fetching daily flame:', error);
+      console.error('Error fetching user flames:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger votre flamme quotidienne.",
+        description: "Impossible de charger vos flammes.",
         variant: "destructive"
       });
     } finally {
@@ -88,7 +51,7 @@ export function useFlames() {
   };
 
   const giveFlame = async (offerId: string) => {
-    if (!user || !dailyFlame) {
+    if (!user) {
       toast({
         title: "Connexion requise",
         description: "Connectez-vous pour donner une flamme.",
@@ -97,32 +60,35 @@ export function useFlames() {
       return false;
     }
 
-    try {
-      // Si l'utilisateur a déjà donné sa flamme à cette offre, on la retire
-      if (dailyFlame.offer_id === offerId) {
-        return await removeFlame();
-      }
+    // Vérifier si l'utilisateur a déjà donné une flamme à cette offre
+    const existingFlame = userFlames.find(flame => flame.offer_id === offerId);
+    
+    if (existingFlame) {
+      return await removeFlame(offerId);
+    }
 
-      // Sinon, on donne la flamme à cette offre (retire automatiquement de l'autre)
-      const { error } = await supabase
-        .from('user_flames_daily')
-        .update({ offer_id: offerId })
-        .eq('id', dailyFlame.id);
+    try {
+      const { data, error } = await supabase
+        .from('flames')
+        .insert({
+          user_id: user.id,
+          offer_id: offerId
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Mise à jour immédiate de l'état local pour synchronisation
-      setDailyFlame(prev => prev ? { ...prev, offer_id: offerId } : null);
+      // Mise à jour immédiate de l'état local
+      setUserFlames(prev => [...prev, data]);
       
       // Refresh flame counts
       queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
-      
-      // Dispatch event to update flame counter
-      window.dispatchEvent(new CustomEvent('flameUpdated'));
+      queryClient.invalidateQueries({ queryKey: ["flamesCount"] });
       
       toast({
         title: "Flamme donnée !",
-        description: "Votre flamme quotidienne a été donnée à cette offre.",
+        description: "Votre flamme a été donnée à cette offre.",
       });
       return true;
     } catch (error) {
@@ -136,24 +102,27 @@ export function useFlames() {
     }
   };
 
-  const removeFlame = async () => {
-    if (!user || !dailyFlame) return false;
+  const removeFlame = async (offerId: string) => {
+    if (!user) return false;
+
+    const existingFlame = userFlames.find(flame => flame.offer_id === offerId);
+    if (!existingFlame) return false;
 
     try {
       const { error } = await supabase
-        .from('user_flames_daily')
-        .update({ offer_id: null })
-        .eq('id', dailyFlame.id);
+        .from('flames')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('offer_id', offerId);
 
       if (error) throw error;
 
-      setDailyFlame(prev => prev ? { ...prev, offer_id: null } : null);
+      // Mise à jour immédiate de l'état local
+      setUserFlames(prev => prev.filter(flame => flame.offer_id !== offerId));
       
       // Refresh flame counts
       queryClient.invalidateQueries({ queryKey: ["flamesCounts"] });
-      
-      // Dispatch event to update flame counter
-      window.dispatchEvent(new CustomEvent('flameUpdated'));
+      queryClient.invalidateQueries({ queryKey: ["flamesCount"] });
       
       toast({
         title: "Flamme retirée",
@@ -172,20 +141,20 @@ export function useFlames() {
   };
 
   const hasGivenFlameToOffer = (offerId: string) => {
-    return dailyFlame?.offer_id === offerId;
+    return userFlames.some(flame => flame.offer_id === offerId);
   };
 
   const canGiveFlame = () => {
-    return !!user && !!dailyFlame;
+    return !!user;
   };
 
   return {
-    dailyFlame,
+    userFlames,
     isLoading,
     giveFlame,
     removeFlame,
     hasGivenFlameToOffer,
     canGiveFlame,
-    refetch: fetchDailyFlame
+    refetch: fetchUserFlames
   };
 }

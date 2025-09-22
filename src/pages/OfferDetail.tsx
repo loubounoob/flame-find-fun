@@ -109,23 +109,6 @@ export default function OfferDetail() {
     enabled: !!id,
   });
 
-  // Récupérer les tarifs de l'entreprise
-  const { data: pricing = [] } = useQuery({
-    queryKey: ["businessPricing", offer?.business_user_id],
-    queryFn: async () => {
-      if (!offer?.business_user_id) return [];
-      const { data, error } = await supabase
-        .from("business_pricing")
-        .select("*")
-        .eq("business_user_id", offer.business_user_id)
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!offer?.business_user_id,
-  });
 
   // Récupérer les médias de l'entreprise
   const { data: businessMedia = [] } = useQuery({
@@ -377,57 +360,9 @@ export default function OfferDetail() {
                 <MapPin size={18} className="text-primary" />
                 <span className="text-foreground">{offer.location}</span>
               </div>
-              
-              {offer.price && (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-primary">{offer.price}</span>
-                </div>
-              )}
-              
-              {offer.max_participants && (
-                <div className="flex items-center gap-2">
-                  <Users size={18} className="text-info" />
-                  <span className="text-foreground">Jusqu'à {offer.max_participants} personnes</span>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Tarification */}
-          {pricing.length > 0 && (
-            <Card className="bg-gradient-card border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Euro size={18} className="text-primary" />
-                  <h3 className="font-poppins font-semibold text-foreground">Tarification</h3>
-                </div>
-                <div className="space-y-3">
-                  {pricing.map((price) => (
-                    <div key={price.id} className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-foreground">{price.service_name}</h4>
-                        {price.description && (
-                          <p className="text-sm text-muted-foreground">{price.description}</p>
-                        )}
-                        <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                          {price.duration_minutes && (
-                            <span>⏱️ {price.duration_minutes}min</span>
-                          )}
-                          {price.max_participants && (
-                            <span>👥 Max {price.max_participants} pers.</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-primary">{price.price_amount}€</span>
-                        <p className="text-xs text-muted-foreground">{price.price_type}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Médias de l'entreprise */}
           {businessMedia.length > 0 && (

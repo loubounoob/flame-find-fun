@@ -8,9 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PromotionManager } from "@/components/ui/promotion-manager";
-import { BusinessRevenueDashboard } from "@/components/BusinessRevenueDashboard";
-import { BusinessPricingSetup } from "@/components/ui/business-pricing-setup";
 
 import { 
   Plus, 
@@ -54,8 +51,6 @@ export default function BusinessDashboard() {
     custom_category: ""
   });
   const [isCreateOfferOpen, setIsCreateOfferOpen] = useState(false);
-  const [showPricingSetup, setShowPricingSetup] = useState(false);
-  const [pricingOptions, setPricingOptions] = useState([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -235,24 +230,11 @@ export default function BusinessDashboard() {
   const createOffer = async () => {
     if (!user) return;
 
-    // Validate pricing options before creating offer
-    if (pricingOptions.length === 0) {
-      toast({
-        title: "Configuration incomplète",
-        description: "Veuillez configurer au moins une option tarifaire avant de créer l'offre.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       let imageUrl = null;
       if (formData.image_file) {
         imageUrl = await handleImageUpload(formData.image_file);
       }
-
-      // Create the offer with base price from first pricing option
-      const basePrice = pricingOptions[0]?.price_amount || 0;
 
       const { data: offerData, error } = await supabase
         .from('offers')
@@ -263,31 +245,13 @@ export default function BusinessDashboard() {
           category: formData.category === "Autre" ? formData.custom_category : formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
-          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: imageUrl,
-          base_price: basePrice,
           status: 'active'
         })
         .select()
         .single();
 
       if (error) throw error;
-
-      // Create offer-specific pricing options if needed
-      if (offerData && pricingOptions.length > 0) {
-        const offerPricingOptions = pricingOptions.map(option => ({
-          offer_id: offerData.id,
-          option_name: option.service_name,
-          price: option.price_amount,
-          description: option.description,
-          duration_minutes: option.duration_minutes,
-          is_default: option === pricingOptions[0] // First option is default
-        }));
-
-        await supabase
-          .from('offer_pricing_options')
-          .insert(offerPricingOptions);
-      }
 
       toast({
         title: "Offre créée !",
@@ -304,7 +268,6 @@ export default function BusinessDashboard() {
         image_file: null,
         custom_category: ""
       });
-      setPricingOptions([]);
       setShowCreateForm(false);
       
       loadOffers();
@@ -335,7 +298,6 @@ export default function BusinessDashboard() {
           category: formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
-          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
           image_url: imageUrl
         })
         .eq('id', editingOffer.id);
@@ -393,7 +355,7 @@ export default function BusinessDashboard() {
       description: offer.description || "",
       category: offer.category || "",
       address: offer.address || "",
-      max_participants: offer.max_participants?.toString() || "",
+      max_participants: "",
       image_file: null,
       custom_category: ""
     });
@@ -611,79 +573,10 @@ export default function BusinessDashboard() {
                      />
                    </div>
 
-                   {/* Pricing Configuration */}
-                   <div className="space-y-4">
-                     <div className="flex items-center justify-between">
-                       <Label>Configuration des tarifs</Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            console.log("Bouton configurer tarifs cliqué, showPricingSetup:", showPricingSetup);
-                            setShowPricingSetup(!showPricingSetup);
-                          }}
-                        >
-                          <Zap size={16} className="mr-2" />
-                          {showPricingSetup ? "Masquer tarifs" : "Configurer tarifs"}
-                        </Button>
-                     </div>
-                     
-                     {pricingOptions.length === 0 && !showPricingSetup && (
-                       <div className="p-4 border border-dashed border-border rounded-lg text-center">
-                         <p className="text-sm text-muted-foreground mb-2">
-                           Aucune option tarifaire configurée
-                         </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              console.log("Bouton ajouter tarif cliqué");
-                              setShowPricingSetup(true);
-                            }}
-                          >
-                            Ajouter une option de tarif
-                          </Button>
-                       </div>
-                     )}
-
-                     {pricingOptions.length > 0 && !showPricingSetup && (
-                       <div className="space-y-2">
-                         <p className="text-sm text-muted-foreground">
-                           {pricingOptions.length} option{pricingOptions.length > 1 ? 's' : ''} configurée{pricingOptions.length > 1 ? 's' : ''}
-                         </p>
-                         <div className="flex flex-wrap gap-2">
-                           {pricingOptions.slice(0, 3).map((option, index) => (
-                             <Badge key={index} variant="secondary" className="text-xs">
-                               {option.service_name}: {option.price_amount}€
-                             </Badge>
-                           ))}
-                           {pricingOptions.length > 3 && (
-                             <Badge variant="outline" className="text-xs">
-                               +{pricingOptions.length - 3} autres
-                             </Badge>
-                           )}
-                         </div>
-                       </div>
-                     )}
-
-                       {showPricingSetup && user && (
-                         <div className="mt-4">
-                           <BusinessPricingSetup
-                             businessUserId={user.id}
-                             onPricingComplete={(options) => {
-                               console.log("Pricing complete, options:", options);
-                               setPricingOptions(options);
-                             }}
-                             onClose={() => {
-                               setShowPricingSetup(false);
-                             }}
-                           />
-                         </div>
-                       )}
-                   </div>
-
+                    {/* Pricing Configuration */}
+                    <div className="space-y-4">
+                      <Label>Configuration des tarifs</Label>
+                    </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Adresse</Label>
@@ -859,14 +752,20 @@ export default function BusinessDashboard() {
             {/* Promotions Section */}
             <div className="space-y-4">
               <h2 className="text-xl font-poppins font-bold text-foreground">Promotions</h2>
-              <PromotionManager />
+              <div className="text-center py-8">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Promotions</h3>
+                <p className="text-muted-foreground">Créez des promotions pour attirer plus de clients.</p>
+              </div>
             </div>
             </div>
           </TabsContent>
 
 
           <TabsContent value="revenue" className="space-y-4">
-            <BusinessRevenueDashboard />
+            <div className="text-center py-8">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Revenus</h3>
+              <p className="text-muted-foreground">Consultez vos statistiques de revenus ici.</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="bookings" className="space-y-4">

@@ -107,7 +107,7 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { dailyFlame, giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
+  const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const { scoredOffers } = useOfferScoring();
 
   const { data: offers = [], isLoading } = useQuery({
@@ -175,7 +175,7 @@ export default function Home() {
     const hasFlameOnThisOffer = hasGivenFlameToOffer(offerId);
     
     if (hasFlameOnThisOffer) {
-      await removeFlame();
+      await removeFlame(offerId);
     } else {
       await giveFlame(offerId);
     }
@@ -205,7 +205,7 @@ export default function Home() {
             <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
               <Flame size={14} className="text-white fill-current animate-pulse" />
               <span className="text-white text-sm font-semibold">
-                {dailyFlame?.offer_id ? 0 : 1} flamme{dailyFlame?.offer_id ? 's' : ''}
+                Illimité
               </span>
             </div>
             

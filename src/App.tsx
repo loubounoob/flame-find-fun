@@ -18,7 +18,7 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessProfile from "./pages/BusinessProfile";
-import ShopifyBookingInterface from "./components/ShopifyBookingInterface";
+
 
 import { RouteTracker } from "./components/RouteTracker";
 
@@ -37,7 +37,7 @@ const App = () => (
           <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
            <Route path="/offer/:id" element={<OfferDetail />} />
-           <Route path="/booking/:id" element={<ProtectedRoute><ShopifyBookingInterface /></ProtectedRoute>} />
+           
            <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
            <Route path="/booking-form/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
            <Route path="/auth" element={<Auth />} />

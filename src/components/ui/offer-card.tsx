@@ -56,7 +56,7 @@ export function OfferCard({
     const hasFlameOnThisOffer = hasGivenFlameToOffer(id);
     
     if (hasFlameOnThisOffer) {
-      await removeFlame();
+      await removeFlame(id);
     } else {
       await giveFlame(id);
     }
@@ -156,7 +156,7 @@ export function OfferCard({
                   if (!canGiveFlame()) {
                     window.location.href = '/auth';
                   } else {
-                    window.location.href = `/booking/${id}`;
+                    window.location.href = `/booking-form/${id}`;
                   }
                 }}
               >

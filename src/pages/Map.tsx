@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UltraGoogleMap } from "@/components/ui/ultra-google-map";
+import { SimpleGoogleMap } from "@/components/ui/simple-google-map";
 import { Input } from "@/components/ui/input";
 import { UnifiedFilterSystem } from "@/components/UnifiedFilterSystem";
 import { OfferCard } from "@/components/ui/offer-card";
@@ -122,25 +122,13 @@ export default function Map() {
           </div>
         </div>
 
-        <UnifiedFilterSystem
-          selectedCategories={selectedCategories}
-          onCategoryChange={setSelectedCategories}
-          selectedLocation={selectedLocation}
-          onLocationChange={setSelectedLocation}
-          availableCategories={categories}
-        />
       </div>
 
       {/* Map and sidebar */}
       <div className="flex-1 flex">
         {/* Map */}
         <div className="flex-1 relative">
-          <UltraGoogleMap
-            markers={markers}
-            center={userLocation || { lat: 48.8566, lng: 2.3522 }} // Default to Paris
-            zoom={userLocation ? 12 : 10}
-            className="w-full h-full"
-          />
+        <SimpleGoogleMap />
         </div>
 
         {/* Sidebar with offers */}
@@ -163,16 +151,17 @@ export default function Map() {
               </div>
             ) : offers.length > 0 ? (
               offers.map((offer) => (
-                <OfferCard
-                  key={offer.id}
-                  id={offer.id}
-                  title={offer.title}
-                  description={offer.description}
-                  category={offer.category}
-                  location={offer.location}
-                  imageUrl={offer.image_url}
-                  businessUserId={offer.business_user_id}
-                />
+              <OfferCard
+                key={offer.id}
+                id={offer.id}
+                title={offer.title}
+                description={offer.description}
+                category={offer.category}
+                location={offer.location}
+                image={offer.image_url}
+                business_user_id={offer.business_user_id}
+                flames={0}
+              />
               ))
             ) : (
               <Card>

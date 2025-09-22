@@ -267,7 +267,7 @@ export function PromoCard({
             )}
             onClick={(e) => handleButtonClick(e, async () => {
               if (isLiked) {
-                await removeFlame();
+                await removeFlame(offerId);
                 setCurrentFlames(prev => prev - 1);
               } else {
                 await giveFlame(offerId);
