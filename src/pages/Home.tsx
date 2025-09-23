@@ -150,9 +150,8 @@ export default function Home() {
     queryKey: ["flamesCounts"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_flames_daily")
-        .select("offer_id")
-        .not("offer_id", "is", null);
+        .from("flames")
+        .select("offer_id");
       
       if (error) throw error;
       
@@ -233,10 +232,6 @@ export default function Home() {
               LIMITÉ
             </Badge>
           </div>
-          <FilterModal 
-            onFiltersChange={setFilters}
-            currentFilters={filters}
-          />
         </div>
         
         {/* Promotional Offers */}

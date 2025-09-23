@@ -65,6 +65,8 @@ export default function BookingForm() {
       const bookingDate = new Date(today);
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      const timeNote = `Heure souhaitée: ${bookingTime}${notes ? ` - ${notes}` : ''}`;
+
       const { error } = await supabase
         .from("bookings")
         .insert({
@@ -73,7 +75,7 @@ export default function BookingForm() {
           business_user_id: offer.business_user_id,
           booking_date: bookingDate.toISOString(),
           participant_count: participantCount,
-          notes: notes || null,
+          notes: timeNote,
           status: "confirmed"
         });
 

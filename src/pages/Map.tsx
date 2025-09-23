@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SimpleGoogleMap } from "@/components/ui/simple-google-map";
 import { Input } from "@/components/ui/input";
-import { UnifiedFilterSystem } from "@/components/UnifiedFilterSystem";
+
 import { OfferCard } from "@/components/ui/offer-card";
 import { Search, MapPin } from "lucide-react";
 import { BottomNav } from "@/components/ui/bottom-nav";
@@ -24,8 +24,6 @@ interface Offer {
 
 export default function Map() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Get user's location
@@ -47,7 +45,7 @@ export default function Map() {
 
   // Fetch offers
   const { data: offers = [], isLoading } = useQuery({
-    queryKey: ['offers', searchQuery, selectedCategories, selectedLocation],
+    queryKey: ['offers', searchQuery],
     queryFn: async () => {
       let query = supabase
         .from('offers')
@@ -56,14 +54,6 @@ export default function Map() {
 
       if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`);
-      }
-
-      if (selectedCategories.length > 0) {
-        query = query.in('category', selectedCategories);
-      }
-
-      if (selectedLocation) {
-        query = query.ilike('location', `%${selectedLocation}%`);
       }
 
       const { data, error } = await query;
@@ -82,21 +72,6 @@ export default function Map() {
     offer.latitude !== null && offer.longitude !== null
   );
 
-  // Get unique categories for filter
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('offers')
-        .select('category')
-        .eq('status', 'active');
-
-      if (error) throw error;
-
-      const uniqueCategories = [...new Set(data.map(item => item.category))];
-      return uniqueCategories;
-    }
-  });
 
   // Convert offers to map markers
   const markers = offersWithCoords.map(offer => ({
@@ -128,7 +103,9 @@ export default function Map() {
       <div className="flex-1 flex">
         {/* Map */}
         <div className="flex-1 relative">
-        <SimpleGoogleMap />
+          <SimpleGoogleMap
+            filteredOffers={offersWithCoords}
+          />
         </div>
 
         {/* Sidebar with offers */}
@@ -171,14 +148,10 @@ export default function Map() {
                   </p>
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategories([]);
-                      setSelectedLocation("");
-                    }}
+                    onClick={() => setSearchQuery("")}
                     className="mt-4"
                   >
-                    Réinitialiser les filtres
+                    Effacer la recherche
                   </Button>
                 </CardContent>
               </Card>

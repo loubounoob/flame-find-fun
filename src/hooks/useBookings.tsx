@@ -9,7 +9,6 @@ interface Booking {
   offer_id: string;
   business_user_id: string;
   booking_date: string;
-  booking_time?: string;
   is_archived?: boolean;
   status: string;
   participant_count: number;
@@ -72,7 +71,6 @@ export function useBookings() {
     participantCount: number;
     notes?: string;
     bookingDate?: string;
-    bookingTime?: string;
   }) => {
     if (!user) {
       toast({
@@ -90,8 +88,7 @@ export function useBookings() {
         business_user_id: bookingData.businessUserId,
         participant_count: bookingData.participantCount,
         notes: bookingData.notes,
-        ...(bookingData.bookingDate && { booking_date: bookingData.bookingDate }),
-        ...(bookingData.bookingTime && { booking_time: bookingData.bookingTime })
+        ...(bookingData.bookingDate && { booking_date: bookingData.bookingDate })
       };
 
       const { data, error } = await supabase
