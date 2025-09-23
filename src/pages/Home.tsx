@@ -16,6 +16,7 @@ import { FilterModal } from "@/components/ui/filter-modal";
 import { Bell, Search, Star, Zap, Flame, Filter } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
+import { SearchSuggestions } from "@/components/SearchSuggestions";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -200,12 +201,21 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Flames counter */}
-            <div className="flex items-center gap-1 bg-gradient-flame rounded-full px-3 py-1">
-              <Flame size={14} className="text-white fill-current animate-pulse" />
-              <span className="text-white text-sm font-semibold">
-                Illimité
-              </span>
+            {/* Search input */}
+            <div className="relative flex-1 max-w-sm">
+              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Rechercher une activité..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border/50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <SearchSuggestions
+                query={searchQuery}
+                onSelect={(suggestion) => setSearchQuery(suggestion)}
+                isVisible={!!searchQuery}
+              />
             </div>
             
             {/* Real-time notifications counter */}

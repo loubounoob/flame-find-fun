@@ -26,6 +26,7 @@ export type Database = {
           offer_id: string
           participant_count: number
           status: string
+          total_price: number
           updated_at: string
           user_id: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           offer_id: string
           participant_count?: number
           status?: string
+          total_price?: number
           updated_at?: string
           user_id: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           offer_id?: string
           participant_count?: number
           status?: string
+          total_price?: number
           updated_at?: string
           user_id?: string
         }
