@@ -102,16 +102,16 @@ export default function Map() {
       </div>
 
       {/* Map and sidebar */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col lg:flex-row">
         {/* Map */}
-        <div className="flex-1 relative">
+        <div className="relative w-full h-64 lg:h-auto lg:flex-1">
           <SimpleGoogleMap
             filteredOffers={offersWithCoords}
           />
         </div>
 
         {/* Sidebar with offers */}
-        <div className="w-96 border-l bg-background overflow-y-auto">
+        <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l bg-background overflow-y-auto">
           <div className="p-4 border-b">
             <h2 className="font-semibold flex items-center gap-2">
               <MapPin className="h-4 w-4" />

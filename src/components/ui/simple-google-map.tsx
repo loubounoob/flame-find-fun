@@ -85,7 +85,7 @@ export function SimpleGoogleMap({
 
   // Initialiser une carte simple et performante
   const initializeMap = async () => {
-    if (!mapRef.current || !position) return;
+    if (!mapRef.current) return;
 
     try {
       const loader = new Loader({
@@ -98,8 +98,8 @@ export function SimpleGoogleMap({
       const google = (window as any).google;
 
       const map = new google.maps.Map(mapRef.current, {
-        center: position,
-        zoom: 15,
+        center: position || { lat: 48.8566, lng: 2.3522 },
+        zoom: position ? 15 : 12,
         disableDefaultUI: true,
         gestureHandling: 'greedy',
         styles: [
@@ -114,25 +114,27 @@ export function SimpleGoogleMap({
       mapInstanceRef.current = map;
       onMapLoad?.(map);
 
-      // Centrer automatiquement sur la position utilisateur
-      map.setCenter(position);
+      // Centrer automatiquement
+      map.setCenter(position || { lat: 48.8566, lng: 2.3522 });
       
-      // Marqueur utilisateur simple
-      new google.maps.Marker({
-        position: position,
-        map: map,
-        title: 'Votre position',
-        icon: {
-          url: `data:image/svg+xml,${encodeURIComponent(`
-            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
-              <circle cx="10" cy="10" r="3" fill="white"/>
-            </svg>
-          `)}`,
-          scaledSize: new google.maps.Size(20, 20),
-          anchor: new google.maps.Point(10, 10)
-        }
-      });
+      // Marqueur utilisateur simple (si géolocalisation disponible)
+      if (position) {
+        new google.maps.Marker({
+          position: position,
+          map: map,
+          title: 'Votre position',
+          icon: {
+            url: `data:image/svg+xml,${encodeURIComponent(`
+              <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
+                <circle cx="10" cy="10" r="3" fill="white"/>
+              </svg>
+            `)}`,
+            scaledSize: new google.maps.Size(20, 20),
+            anchor: new google.maps.Point(10, 10)
+          }
+        });
+      }
 
       // Clear existing markers
       markersRef.current.forEach(marker => marker.setMap(null));
@@ -217,7 +219,7 @@ export function SimpleGoogleMap({
 
   // Charger la carte quand la géolocalisation est prête
   useEffect(() => {
-    if (position && !mapInstanceRef.current) {
+    if (!mapInstanceRef.current) {
       initializeMap();
     }
   }, [position, businesses]);
@@ -240,15 +242,6 @@ export function SimpleGoogleMap({
     );
   }
 
-  if (!position) {
-    return (
-      <div className="h-full flex items-center justify-center bg-muted">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">Géolocalisation non disponible</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full h-full relative">
