@@ -101,65 +101,11 @@ export default function Map() {
         </div>
       </div>
 
-      {/* Map and sidebar */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Map */}
-        <div className="relative w-full h-64 lg:h-auto lg:flex-1">
-          <SimpleGoogleMap
-            filteredOffers={offersWithCoords}
-          />
-        </div>
-
-        {/* Sidebar with offers */}
-        <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l bg-background overflow-y-auto">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Activités trouvées ({offers.length})
-            </h2>
-          </div>
-          
-          <div className="p-4 space-y-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-32 bg-gray-200 rounded"></div>
-                  </div>
-                ))}
-              </div>
-            ) : offers.length > 0 ? (
-              offers.map((offer) => (
-              <OfferCard
-                key={offer.id}
-                id={offer.id}
-                title={offer.title}
-                description={offer.description}
-                category={offer.category}
-                location={offer.location}
-                image={offer.image_url}
-                business_user_id={offer.business_user_id}
-                flames={0}
-              />
-              ))
-            ) : (
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground">
-                    Aucune activité trouvée avec ces critères
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSearchQuery("")}
-                    className="mt-4"
-                  >
-                    Effacer la recherche
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+      {/* Map full screen */}
+      <div className="flex-1">
+        <SimpleGoogleMap
+          filteredOffers={offersWithCoords}
+        />
       </div>
       <BottomNav />
     </div>
