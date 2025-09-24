@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UltraGoogleMap } from "@/components/ui/ultra-google-map";
+import { SimpleGoogleMap } from "@/components/ui/simple-google-map";
 import { Input } from "@/components/ui/input";
 
 import { OfferCard } from "@/components/ui/offer-card";
@@ -83,27 +83,29 @@ export default function Map() {
 
   return (
     <div className="h-screen flex flex-col pb-20">
-      {/* Header with search and filters */}
-      <div className="bg-background border-b p-4 space-y-4">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une activité..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+      {/* Header */}
+      <div className="bg-background border-b p-4">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold">Carte des activités</h1>
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une activité..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
         </div>
-
       </div>
 
       {/* Map and sidebar */}
       <div className="flex-1 flex">
         {/* Map */}
         <div className="flex-1 relative">
-          <UltraGoogleMap
+          <SimpleGoogleMap
             filteredOffers={offersWithCoords}
           />
         </div>
