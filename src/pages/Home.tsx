@@ -202,7 +202,7 @@ export default function Home() {
           
           <div className="flex items-center gap-3">
             {/* Search input */}
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 max-w-sm ml-3">
               <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"

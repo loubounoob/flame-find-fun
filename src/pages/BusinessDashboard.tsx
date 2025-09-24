@@ -469,9 +469,8 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="revenue">Revenus</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
 
@@ -482,14 +481,6 @@ export default function BusinessDashboard() {
             {/* Create Offer Button */}
             <Card className="bg-gradient-card border-border/50">
               <CardContent className="p-6 text-center">
-                  <Button 
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    onClick={() => navigate('/business-customizer')}
-                  >
-                    <Palette size={16} />
-                    Personnaliser ma page
-                  </Button>
                   <Button
                   onClick={() => showCreateForm ? resetForm() : setShowCreateForm(true)}
                   className="bg-gradient-primary hover:opacity-90"
@@ -761,12 +752,6 @@ export default function BusinessDashboard() {
           </TabsContent>
 
 
-          <TabsContent value="revenue" className="space-y-4">
-            <div className="text-center py-8">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Revenus</h3>
-              <p className="text-muted-foreground">Consultez vos statistiques de revenus ici.</p>
-            </div>
-          </TabsContent>
 
           <TabsContent value="bookings" className="space-y-4">
             <div className="space-y-4">
