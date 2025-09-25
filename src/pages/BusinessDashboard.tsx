@@ -51,6 +51,19 @@ export default function BusinessDashboard() {
     custom_category: ""
   });
   const [isCreateOfferOpen, setIsCreateOfferOpen] = useState(false);
+  const [promotions, setPromotions] = useState<any[]>([]);
+  const [showCreatePromo, setShowCreatePromo] = useState(false);
+  const [promoForm, setPromoForm] = useState({
+    offer_id: "",
+    title: "",
+    description: "",
+    discount_type: "percentage",
+    discount_value: 0,
+    original_price: 0,
+    start_date: "",
+    end_date: "",
+    max_participants: ""
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -141,6 +154,24 @@ export default function BusinessDashboard() {
       setBookings(bookingsData || []);
     } catch (error) {
       console.error('Error loading bookings:', error);
+    }
+  };
+
+  const loadPromotions = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('business_user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPromotions(data || []);
+    } catch (error) {
+      console.error('Error loading promotions:', error);
     }
   };
 
@@ -319,6 +350,79 @@ export default function BusinessDashboard() {
         description: "Impossible de modifier l'offre. Veuillez réessayer.",
         variant: "destructive"
       });
+    }
+  };
+
+  const createPromotion = async () => {
+    if (!user) return;
+    try {
+      const {
+        offer_id,
+        title,
+        description,
+        discount_type,
+        discount_value,
+        original_price,
+        start_date,
+        end_date,
+        max_participants
+      } = promoForm;
+
+      if (!offer_id || !title || !start_date || !end_date || !original_price) {
+        toast({ title: "Champs manquants", description: "Veuillez remplir tous les champs obligatoires.", variant: "destructive" });
+        return;
+      }
+
+      const discountVal = Number(discount_value) || 0;
+      const basePrice = Number(original_price) || 0;
+      let promotional_price = basePrice;
+      let discount_text = "";
+
+      if (discount_type === 'percentage') {
+        promotional_price = Math.max(0, basePrice * (1 - discountVal / 100));
+        discount_text = `-${discountVal}%`;
+      } else {
+        promotional_price = Math.max(0, basePrice - discountVal);
+        discount_text = `-${discountVal}€`;
+      }
+
+      const { error } = await supabase
+        .from('promotions')
+        .insert({
+          business_user_id: user.id,
+          offer_id,
+          title,
+          description: description || null,
+          discount_type,
+          discount_value: discountVal,
+          original_price: basePrice,
+          promotional_price,
+          discount_text,
+          start_date: new Date(start_date).toISOString(),
+          end_date: new Date(end_date).toISOString(),
+          max_participants: max_participants ? Number(max_participants) : null,
+          is_active: true,
+        });
+
+      if (error) throw error;
+
+      toast({ title: "Promotion créée", description: "Votre offre flash a été créée avec succès." });
+      setShowCreatePromo(false);
+      setPromoForm({
+        offer_id: "",
+        title: "",
+        description: "",
+        discount_type: "percentage",
+        discount_value: 0,
+        original_price: 0,
+        start_date: "",
+        end_date: "",
+        max_participants: ""
+      });
+      loadPromotions();
+    } catch (error) {
+      console.error('Error creating promotion:', error);
+      toast({ title: "Erreur", description: "Impossible de créer la promotion.", variant: "destructive" });
     }
   };
 

@@ -221,7 +221,13 @@ export default function BookingForm() {
                       mode="single"
                       selected={bookingDate}
                       onSelect={setBookingDate}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => {
+                        const d = new Date(date);
+                        d.setHours(0,0,0,0);
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        return d < today;
+                      }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
