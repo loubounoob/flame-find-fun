@@ -244,6 +244,36 @@ export type Database = {
         }
         Relationships: []
       }
+      business_revenue_stats: {
+        Row: {
+          average_booking_value: number
+          booking_count: number
+          business_user_id: string
+          created_at: string
+          daily_revenue: number
+          stat_date: string
+          updated_at: string
+        }
+        Insert: {
+          average_booking_value?: number
+          booking_count?: number
+          business_user_id: string
+          created_at?: string
+          daily_revenue?: number
+          stat_date: string
+          updated_at?: string
+        }
+        Update: {
+          average_booking_value?: number
+          booking_count?: number
+          business_user_id?: string
+          created_at?: string
+          daily_revenue?: number
+          stat_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       financial_transactions: {
         Row: {
           amount: number

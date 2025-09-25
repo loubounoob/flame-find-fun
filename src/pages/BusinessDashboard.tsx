@@ -81,6 +81,7 @@ export default function BusinessDashboard() {
     setUser(session.user);
     loadOffers();
     loadBookings();
+    loadPromotions();
   };
 
   const loadOffers = async () => {
