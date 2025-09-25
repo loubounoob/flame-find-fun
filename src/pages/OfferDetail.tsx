@@ -485,29 +485,9 @@ export default function OfferDetail() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleLike}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-            >
-              <Flame 
-                size={18} 
-                className="mr-2 fill-current text-white" 
-              />
-              {flamesCount} Flammes
-            </Button>
-            
-            <Link to={`/booking-form/${id}`} className="flex-1">
-              <Button className="w-full bg-gradient-primary hover:opacity-90">
-                Réserver maintenant
-              </Button>
-            </Link>
-          </div>
-
-          {/* Bouton d'évaluation pour les utilisateurs ayant réservé */}
-          {user && (
-            <div className="text-center">
+          <div className="space-y-3">
+            {/* Bouton d'évaluation pour les utilisateurs ayant réservé */}
+            {user && (
               <Button 
                 variant="outline" 
                 onClick={() => setShowRatingModal(true)}
@@ -516,8 +496,14 @@ export default function OfferDetail() {
                 <Star size={18} className="mr-2" />
                 Donner votre avis
               </Button>
-            </div>
-          )}
+            )}
+            
+            <Link to={`/booking-form/${id}`} className="block">
+              <Button className="w-full bg-gradient-primary hover:opacity-90">
+                Réserver maintenant
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

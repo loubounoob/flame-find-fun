@@ -5,11 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { ArrowLeft, Users, Clock, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -20,6 +24,7 @@ export default function BookingForm() {
   const [notes, setNotes] = useState("");
   const [participantCount, setParticipantCount] = useState(1);
   const [bookingTime, setBookingTime] = useState("");
+  const [bookingDate, setBookingDate] = useState<Date>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: offer, isLoading } = useQuery({
@@ -57,15 +62,23 @@ export default function BookingForm() {
       return;
     }
 
+    if (!bookingDate) {
+      toast({
+        title: "Date requise",
+        description: "Veuillez sélectionner une date pour votre réservation.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const today = new Date();
       const [hours, minutes] = bookingTime.split(':');
-      const bookingDate = new Date(today);
-      bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      const finalBookingDate = new Date(bookingDate);
+      finalBookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const timeNote = `Heure souhaitée: ${bookingTime}${notes ? ` - ${notes}` : ''}`;
+      const timeNote = `Date: ${format(bookingDate, 'dd/MM/yyyy')} - Heure: ${bookingTime}${notes ? ` - ${notes}` : ''}`;
 
       const { error } = await supabase
         .from("bookings")
@@ -73,7 +86,7 @@ export default function BookingForm() {
           user_id: user.id,
           offer_id: offer.id,
           business_user_id: offer.business_user_id,
-          booking_date: bookingDate.toISOString(),
+          booking_date: finalBookingDate.toISOString(),
           participant_count: participantCount,
           notes: timeNote,
           status: "confirmed"
@@ -183,6 +196,37 @@ export default function BookingForm() {
                     +
                   </Button>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar size={16} className="text-primary" />
+                  Date souhaitée
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-background border-border/50",
+                        !bookingDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {bookingDate ? format(bookingDate, "dd/MM/yyyy") : <span>Sélectionner une date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={bookingDate}
+                      onSelect={setBookingDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
