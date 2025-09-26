@@ -632,6 +632,45 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_promotions: {
+        Row: {
+          business_user_id: string
+          created_at: string
+          days_of_week: number[]
+          discount_percentage: number
+          end_time: string
+          id: string
+          is_active: boolean
+          offer_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string
+          days_of_week: number[]
+          discount_percentage: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          offer_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string
+          days_of_week?: number[]
+          discount_percentage?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          offer_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_flames_daily: {
         Row: {
           created_at: string
@@ -725,6 +764,14 @@ export type Database = {
           rating_distribution: Json
           total_reviews: number
         }[]
+      }
+      is_recurring_promotion_active: {
+        Args: {
+          p_days_of_week: number[]
+          p_end_time: string
+          p_start_time: string
+        }
+        Returns: boolean
       }
       schedule_rating_notification: {
         Args: { booking_id: string; offer_id: string; user_id: string }

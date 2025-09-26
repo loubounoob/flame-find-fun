@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import RecurringPromotions from "@/components/RecurringPromotions";
 
 export default function BusinessDashboard() {
   const [user, setUser] = useState(null);
@@ -847,11 +848,10 @@ export default function BusinessDashboard() {
 
             {/* Promotions Section */}
             <div className="space-y-4">
-              <h2 className="text-xl font-poppins font-bold text-foreground">Promotions</h2>
-              <div className="text-center py-8">
-                <h3 className="text-lg font-semibold text-foreground mb-2">Promotions</h3>
-                <p className="text-muted-foreground">Créez des promotions pour attirer plus de clients.</p>
-              </div>
+              <RecurringPromotions 
+                offers={offers.map(offer => ({ id: offer.id, title: offer.title }))} 
+                businessUserId={user?.id || ''} 
+              />
             </div>
             </div>
           </TabsContent>
