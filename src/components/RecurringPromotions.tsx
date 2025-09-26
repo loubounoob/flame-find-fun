@@ -203,16 +203,17 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h3 className="text-lg font-semibold">Promotions Récurrentes</h3>
           <p className="text-sm text-muted-foreground">
-            Configurez des promotions automatiques pour vos créneaux moins fréquentés
+            Promotions automatiques pour créneaux moins fréquentés
           </p>
         </div>
         <Button 
           onClick={() => setIsCreating(!isCreating)}
           variant={isCreating ? "outline" : "default"}
+          className="w-full sm:w-auto"
         >
           {isCreating ? 'Annuler' : 'Nouvelle Promotion'}
         </Button>
@@ -245,7 +246,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
 
             <div>
               <Label>Jours de la semaine</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                 {DAYS_OF_WEEK.map((day) => (
                   <div key={day.value} className="flex items-center space-x-2">
                     <Checkbox
@@ -261,7 +262,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="start-time">Heure de début</Label>
                 <Input
@@ -322,34 +323,35 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
           recurringPromotions.map((promotion) => (
             <Card key={promotion.id} className={promotion.is_active ? 'border-primary' : 'border-muted'}>
               <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{promotion.offer_title}</h4>
-                      <Badge variant={promotion.is_active ? 'default' : 'secondary'}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <h4 className="font-semibold text-sm sm:text-base">{promotion.offer_title}</h4>
+                      <Badge variant={promotion.is_active ? 'default' : 'secondary'} className="w-fit">
                         {promotion.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {getDaysLabel(promotion.days_of_week)}
+                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">{getDaysLabel(promotion.days_of_week)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {promotion.start_time} - {promotion.end_time}
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span>{promotion.start_time} - {promotion.end_time}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Percent className="w-4 h-4" />
-                        {promotion.discount_percentage}% de réduction
+                        <Percent className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span>{promotion.discount_percentage}% réduction</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => togglePromotionStatus(promotion.id, promotion.is_active)}
+                      className="flex-1 sm:flex-none text-xs sm:text-sm"
                     >
                       {promotion.is_active ? 'Désactiver' : 'Activer'}
                     </Button>
@@ -357,8 +359,9 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                       variant="outline"
                       size="sm"
                       onClick={() => deleteRecurringPromotion(promotion.id)}
+                      className="px-2 sm:px-3"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 </div>

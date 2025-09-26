@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { useOfferScoring } from "@/hooks/useOfferScoring";
+import { useFlashOffers } from "@/hooks/useFlashOffers";
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +111,7 @@ export default function Home() {
   
   const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const { scoredOffers } = useOfferScoring();
+  const { flashOffers, loading: flashOffersLoading } = useFlashOffers();
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["offers"],
@@ -246,12 +248,40 @@ export default function Home() {
         
         {/* Promotional Offers */}
         <div className="space-y-4">
-          {/* Show message if no promotions */}
-          <div className="text-center py-8">
-            <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
-            <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
-          </div>
+          {flashOffersLoading ? (
+            <div className="text-center py-8">
+              <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
+              <p className="text-muted-foreground">Chargement des offres flash...</p>
+            </div>
+          ) : flashOffers.length > 0 ? (
+            flashOffers.map((offer) => (
+              <PromoCard
+                key={offer.id}
+                id={offer.id}
+                promotionId={offer.id}
+                offerId={offer.id}
+                businessUserId={offer.business_user_id}
+                title={offer.title}
+                business={offer.business_user_id}
+                description={offer.description}
+                location={offer.location}
+                category={offer.category}
+                image={offer.image_url}
+                video={offer.video_url}
+                originalPrice={offer.original_price}
+                promotionalPrice={offer.promotional_price}
+                discountText={`${offer.discount_percentage}% de réduction`}
+                endDate={offer.endDate.toISOString()}
+                flames={flamesCounts[offer.id] || 0}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
+              <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+            </div>
+          )}
         </div>
       </section>
 
