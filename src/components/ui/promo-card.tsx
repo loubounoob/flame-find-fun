@@ -123,8 +123,8 @@ export function PromoCard({
       return;
     }
 
-    // Navigate to booking form instead
-    navigate(`/booking/${offerId}`);
+    // Navigate to classic booking form
+    navigate(`/booking-form/${offerId}`);
   };
 
   return (
@@ -205,7 +205,6 @@ export function PromoCard({
           <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">
             {title}
           </h3>
-          {business && <p className="text-muted-foreground text-sm font-medium">{business}</p>}
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -224,26 +223,24 @@ export function PromoCard({
           )}
         </div>
 
-        {/* Pricing */}
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-primary">
-            {promotionalPrice.toFixed(2)}€
-          </span>
-          <span className="text-sm text-muted-foreground line-through">
-            {originalPrice.toFixed(2)}€
-          </span>
-          <Badge variant="secondary" className="ml-auto">
-            -{Math.round(((originalPrice - promotionalPrice) / originalPrice) * 100)}%
-          </Badge>
-        </div>
+        {/* Pricing - Only show if prices are valid */}
+        {originalPrice > 0 && promotionalPrice > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-primary">
+              {promotionalPrice.toFixed(2)}€
+            </span>
+            <span className="text-sm text-muted-foreground line-through">
+              {originalPrice.toFixed(2)}€
+            </span>
+            <Badge variant="secondary" className="ml-auto">
+              -{Math.round(((originalPrice - promotionalPrice) / originalPrice) * 100)}%
+            </Badge>
+          </div>
+        )}
 
-        {/* Stats */}
+        {/* Stats - Remove flames counter */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <Flame size={14} className="text-primary" />
-              <span className="font-medium">{currentFlames}</span>
-            </div>
             {maxParticipants && (
               <div className="flex items-center gap-1">
                 <Users size={14} />
