@@ -123,11 +123,11 @@ export default function Booking() {
                              <span className="text-xs">{booking.notes}</span>
                            </div>
                          )}
-                         {booking.notes && booking.notes.startsWith('Date:') && (
-                           <div className="text-xs text-muted-foreground mt-1 bg-muted/50 p-2 rounded">
-                             {booking.notes}
-                           </div>
-                         )}
+                          {booking.notes && booking.notes.startsWith('Date:') && (
+                            <div className="text-xs text-foreground mt-1 border-l-2 border-primary pl-3">
+                              <strong>Détails:</strong> {booking.notes.replace('Date:', '').replace('Notes:', ' •')}
+                            </div>
+                          )}
                        </div>
                       
                       <div className="flex items-center justify-between">

@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Settings,
   LogOut,
   Edit,
   Flame,
@@ -261,9 +260,6 @@ export default function BusinessProfile() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
-              <Settings size={20} />
-            </Button>
             <Button variant="outline" size="icon" onClick={handleLogout}>
               <LogOut size={20} />
             </Button>

@@ -263,7 +263,29 @@ export default function BookingForm() {
                   id="time"
                   type="time"
                   value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
+                  onChange={(e) => {
+                    const selectedTime = e.target.value;
+                    const now = new Date();
+                    const selectedDate = bookingDate || new Date();
+                    
+                    // Si c'est aujourd'hui, vérifier que l'heure n'est pas dans le passé
+                    if (selectedDate.toDateString() === now.toDateString()) {
+                      const [hours, minutes] = selectedTime.split(':').map(Number);
+                      const selectedDateTime = new Date(selectedDate);
+                      selectedDateTime.setHours(hours, minutes, 0, 0);
+                      
+                      if (selectedDateTime <= now) {
+                        toast({
+                          title: "Heure invalide",
+                          description: "Vous ne pouvez pas réserver pour une heure passée.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                    }
+                    
+                    setBookingTime(selectedTime);
+                  }}
                   required
                   className="bg-background border-border/50"
                 />

@@ -15,7 +15,6 @@ import {
   Users, 
   Heart, 
   Calendar,
-  Settings,
   LogOut,
   Edit,
   Trash2,
@@ -511,9 +510,6 @@ export default function BusinessDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
-              <Settings size={20} />
-            </Button>
             <Button variant="outline" size="icon" onClick={handleLogout}>
               <LogOut size={20} />
             </Button>
