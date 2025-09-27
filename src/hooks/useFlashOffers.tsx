@@ -60,18 +60,28 @@ export const useFlashOffers = () => {
       // Filter recurring promotions that are currently active based on time and day
       const now = new Date();
       const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+      const currentTimeStr = now.toTimeString().slice(0, 8); // HH:MM:SS format
 
       console.log('Debug recurring promotions:', {
         currentDay,
-        currentTime,
+        currentTime: currentTimeStr,
         totalRecurringPromotions: recurringPromotions?.length,
         recurringPromotions
       });
 
+      const timeToMinutes = (t: string) => {
+        // Accepts HH:MM or HH:MM:SS
+        const [h, m, s] = t.split(':').map((x) => parseInt(x, 10));
+        return (h || 0) * 60 + (m || 0);
+      };
+
+      const currentMinutes = timeToMinutes(currentTimeStr);
+
       const activeRecurringPromotions = (recurringPromotions || []).filter(promotion => {
         const isCorrectDay = promotion.days_of_week.includes(currentDay);
-        const isCorrectTime = currentTime >= promotion.start_time && currentTime <= promotion.end_time;
+        const startMinutes = timeToMinutes(promotion.start_time);
+        const endMinutes = timeToMinutes(promotion.end_time);
+        const isCorrectTime = currentMinutes >= startMinutes && currentMinutes <= endMinutes;
         
         console.log(`Promo ${promotion.id}:`, {
           days_of_week: promotion.days_of_week,
@@ -85,44 +95,68 @@ export const useFlashOffers = () => {
         return isCorrectDay && isCorrectTime;
       });
 
-      const allFlashOffers: FlashOffer[] = [];
+      // Helper to extract a sensible base price from pricing_options
+      const getBasePrice = (options: any): number => {
+        try {
+          if (!options) return 0;
+          const arr = Array.isArray(options) ? options : [];
+          if (arr.length === 0) return 0;
+          const defaultOpt = arr.find((o: any) => o?.is_default === true && typeof o?.price === 'number');
+          if (defaultOpt) return defaultOpt.price;
+          const withPrice = arr.filter((o: any) => typeof o?.price === 'number');
+          if (withPrice.length > 0) {
+            // Use the lowest available price to be conservative
+            return withPrice.reduce((min: number, o: any) => Math.min(min, o.price), withPrice[0].price);
+          }
+          return 0;
+        } catch {
+          return 0;
+        }
+      };
+
+      // Use a map to avoid duplicates per offer (keep the best discount)
+      const flashByOfferId = new Map<string, FlashOffer>();
 
       // Add offers with recurring promotions
       activeRecurringPromotions.forEach(promo => {
         const offer = offers?.find(o => o.id === promo.offer_id);
-        if (offer && offer.pricing_options && Array.isArray(offer.pricing_options) && offer.pricing_options.length > 0) {
-          const pricingOptions = offer.pricing_options as Array<{price?: number}>;
-          const basePrice = pricingOptions[0]?.price || 0;
-          const discountAmount = (basePrice * promo.discount_percentage) / 100;
-          const promotionalPrice = basePrice - discountAmount;
+        if (!offer) return;
+        const basePrice = getBasePrice(offer.pricing_options);
+        const promotionalPrice = Math.max(basePrice - (basePrice * Number(promo.discount_percentage)) / 100, 0);
+        const candidate: FlashOffer = {
+          ...offer,
+          discount_percentage: Number(promo.discount_percentage) || 0,
+          original_price: basePrice,
+          promotional_price: promotionalPrice,
+          isFlash: true,
+          endDate: getEndOfDay() // Recurring promotions end at end of day
+        };
 
-          allFlashOffers.push({
-            ...offer,
-            discount_percentage: promo.discount_percentage,
-            original_price: basePrice,
-            promotional_price: promotionalPrice,
-            isFlash: true,
-            endDate: getEndOfDay() // Recurring promotions end at end of day
-          });
+        const existing = flashByOfferId.get(offer.id);
+        if (!existing || candidate.discount_percentage > existing.discount_percentage) {
+          flashByOfferId.set(offer.id, candidate);
         }
       });
 
       // Add regular promotions
       regularPromotions?.forEach(promo => {
         const offer = offers?.find(o => o.id === promo.offer_id);
-        if (offer) {
-          allFlashOffers.push({
-            ...offer,
-            discount_percentage: promo.discount_value,
-            original_price: promo.original_price,
-            promotional_price: promo.promotional_price,
-            isFlash: true,
-            endDate: new Date(promo.end_date)
-          });
+        if (!offer) return;
+        const candidate: FlashOffer = {
+          ...offer,
+          discount_percentage: Number(promo.discount_value) || 0,
+          original_price: Number(promo.original_price) || 0,
+          promotional_price: Number(promo.promotional_price) || 0,
+          isFlash: true,
+          endDate: new Date(promo.end_date)
+        };
+        const existing = flashByOfferId.get(offer.id);
+        if (!existing || candidate.discount_percentage > existing.discount_percentage) {
+          flashByOfferId.set(offer.id, candidate);
         }
       });
 
-      setFlashOffers(allFlashOffers);
+      setFlashOffers(Array.from(flashByOfferId.values()));
     } catch (error) {
       console.error('Erreur lors du chargement des offres flash:', error);
     } finally {

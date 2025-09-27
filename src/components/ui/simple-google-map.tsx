@@ -101,13 +101,28 @@ export function SimpleGoogleMap({
         center: position || { lat: 48.8566, lng: 2.3522 },
         zoom: position ? 15 : 12,
         disableDefaultUI: true,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        clickableIcons: false,
         gestureHandling: 'greedy',
         styles: [
-          {
-            featureType: "poi",
-            elementType: "labels.text",
-            stylers: [{ visibility: "off" }]
-          }
+          // Hide all POIs
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+          { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
+          // Hide transit
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+          // Hide highway labels and icons
+          { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ visibility: 'simplified' }] },
+          // Keep street names visible
+          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ visibility: 'on' }] },
+          { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
+          { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
+          // Keep city/locality names visible
+          { featureType: 'administrative.locality', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
+          { featureType: 'administrative.neighborhood', elementType: 'labels.text', stylers: [{ visibility: 'on' }] }
         ]
       });
 
