@@ -62,9 +62,26 @@ export const useFlashOffers = () => {
       const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
       const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
 
+      console.log('Debug recurring promotions:', {
+        currentDay,
+        currentTime,
+        totalRecurringPromotions: recurringPromotions?.length,
+        recurringPromotions
+      });
+
       const activeRecurringPromotions = (recurringPromotions || []).filter(promotion => {
         const isCorrectDay = promotion.days_of_week.includes(currentDay);
         const isCorrectTime = currentTime >= promotion.start_time && currentTime <= promotion.end_time;
+        
+        console.log(`Promo ${promotion.id}:`, {
+          days_of_week: promotion.days_of_week,
+          start_time: promotion.start_time,
+          end_time: promotion.end_time,
+          isCorrectDay,
+          isCorrectTime,
+          isActive: isCorrectDay && isCorrectTime
+        });
+        
         return isCorrectDay && isCorrectTime;
       });
 

@@ -127,8 +127,16 @@ export default function Home() {
     },
   });
 
-  // Apply filters
+  // Get IDs of offers that have flash promotions to exclude them from regular offers
+  const flashOfferIds = new Set(flashOffers.map(offer => offer.id));
+
+  // Apply filters and exclude offers that are in flash offers
   const filteredOffers = offers.filter(offer => {
+    // Exclude offers that are currently in flash promotions
+    if (flashOfferIds.has(offer.id)) {
+      return false;
+    }
+    
     // Category filter
     if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
       return false;

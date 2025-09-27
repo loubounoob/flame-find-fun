@@ -103,10 +103,42 @@ export function UltraGoogleMap({
         disableDefaultUI: true,
         gestureHandling: 'greedy',
         styles: [
+          // Masquer tous les POI (points d'intérêt)
           {
             featureType: "poi",
-            elementType: "labels.text",
             stylers: [{ visibility: "off" }]
+          },
+          // Masquer les autoroutes
+          {
+            featureType: "road.highway",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          // Masquer les entreprises
+          {
+            featureType: "poi.business",
+            stylers: [{ visibility: "off" }]
+          },
+          // Masquer les transports
+          {
+            featureType: "transit",
+            stylers: [{ visibility: "off" }]
+          },
+          // Garder seulement les noms de rues et villes
+          {
+            featureType: "road",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "on" }]
+          },
+          {
+            featureType: "administrative.locality",
+            elementType: "labels.text",
+            stylers: [{ visibility: "on" }]
+          },
+          {
+            featureType: "administrative.neighborhood",
+            elementType: "labels.text",
+            stylers: [{ visibility: "on" }]
           }
         ]
       });
