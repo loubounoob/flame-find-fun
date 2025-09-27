@@ -102,22 +102,33 @@ export default function Booking() {
                         </Badge>
                       </div>
                       
-                      <div className="space-y-1 text-sm text-muted-foreground mb-3">
-                        <div className="flex items-center gap-1">
-                          <Calendar size={14} />
+                       <div className="space-y-1 text-sm text-muted-foreground mb-3">
+                         <div className="flex items-center gap-1">
+                           <Calendar size={14} />
                            <span>
-                             {new Date(booking.booking_date).toLocaleDateString('fr-FR')}
+                             {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin size={14} />
-                          <span>{booking.offer?.location}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users size={14} />
-                          <span>{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
+                         </div>
+                         <div className="flex items-center gap-1">
+                           <MapPin size={14} />
+                           <span>{booking.offer?.location}</span>
+                         </div>
+                         <div className="flex items-center gap-1">
+                           <Users size={14} />
+                           <span>{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
+                         </div>
+                         {booking.notes && !booking.notes.startsWith('Date:') && (
+                           <div className="flex items-center gap-1">
+                             <Clock size={14} />
+                             <span className="text-xs">{booking.notes}</span>
+                           </div>
+                         )}
+                         {booking.notes && booking.notes.startsWith('Date:') && (
+                           <div className="text-xs text-muted-foreground mt-1 bg-muted/50 p-2 rounded">
+                             {booking.notes}
+                           </div>
+                         )}
+                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">

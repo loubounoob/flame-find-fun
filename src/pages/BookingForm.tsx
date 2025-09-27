@@ -74,11 +74,30 @@ export default function BookingForm() {
     setIsSubmitting(true);
 
     try {
+      // Vérifier s'il y a déjà une réservation pour cette offre
+      const { data: existingBooking } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("offer_id", offer.id)
+        .eq("status", "confirmed")
+        .single();
+
+      if (existingBooking) {
+        toast({
+          title: "Réservation déjà existante",
+          description: "Vous avez déjà réservé pour cette activité. Consultez vos réservations pour plus d'informations.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const [hours, minutes] = bookingTime.split(':');
       const finalBookingDate = new Date(bookingDate);
       finalBookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const timeNote = `Date: ${format(bookingDate, 'dd/MM/yyyy')} - Heure: ${bookingTime}${notes ? ` - ${notes}` : ''}`;
+      const timeNote = `Date: ${format(bookingDate, 'dd/MM/yyyy')} - Heure: ${bookingTime}${notes ? ` - Notes: ${notes}` : ''}`;
 
       const { error } = await supabase
         .from("bookings")

@@ -147,7 +147,7 @@ export default function BusinessDashboard() {
         .from('bookings')
         .select(`
           *,
-          offer:offers(title, category)
+          offer:offers(title, category, location)
         `)
         .eq('business_user_id', session.user.id)
         .order('created_at', { ascending: false });

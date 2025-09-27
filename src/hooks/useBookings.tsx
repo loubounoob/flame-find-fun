@@ -82,6 +82,24 @@ export function useBookings() {
     }
 
     try {
+      // Vérifier s'il y a déjà une réservation pour cette offre
+      const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('offer_id', bookingData.offerId)
+        .eq('status', 'confirmed')
+        .single();
+
+      if (existingBooking) {
+        toast({
+          title: "Réservation déjà existante",
+          description: "Vous avez déjà réservé pour cette activité. Consultez vos réservations pour plus d'informations.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       const bookingInsert = {
         user_id: user.id,
         offer_id: bookingData.offerId,
