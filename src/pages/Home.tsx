@@ -137,8 +137,14 @@ export default function Home() {
     return true;
   });
 
-  // Apply filters to active promotions as well
-  const filteredPromotions = [];
+  // Apply filters to flash offers as well
+  const filteredFlashOffers = flashOffers.filter(offer => {
+    // Category filter
+    if (filters.category !== "all" && offer.category?.toLowerCase() !== filters.category.toLowerCase()) {
+      return false;
+    }
+    return true;
+  });
 
   // Sort offers based on scoring algorithm
   const sortedOffers = user && scoredOffers.length > 0 
@@ -253,8 +259,8 @@ export default function Home() {
               <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
               <p className="text-muted-foreground">Chargement des offres flash...</p>
             </div>
-          ) : flashOffers.length > 0 ? (
-            flashOffers.map((offer) => (
+          ) : filteredFlashOffers.length > 0 ? (
+            filteredFlashOffers.map((offer) => (
               <PromoCard
                 key={offer.id}
                 id={offer.id}

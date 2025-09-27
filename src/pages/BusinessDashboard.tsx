@@ -874,19 +874,26 @@ export default function BusinessDashboard() {
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground">{booking.offer?.title}</h3>
                           <p className="text-sm text-muted-foreground">{booking.offer?.category}</p>
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={12} className="text-primary" />
-                              <span className="text-xs">{new Date(booking.booking_date).toLocaleDateString('fr-FR')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users size={12} className="text-success" />
-                              <span className="text-xs">{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
-                            </div>
-                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className="text-xs">
-                              {booking.status === "confirmed" ? "Confirmé" : booking.status}
-                            </Badge>
-                          </div>
+                           <div className="flex flex-wrap items-center gap-2 mt-2">
+                             <div className="flex items-center gap-1">
+                               <Calendar size={12} className="text-primary" />
+                               <span className="text-xs">
+                                 {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                               </span>
+                             </div>
+                             <div className="flex items-center gap-1">
+                               <Users size={12} className="text-success" />
+                               <span className="text-xs">{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
+                             </div>
+                             <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className="text-xs">
+                               {booking.status === "confirmed" ? "Confirmé" : booking.status}
+                             </Badge>
+                           </div>
+                           {booking.notes && (
+                             <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded max-w-full">
+                               <strong>Détails:</strong> {booking.notes}
+                             </div>
+                           )}
                         </div>
                         <div className="flex flex-col items-end gap-1 flex-shrink-0">
                           <Bell size={12} className="text-primary" />
