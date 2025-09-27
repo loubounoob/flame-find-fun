@@ -63,7 +63,7 @@ export function UltraGoogleMap({
   
   const { position, isLoading: locationLoading } = useGeolocation();
 
-  // Fetch businesses with simple query
+  // Fetch businesses with profiles
   const { data: businesses = [] } = useQuery({
     queryKey: ["simple-businesses-map", filteredOffers],
     queryFn: async () => {
@@ -71,15 +71,16 @@ export function UltraGoogleMap({
         return filteredOffers.filter(offer => offer.latitude && offer.longitude);
       }
       
-      const { data, error } = await supabase
-        .from("offers")
-        .select("*")
-        .eq("status", "active")
+      // Get unique business locations with their profiles
+      const { data: businessProfiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("user_id, business_name, first_name, last_name, avatar_url, latitude, longitude, address")
+        .eq("account_type", "business")
         .not("latitude", "is", null)
         .not("longitude", "is", null);
       
-      if (error) throw error;
-      return data || [];
+      if (profileError) throw profileError;
+      return businessProfiles || [];
     },
   });
 
@@ -108,9 +109,28 @@ export function UltraGoogleMap({
             featureType: "poi",
             stylers: [{ visibility: "off" }]
           },
-          // Masquer les autoroutes
+          // Masquer complètement toutes les routes et leurs labels
+          {
+            featureType: "road",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
           {
             featureType: "road.highway",
+            stylers: [{ visibility: "simplified" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.arterial",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.local",
             elementType: "labels",
             stylers: [{ visibility: "off" }]
           },
@@ -124,12 +144,7 @@ export function UltraGoogleMap({
             featureType: "transit",
             stylers: [{ visibility: "off" }]
           },
-          // Garder seulement les noms de rues et villes
-          {
-            featureType: "road",
-            elementType: "labels.text.fill",
-            stylers: [{ visibility: "on" }]
-          },
+          // Garder seulement les noms de villes
           {
             featureType: "administrative.locality",
             elementType: "labels.text",
@@ -138,7 +153,7 @@ export function UltraGoogleMap({
           {
             featureType: "administrative.neighborhood",
             elementType: "labels.text",
-            stylers: [{ visibility: "on" }]
+            stylers: [{ visibility: "off" }]
           }
         ]
       });
@@ -170,10 +185,10 @@ export function UltraGoogleMap({
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
 
-      // Créer des marqueurs simples avec icônes
-      for (const offer of businesses) {
-        if (offer.latitude && offer.longitude) {
-          createSimpleMarker(offer, map, google);
+      // Créer des marqueurs avec photos de profil pour les entreprises
+      for (const business of businesses) {
+        if (business.latitude && business.longitude) {
+          createBusinessMarker(business, map, google);
         }
       }
 
@@ -184,29 +199,34 @@ export function UltraGoogleMap({
     }
   };
 
-  // Créer des marqueurs simples avec icônes catégories
-  const createSimpleMarker = (offer: any, map: any, google: any) => {
-    const categoryIcon = CATEGORY_ICONS[offer.category as keyof typeof CATEGORY_ICONS] || '📍';
-    const categoryColor = CATEGORY_COLORS[offer.category as keyof typeof CATEGORY_COLORS] || '#ff6b35';
+  // Créer des marqueurs avec photos de profil pour les entreprises
+  const createBusinessMarker = (business: any, map: any, google: any) => {
+    const businessName = business.business_name || `${business.first_name || ''} ${business.last_name || ''}`.trim() || 'Entreprise';
+    const avatarUrl = business.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(businessName)}&background=ff6b35&color=fff&size=80`;
 
     const marker = new google.maps.Marker({
       position: { 
-        lat: Number(offer.latitude), 
-        lng: Number(offer.longitude) 
+        lat: Number(business.latitude), 
+        lng: Number(business.longitude) 
       },
       map: map,
-      title: offer.title,
+      title: businessName,
       icon: {
         url: `data:image/svg+xml,${encodeURIComponent(`
-          <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 5C13 5 7.5 10.5 7.5 17.5C7.5 25 20 45 20 45S32.5 25 32.5 17.5C32.5 10.5 27 5 20 5Z" 
-                  fill="${categoryColor}" stroke="white" stroke-width="2"/>
-            <circle cx="20" cy="17.5" r="8" fill="white"/>
-            <text x="20" y="22" text-anchor="middle" font-size="12">${categoryIcon}</text>
+          <svg width="50" height="60" viewBox="0 0 50 60" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="circle-clip">
+                <circle cx="25" cy="20" r="15"/>
+              </clipPath>
+            </defs>
+            <path d="M25 5C18 5 12.5 10.5 12.5 17.5C12.5 25 25 50 25 50S37.5 25 37.5 17.5C37.5 10.5 32 5 25 5Z" 
+                  fill="#ff6b35" stroke="white" stroke-width="3"/>
+            <circle cx="25" cy="20" r="15" fill="white"/>
+            <image x="10" y="5" width="30" height="30" href="${avatarUrl}" clip-path="url(#circle-clip)"/>
           </svg>
         `)}`,
-        scaledSize: new google.maps.Size(40, 50),
-        anchor: new google.maps.Point(20, 50)
+        scaledSize: new google.maps.Size(50, 60),
+        anchor: new google.maps.Point(25, 60)
       }
     });
 
@@ -214,9 +234,13 @@ export function UltraGoogleMap({
     const infoWindow = new google.maps.InfoWindow({
       content: `
         <div style="padding: 8px; max-width: 200px;">
-          <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${offer.title}</h3>
-          <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
-          <p style="margin: 4px 0 0 0; font-size: 11px;">${offer.location || ''}</p>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="${avatarUrl}" alt="${businessName}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+            <div>
+              <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${businessName}</h3>
+              <p style="margin: 0; font-size: 11px; color: #666;">${business.address || ''}</p>
+            </div>
+          </div>
         </div>
       `
     });
@@ -230,9 +254,9 @@ export function UltraGoogleMap({
       
       infoWindow.open(map, marker);
       
-      // Appel global pour voir les détails business
+      // Navigation vers le profil business
       if ((window as any).viewBusiness) {
-        (window as any).viewBusiness(offer.id);
+        (window as any).viewBusiness(business.user_id);
       }
     });
 
@@ -240,7 +264,7 @@ export function UltraGoogleMap({
     markersRef.current.push(marker);
 
     // Mettre en évidence le business sélectionné
-    if (selectedBusiness && selectedBusiness.id === offer.id) {
+    if (selectedBusiness && selectedBusiness.user_id === business.user_id) {
       infoWindow.open(map, marker);
       map.setCenter(marker.getPosition());
       map.setZoom(16);
