@@ -238,9 +238,15 @@ export function PromoCard({
           </div>
         )}
 
-        {/* Stats - Remove flames counter */}
+        {/* Stats with flame counter */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <div className="bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
+                <Flame size={12} className="fill-current" />
+                {currentFlames}
+              </div>
+            </div>
             {maxParticipants && (
               <div className="flex items-center gap-1">
                 <Users size={14} />
