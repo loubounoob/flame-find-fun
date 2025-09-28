@@ -66,6 +66,11 @@ export function BottomNav({ className }: BottomNavProps) {
         path: "/business-dashboard" 
       },
       { 
+        icon: Heart, 
+        label: "Réservations", 
+        path: "/business-bookings" 
+      },
+      { 
         icon: Map, 
         label: "Carte", 
         path: "/map" 
@@ -86,7 +91,7 @@ export function BottomNav({ className }: BottomNavProps) {
           className
         )}
       >
-        <div className="flex items-center justify-around max-w-md mx-auto grid-cols-4">{/* Added grid-cols-4 for spacing */}
+        <div className="flex items-center justify-around max-w-md mx-auto grid-cols-5">{/* Added grid-cols-5 for spacing */}
           {businessNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;

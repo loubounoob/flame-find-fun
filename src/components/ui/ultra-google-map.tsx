@@ -109,7 +109,17 @@ export function UltraGoogleMap({
             featureType: "poi",
             stylers: [{ visibility: "off" }]
           },
-          // Masquer complètement toutes les routes et leurs labels
+          // Masquer COMPLÈTEMENT toutes les routes et leurs labels (y compris noms de routes)
+          {
+            featureType: "road",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road",
+            elementType: "labels.text.stroke",
+            stylers: [{ visibility: "off" }]
+          },
           {
             featureType: "road",
             elementType: "labels",
@@ -117,11 +127,12 @@ export function UltraGoogleMap({
           },
           {
             featureType: "road.highway",
-            stylers: [{ visibility: "simplified" }]
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
           },
           {
             featureType: "road.highway",
-            elementType: "labels",
+            elementType: "labels.text",
             stylers: [{ visibility: "off" }]
           },
           {
@@ -130,8 +141,29 @@ export function UltraGoogleMap({
             stylers: [{ visibility: "off" }]
           },
           {
+            featureType: "road.arterial",
+            elementType: "labels.text",
+            stylers: [{ visibility: "off" }]
+          },
+          {
             featureType: "road.local",
             elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.local",
+            elementType: "labels.text",
+            stylers: [{ visibility: "off" }]
+          },
+          // Masquer TOUS les autres types de labels de routes
+          {
+            featureType: "all",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "all",
+            elementType: "labels.text.stroke",
             stylers: [{ visibility: "off" }]
           },
           // Masquer les entreprises
@@ -144,12 +176,18 @@ export function UltraGoogleMap({
             featureType: "transit",
             stylers: [{ visibility: "off" }]
           },
-          // Garder seulement les noms de villes
+          // Garder seulement les noms de villes (réactiver spécifiquement)
           {
             featureType: "administrative.locality",
             elementType: "labels.text",
             stylers: [{ visibility: "on" }]
           },
+          {
+            featureType: "administrative.locality",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "on" }]
+          },
+          // Masquer les quartiers
           {
             featureType: "administrative.neighborhood",
             elementType: "labels.text",

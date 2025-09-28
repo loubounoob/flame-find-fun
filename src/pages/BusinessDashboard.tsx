@@ -573,10 +573,9 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="bookings">Réservations reçues</TabsTrigger>
-            <TabsTrigger value="my-bookings">Mes réservations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4">
@@ -1032,21 +1031,6 @@ export default function BusinessDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="my-bookings" className="space-y-4">
-            <div className="text-center p-8">
-              <Calendar size={48} className="mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Mes réservations en tant que client</h3>
-              <p className="text-muted-foreground mb-4">
-                Consultez toutes vos réservations effectuées en tant que client
-              </p>
-              <Button 
-                onClick={() => navigate('/business-bookings')}
-                className="bg-gradient-primary"
-              >
-                Voir mes réservations
-              </Button>
-            </div>
-          </TabsContent>
 
         </Tabs>
       </div>
