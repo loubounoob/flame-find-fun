@@ -99,6 +99,8 @@ export default function BusinessDashboard() {
 
       if (offersError) throw offersError;
 
+      console.log('Offers loaded:', offersData?.length);
+
       // Compter les flammes pour chaque offre
       const { data: flamesData, error: flamesError } = await supabase
         .from('flames')
@@ -107,6 +109,8 @@ export default function BusinessDashboard() {
 
       if (flamesError) throw flamesError;
 
+      console.log('Flames data:', flamesData?.length, flamesData);
+
       // Compter les vues pour chaque offre
       const { data: viewsData, error: viewsError } = await supabase
         .from('offer_views')
@@ -114,6 +118,8 @@ export default function BusinessDashboard() {
         .in('offer_id', offersData?.map(o => o.id) || []);
 
       if (viewsError) throw viewsError;
+
+      console.log('Views data:', viewsData?.length, viewsData);
 
       // Construire les statistiques par offre
       const flamesCounts = flamesData?.reduce((acc, flame) => {
@@ -126,11 +132,16 @@ export default function BusinessDashboard() {
         return acc;
       }, {} as Record<string, number>) || {};
 
+      console.log('Flames counts:', flamesCounts);
+      console.log('Views counts:', viewsCounts);
+
       const formattedOffers = offersData?.map(offer => ({
         ...offer,
         flames: flamesCounts[offer.id] || 0,
         views: viewsCounts[offer.id] || 0
       })) || [];
+
+      console.log('Formatted offers with counts:', formattedOffers.map(o => ({id: o.id, title: o.title, flames: o.flames, views: o.views})));
 
       setOffers(formattedOffers);
     } catch (error) {
@@ -147,14 +158,35 @@ export default function BusinessDashboard() {
         .from('bookings')
         .select(`
           *,
-          offer:offers(title, category, location),
-          customer:profiles!bookings_user_id_fkey(first_name, last_name)
+          offer:offers(title, category, location)
         `)
         .eq('business_user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBookings(bookingsData || []);
+
+      // Récupérer les profils des clients séparément
+      const userIds = [...new Set(bookingsData?.map(b => b.user_id) || [])];
+      let profilesData = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+        
+        if (!profilesError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Joindre les données manuellement
+      const enrichedBookings = bookingsData?.map(booking => ({
+        ...booking,
+        customer: profilesData.find(p => p.user_id === booking.user_id) || null
+      })) || [];
+
+      setBookings(enrichedBookings);
     } catch (error) {
       console.error('Error loading bookings:', error);
     }
