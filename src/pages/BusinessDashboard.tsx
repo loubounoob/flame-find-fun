@@ -932,13 +932,16 @@ export default function BusinessDashboard() {
                                     <Users size={14} className="text-success" />
                                     <span className="text-sm">{booking.participant_count} pers.</span>
                                   </div>
-                                  <Badge variant="default" className="text-xs bg-primary">
-                                    Confirmé
+                                  <Badge 
+                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
+                                    className="text-xs"
+                                  >
+                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
                                   </Badge>
                                 </div>
                                 {booking.notes && (
                                   <p className="mt-2 text-sm text-muted-foreground italic">
-                                    "{booking.notes}"
+                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
                                   </p>
                                 )}
                               </div>
@@ -987,13 +990,16 @@ export default function BusinessDashboard() {
                                     <Users size={14} className="text-success" />
                                     <span className="text-sm">{booking.participant_count} pers.</span>
                                   </div>
-                                  <Badge variant="default" className="text-xs">
-                                    Confirmé
+                                  <Badge 
+                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
+                                    className="text-xs"
+                                  >
+                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
                                   </Badge>
                                 </div>
                                 {booking.notes && (
                                   <p className="mt-2 text-sm text-muted-foreground italic">
-                                    "{booking.notes}"
+                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
                                   </p>
                                 )}
                               </div>
@@ -1004,7 +1010,7 @@ export default function BusinessDashboard() {
                     </div>
                   )}
                   
-                  {/* Autres réservations */}
+                  {/* Autres réservations futures */}
                   {bookings.filter(booking => {
                     const bookingDate = new Date(booking.booking_date);
                     const today = new Date();
@@ -1042,13 +1048,70 @@ export default function BusinessDashboard() {
                                     <Users size={14} className="text-success" />
                                     <span className="text-sm">{booking.participant_count} pers.</span>
                                   </div>
-                                  <Badge variant="secondary" className="text-xs">
-                                    Confirmé
+                                  <Badge 
+                                    variant={booking.status === 'cancelled' ? 'destructive' : 'secondary'} 
+                                    className="text-xs"
+                                  >
+                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
                                   </Badge>
                                 </div>
                                 {booking.notes && (
                                   <p className="mt-2 text-sm text-muted-foreground italic">
-                                    "{booking.notes}"
+                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Réservations passées */}
+                  {bookings.filter(booking => {
+                    const bookingDate = new Date(booking.booking_date);
+                    const today = new Date();
+                    return bookingDate < today;
+                  }).length > 0 && (
+                    <div>
+                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Passées</h3>
+                      {bookings.filter(booking => {
+                        const bookingDate = new Date(booking.booking_date);
+                        const today = new Date();
+                        return bookingDate < today;
+                      }).map((booking) => (
+                        <Card key={booking.id} className="mb-3 opacity-70">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
+                                {booking.customer && (
+                                  <p className="text-sm text-primary font-medium">
+                                    {booking.customer.first_name} {booking.customer.last_name}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-3 mt-2">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar size={14} className="text-muted-foreground" />
+                                    <span className="text-sm">
+                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Users size={14} className="text-muted-foreground" />
+                                    <span className="text-sm">{booking.participant_count} pers.</span>
+                                  </div>
+                                  <Badge 
+                                    variant={booking.status === 'cancelled' ? 'destructive' : 'outline'} 
+                                    className="text-xs"
+                                  >
+                                    {booking.status === 'cancelled' ? 'Annulé' : 'Terminé'}
+                                  </Badge>
+                                </div>
+                                {booking.notes && (
+                                  <p className="mt-2 text-sm text-muted-foreground italic">
+                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
                                   </p>
                                 )}
                               </div>
