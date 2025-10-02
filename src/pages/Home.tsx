@@ -182,22 +182,6 @@ export default function Home() {
     },
   });
 
-  // Récupérer le nombre de notifications non lues
-  const { data: unreadNotifications = 0 } = useQuery({
-    queryKey: ["unread-notifications", user?.id],
-    queryFn: async () => {
-      if (!user) return 0;
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false);
-      return count || 0;
-    },
-    enabled: !!user,
-    refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
-  });
-
   const handleLike = async (offerId: string) => {
     if (!user) {
       navigate("/auth");
@@ -254,11 +238,8 @@ export default function Home() {
             <Link to="/notifications">
               <Button variant="ghost" size="icon" className="relative hover:scale-110 transition-transform duration-200">
                 <Bell size={20} />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </span>
-                )}
+                {/* Only show badge if there are unread notifications */}
+                {/* Remove default badge, will be implemented with real notifications */}
               </Button>
             </Link>
           </div>
