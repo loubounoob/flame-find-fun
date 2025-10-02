@@ -140,27 +140,10 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
+      // First, attempt signup with temporary avatar to check if email exists
       let finalAvatarUrl = avatarUrl;
       
-      // Upload avatar if file is present
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `temp-${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile);
-        
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-        } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(fileName);
-          finalAvatarUrl = publicUrl;
-        }
-      }
-      
+      // Use base64 avatar temporarily for initial signup
       if (!finalAvatarUrl) {
         finalAvatarUrl = generateInitialsAvatar(firstName, lastName);
       }
@@ -184,6 +167,7 @@ export default function Auth() {
       });
 
       if (error) {
+        // Don't proceed with avatar upload if signup failed
         if (error.message.includes("User already registered") || 
             error.message.includes("already registered") ||
             error.message.includes("already been registered") ||
@@ -200,9 +184,41 @@ export default function Auth() {
             variant: "destructive"
           });
         }
-      } else {
-        // If business account, update profile with additional info
-        if (accountType === "business" && data.user) {
+        setLoading(false);
+        return;
+      }
+
+      // Now upload the actual avatar file if signup succeeded
+      if (avatarFile && data.user) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${data.user.id}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile);
+        
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          finalAvatarUrl = publicUrl;
+
+          // Update user metadata with real avatar URL
+          await supabase.auth.updateUser({
+            data: { avatar_url: finalAvatarUrl }
+          });
+
+          // Update profile with real avatar URL
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: finalAvatarUrl })
+            .eq('user_id', data.user.id);
+        }
+      }
+
+      // If business account, update profile with additional info
+      if (data.user) {
+        if (accountType === "business") {
           await supabase
             .from('profiles')
             .update({
