@@ -26,6 +26,8 @@ export default function Notifications() {
     queryKey: ["notifications", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      
+      // Utiliser un distinct pour éviter les doublons basés sur le contenu
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -33,12 +35,49 @@ export default function Notifications() {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Éliminer les doublons potentiels basés sur le titre, le message et la date (à la minute près)
+      const uniqueNotifications = (data || []).filter((notif, index, array) => {
+        const notifDate = new Date(notif.created_at);
+        notifDate.setSeconds(0, 0); // Ignorer les secondes et millisecondes
+        
+        return !array.slice(0, index).some(prevNotif => {
+          const prevDate = new Date(prevNotif.created_at);
+          prevDate.setSeconds(0, 0);
+          
+          return (
+            prevNotif.title === notif.title &&
+            prevNotif.message === notif.message &&
+            prevNotif.type === notif.type &&
+            prevDate.getTime() === notifDate.getTime()
+          );
+        });
+      });
+      
+      return uniqueNotifications;
     },
     enabled: !!user,
   });
 
-  // No longer using mock notifications
+  // À partir de maintenant, nous utilisons useEffect pour marquer les notifications comme lues après la visite
+  useEffect(() => {
+    // Marquer toutes les notifications comme lues après la visite de la page
+    const markNotificationsAsReadOnVisit = async () => {
+      if (user && realNotifications.some(n => !n.read)) {
+        // Attendre un peu pour permettre à l'utilisateur de voir les notifications
+        setTimeout(async () => {
+          await supabase
+            .from("notifications")
+            .update({ read: true })
+            .eq("user_id", user.id)
+            .eq("read", false);
+          refetchNotifications();
+        }, 1000); // Marquer comme lu après 1 seconde de consultation
+      }
+    };
+
+    markNotificationsAsReadOnVisit();
+  }, [user, realNotifications]);
 
   // Only use real notifications from database
   const allNotifications = realNotifications.map(notif => ({
@@ -72,16 +111,15 @@ export default function Notifications() {
       setShowRatingModal(true);
     }
 
-    // Mark notification as read in component state will be handled by refetch
-
     // Marquer comme lu dans la base de données si c'est une vraie notification
     if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
       const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
-      if (realNotif) {
+      if (realNotif && !realNotif.read) { // Éviter les doublons
         await supabase
           .from("notifications")
           .update({ read: true })
           .eq("id", realNotif.id);
+        refetchNotifications();
       }
     }
   };
@@ -118,13 +156,13 @@ export default function Notifications() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} />
             </Button>
-            <div>
-              <h1 className="text-xl font-poppins font-bold text-foreground">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-poppins font-bold text-foreground">
                 Notifications
               </h1>
               {unreadCount > 0 && (
@@ -135,8 +173,9 @@ export default function Notifications() {
             </div>
           </div>
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              Tout marquer comme lu
+            <Button variant="outline" size="sm" onClick={markAllAsRead} className="text-xs px-2 py-1 h-auto whitespace-nowrap">
+              <span className="hidden sm:inline">Tout marquer comme lu</span>
+              <span className="sm:hidden">Marquer tout</span>
             </Button>
           )}
         </div>
