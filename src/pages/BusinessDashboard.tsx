@@ -890,238 +890,164 @@ export default function BusinessDashboard() {
 
           <TabsContent value="bookings" className="space-y-4">
             <div className="space-y-4">
-              <h2 className="text-lg font-poppins font-semibold text-foreground">Réservations à venir</h2>
+              <h2 className="text-lg font-poppins font-semibold text-foreground">Réservations</h2>
               
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Aucune réservation pour le moment.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* Réservations du jour */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    return bookingDate.toDateString() === today.toDateString();
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-primary mb-2">Aujourd'hui</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        return bookingDate.toDateString() === today.toDateString();
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Clock size={14} className="text-primary" />
-                                    <span className="text-sm font-medium">
-                                      {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                (() => {
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
                   
-                  {/* Réservations de cette semaine */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    const weekFromNow = new Date();
-                    weekFromNow.setDate(today.getDate() + 7);
-                    return bookingDate > today && bookingDate <= weekFromNow;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Cette semaine</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        const weekFromNow = new Date();
-                        weekFromNow.setDate(today.getDate() + 7);
-                        return bookingDate > today && bookingDate <= weekFromNow;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-primary" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                  const tomorrow = new Date(now);
+                  tomorrow.setDate(now.getDate() + 1);
                   
-                  {/* Autres réservations futures */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    const weekFromNow = new Date();
-                    weekFromNow.setDate(today.getDate() + 7);
-                    return bookingDate > weekFromNow;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Plus tard</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        const weekFromNow = new Date();
-                        weekFromNow.setDate(today.getDate() + 7);
-                        return bookingDate > weekFromNow;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-primary" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'secondary'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                  const dayAfterTomorrow = new Date(now);
+                  dayAfterTomorrow.setDate(now.getDate() + 2);
 
-                  {/* Réservations passées */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    return bookingDate < today;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Passées</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        return bookingDate < today;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3 opacity-70">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-muted-foreground" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-muted-foreground" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'outline'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Terminé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
+                  // Séparer les réservations par catégorie temporelle
+                  const todayBookings = bookings.filter(b => {
+                    const date = new Date(b.booking_date);
+                    date.setHours(0, 0, 0, 0);
+                    return date.getTime() === now.getTime() && new Date(b.booking_date) >= new Date();
+                  }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+
+                  const tomorrowBookings = bookings.filter(b => {
+                    const date = new Date(b.booking_date);
+                    date.setHours(0, 0, 0, 0);
+                    return date.getTime() === tomorrow.getTime();
+                  }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+
+                  const futureBookings = bookings.filter(b => {
+                    const date = new Date(b.booking_date);
+                    date.setHours(0, 0, 0, 0);
+                    return date.getTime() >= dayAfterTomorrow.getTime();
+                  }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+
+                  const pastBookings = bookings.filter(b => {
+                    return new Date(b.booking_date) < new Date();
+                  }).sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
+
+                  // Grouper les réservations futures par date
+                  const groupedFutureBookings = futureBookings.reduce((acc, booking) => {
+                    const date = new Date(booking.booking_date);
+                    date.setHours(0, 0, 0, 0);
+                    const dateKey = date.toISOString().split('T')[0];
+                    if (!acc[dateKey]) {
+                      acc[dateKey] = [];
+                    }
+                    acc[dateKey].push(booking);
+                    return acc;
+                  }, {} as Record<string, any[]>);
+
+                  const renderBookingCard = (booking: any, variant: 'today' | 'future' | 'past' = 'future') => (
+                    <Card 
+                      key={booking.id} 
+                      className={`mb-3 ${
+                        variant === 'today' ? 'border-primary/30 bg-gradient-to-r from-primary/5 to-transparent' : 
+                        variant === 'past' ? 'opacity-70' : ''
+                      }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-foreground mb-1">{booking.offer?.title}</h4>
+                            {booking.customer && (
+                              <p className="text-sm text-primary font-medium mb-2">
+                                {booking.customer.first_name} {booking.customer.last_name}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-3 mt-2">
+                              <div className="flex items-center gap-1">
+                                <Clock size={14} className="text-primary flex-shrink-0" />
+                                <span className="text-sm font-medium">
+                                  {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </div>
+                              <div className="flex items-center gap-1">
+                                <Users size={14} className="text-success flex-shrink-0" />
+                                <span className="text-sm">{booking.participant_count} pers.</span>
+                              </div>
+                              <Badge 
+                                variant={
+                                  booking.status === 'cancelled' ? 'destructive' : 
+                                  variant === 'past' ? 'outline' : 
+                                  'default'
+                                } 
+                                className="text-xs"
+                              >
+                                {booking.status === 'cancelled' ? 'Annulé' : 
+                                 variant === 'past' ? 'Terminé' : 
+                                 'Confirmé'}
+                              </Badge>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            {booking.notes && (
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                Note: {booking.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Aujourd'hui */}
+                      {todayBookings.length > 0 && (
+                        <div>
+                          <h3 className="text-md font-semibold text-primary mb-3">Aujourd'hui</h3>
+                          {todayBookings.map(booking => renderBookingCard(booking, 'today'))}
+                        </div>
+                      )}
+
+                      {/* Demain */}
+                      {tomorrowBookings.length > 0 && (
+                        <div>
+                          <h3 className="text-md font-semibold text-foreground mb-3">Demain</h3>
+                          {tomorrowBookings.map(booking => renderBookingCard(booking, 'future'))}
+                        </div>
+                      )}
+
+                      {/* Réservations futures groupées par date */}
+                      {Object.keys(groupedFutureBookings).length > 0 && (
+                        <div>
+                          {Object.entries(groupedFutureBookings)
+                            .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+                            .map(([dateKey, dateBookings]: [string, any[]]) => {
+                              const date = new Date(dateKey + 'T00:00:00');
+                              const formattedDate = date.toLocaleDateString('fr-FR', { 
+                                weekday: 'long', 
+                                day: 'numeric', 
+                                month: 'long' 
+                              });
+                              const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+                              
+                              return (
+                                <div key={dateKey} className="mb-4">
+                                  <h3 className="text-md font-semibold text-foreground mb-3">
+                                    {capitalizedDate}
+                                  </h3>
+                                  {dateBookings.map(booking => renderBookingCard(booking, 'future'))}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+
+                      {/* Passées */}
+                      {pastBookings.length > 0 && (
+                        <div>
+                          <h3 className="text-md font-semibold text-muted-foreground mb-3">Passées</h3>
+                          {pastBookings.map(booking => renderBookingCard(booking, 'past'))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()
               )}
             </div>
           </TabsContent>
