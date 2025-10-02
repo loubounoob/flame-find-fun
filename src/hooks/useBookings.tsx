@@ -82,14 +82,15 @@ export function useBookings() {
     }
 
     try {
-      // Vérifier s'il y a déjà une réservation pour cette offre
+      // Vérifier s'il y a déjà une réservation active (non archivée) pour cette offre
       const { data: existingBooking } = await supabase
         .from('bookings')
         .select('id')
         .eq('user_id', user.id)
         .eq('offer_id', bookingData.offerId)
         .eq('status', 'confirmed')
-        .single();
+        .eq('is_archived', false)
+        .maybeSingle();
 
       if (existingBooking) {
         toast({
