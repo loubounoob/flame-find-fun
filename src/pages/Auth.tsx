@@ -184,15 +184,18 @@ export default function Auth() {
       });
 
       if (error) {
-        if (error.message.includes("User already registered")) {
+        if (error.message.includes("User already registered") || 
+            error.message.includes("already registered") ||
+            error.message.includes("already been registered") ||
+            error.status === 422) {
           toast({
             title: "Compte existant",
-            description: "Un compte existe déjà avec cet email. Connectez-vous plutôt !",
+            description: "Un compte existe déjà avec cet email. Veuillez vous connecter ou utiliser un autre email.",
             variant: "destructive"
           });
         } else {
           toast({
-            title: "Erreur",
+            title: "Erreur d'inscription",
             description: error.message,
             variant: "destructive"
           });
