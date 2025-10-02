@@ -24,8 +24,7 @@ import {
   Camera,
   MapPin,
   Zap,
-  Palette,
-  Clock
+  Palette
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -99,8 +98,6 @@ export default function BusinessDashboard() {
 
       if (offersError) throw offersError;
 
-      console.log('Offers loaded:', offersData?.length);
-
       // Compter les flammes pour chaque offre
       const { data: flamesData, error: flamesError } = await supabase
         .from('flames')
@@ -109,8 +106,6 @@ export default function BusinessDashboard() {
 
       if (flamesError) throw flamesError;
 
-      console.log('Flames data:', flamesData?.length, flamesData);
-
       // Compter les vues pour chaque offre
       const { data: viewsData, error: viewsError } = await supabase
         .from('offer_views')
@@ -118,8 +113,6 @@ export default function BusinessDashboard() {
         .in('offer_id', offersData?.map(o => o.id) || []);
 
       if (viewsError) throw viewsError;
-
-      console.log('Views data:', viewsData?.length, viewsData);
 
       // Construire les statistiques par offre
       const flamesCounts = flamesData?.reduce((acc, flame) => {
@@ -132,16 +125,11 @@ export default function BusinessDashboard() {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      console.log('Flames counts:', flamesCounts);
-      console.log('Views counts:', viewsCounts);
-
       const formattedOffers = offersData?.map(offer => ({
         ...offer,
         flames: flamesCounts[offer.id] || 0,
         views: viewsCounts[offer.id] || 0
       })) || [];
-
-      console.log('Formatted offers with counts:', formattedOffers.map(o => ({id: o.id, title: o.title, flames: o.flames, views: o.views})));
 
       setOffers(formattedOffers);
     } catch (error) {
@@ -164,29 +152,7 @@ export default function BusinessDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Récupérer les profils des clients séparément
-      const userIds = [...new Set(bookingsData?.map(b => b.user_id) || [])];
-      let profilesData = [];
-      
-      if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .in('user_id', userIds);
-        
-        if (!profilesError) {
-          profilesData = profiles || [];
-        }
-      }
-
-      // Joindre les données manuellement
-      const enrichedBookings = bookingsData?.map(booking => ({
-        ...booking,
-        customer: profilesData.find(p => p.user_id === booking.user_id) || null
-      })) || [];
-
-      setBookings(enrichedBookings);
+      setBookings(bookingsData || []);
     } catch (error) {
       console.error('Error loading bookings:', error);
     }
@@ -890,238 +856,51 @@ export default function BusinessDashboard() {
 
           <TabsContent value="bookings" className="space-y-4">
             <div className="space-y-4">
-              <h2 className="text-lg font-poppins font-semibold text-foreground">Réservations à venir</h2>
+              <h2 className="text-lg font-poppins font-semibold text-foreground">Nouvelles réservations</h2>
               
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Aucune réservation pour le moment.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* Réservations du jour */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    return bookingDate.toDateString() === today.toDateString();
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-primary mb-2">Aujourd'hui</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        return bookingDate.toDateString() === today.toDateString();
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Clock size={14} className="text-primary" />
-                                    <span className="text-sm font-medium">
-                                      {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Réservations de cette semaine */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    const weekFromNow = new Date();
-                    weekFromNow.setDate(today.getDate() + 7);
-                    return bookingDate > today && bookingDate <= weekFromNow;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Cette semaine</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        const weekFromNow = new Date();
-                        weekFromNow.setDate(today.getDate() + 7);
-                        return bookingDate > today && bookingDate <= weekFromNow;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-primary" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'default'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Autres réservations futures */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    const weekFromNow = new Date();
-                    weekFromNow.setDate(today.getDate() + 7);
-                    return bookingDate > weekFromNow;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Plus tard</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        const weekFromNow = new Date();
-                        weekFromNow.setDate(today.getDate() + 7);
-                        return bookingDate > weekFromNow;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-primary" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-success" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'secondary'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Confirmé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Réservations passées */}
-                  {bookings.filter(booking => {
-                    const bookingDate = new Date(booking.booking_date);
-                    const today = new Date();
-                    return bookingDate < today;
-                  }).length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold text-muted-foreground mb-2">Passées</h3>
-                      {bookings.filter(booking => {
-                        const bookingDate = new Date(booking.booking_date);
-                        const today = new Date();
-                        return bookingDate < today;
-                      }).map((booking) => (
-                        <Card key={booking.id} className="mb-3 opacity-70">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-foreground">{booking.offer?.title}</h4>
-                                {booking.customer && (
-                                  <p className="text-sm text-primary font-medium">
-                                    {booking.customer.first_name} {booking.customer.last_name}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar size={14} className="text-muted-foreground" />
-                                    <span className="text-sm">
-                                      {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Users size={14} className="text-muted-foreground" />
-                                    <span className="text-sm">{booking.participant_count} pers.</span>
-                                  </div>
-                                  <Badge 
-                                    variant={booking.status === 'cancelled' ? 'destructive' : 'outline'} 
-                                    className="text-xs"
-                                  >
-                                    {booking.status === 'cancelled' ? 'Annulé' : 'Terminé'}
-                                  </Badge>
-                                </div>
-                                {booking.notes && (
-                                  <p className="mt-2 text-sm text-muted-foreground italic">
-                                    *Date: {new Date(booking.booking_date).toLocaleDateString('fr-FR')} - Heure: {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - Notes: {booking.notes}*
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                bookings.map((booking) => (
+                  <Card key={booking.id} className="bg-gradient-card border-border/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{booking.offer?.title}</h3>
+                          <p className="text-sm text-muted-foreground">{booking.offer?.category}</p>
+                           <div className="flex flex-wrap items-center gap-2 mt-2">
+                             <div className="flex items-center gap-1">
+                               <Calendar size={12} className="text-primary" />
+                               <span className="text-xs">
+                                 {new Date(booking.booking_date).toLocaleDateString('fr-FR')} à {new Date(booking.booking_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                               </span>
+                             </div>
+                             <div className="flex items-center gap-1">
+                               <Users size={12} className="text-success" />
+                               <span className="text-xs">{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
+                             </div>
+                             <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className="text-xs">
+                               {booking.status === "confirmed" ? "Confirmé" : booking.status}
+                             </Badge>
+                           </div>
+                           {booking.notes && (
+                             <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded max-w-full">
+                               <strong>Détails:</strong> {booking.notes}
+                             </div>
+                           )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <Bell size={12} className="text-primary" />
+                          <span className="text-xs text-muted-foreground text-right">
+                            {new Date(booking.created_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </div>
           </TabsContent>
