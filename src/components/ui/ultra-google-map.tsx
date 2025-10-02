@@ -108,10 +108,24 @@ export function UltraGoogleMap({
             featureType: "poi",
             stylers: [{ visibility: "off" }]
           },
-          // Masquer les autoroutes
+          // Masquer les autoroutes complètement (routes métropolitaines/départementales)
           {
             featureType: "road.highway",
-            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.highway.controlled_access",
+            stylers: [{ visibility: "off" }]
+          },
+          // Masquer les numéros de routes et échangeurs
+          {
+            featureType: "road.highway",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.arterial",
+            elementType: "labels.icon",
             stylers: [{ visibility: "off" }]
           },
           // Masquer les entreprises
@@ -124,10 +138,10 @@ export function UltraGoogleMap({
             featureType: "transit",
             stylers: [{ visibility: "off" }]
           },
-          // Garder seulement les noms de rues et villes
+          // Garder seulement les noms de rues locales et villes
           {
-            featureType: "road",
-            elementType: "labels.text.fill",
+            featureType: "road.local",
+            elementType: "labels.text",
             stylers: [{ visibility: "on" }]
           },
           {

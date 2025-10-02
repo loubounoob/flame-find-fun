@@ -113,13 +113,14 @@ export function SimpleGoogleMap({
           { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
           // Hide transit
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          // Hide highway labels and icons
-          { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ visibility: 'simplified' }] },
-          // Keep street names visible
-          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ visibility: 'on' }] },
+          // Hide highways completely (routes métropolitaines/départementales)
+          { featureType: 'road.highway', stylers: [{ visibility: 'off' }] },
+          { featureType: 'road.highway.controlled_access', stylers: [{ visibility: 'off' }] },
+          // Hide highway shields (numéros de routes)
+          { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+          { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+          // Keep only local street names visible
           { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
-          { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
           // Keep city/locality names visible
           { featureType: 'administrative.locality', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
           { featureType: 'administrative.neighborhood', elementType: 'labels.text', stylers: [{ visibility: 'on' }] }
