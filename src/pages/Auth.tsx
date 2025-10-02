@@ -23,8 +23,10 @@ export default function Auth() {
   const [accountType, setAccountType] = useState("student");
   const [companyName, setCompanyName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [businessAddress, setBusinessAddress] = useState("");
   const [businessLocation, setBusinessLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -111,43 +113,57 @@ export default function Auth() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `temp-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setAvatarUrl(publicUrl);
+    // Convert to base64 preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result as string);
+      setAvatarFile(file);
       toast({
         title: "Photo ajoutée",
         description: "Votre photo de profil a été ajoutée avec succès.",
       });
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter la photo.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const signUp = async () => {
+    if (!avatarFile && !avatarUrl) {
+      toast({
+        title: "Photo requise",
+        description: "Veuillez ajouter une photo de profil avant de continuer.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const finalAvatarUrl = avatarUrl || generateInitialsAvatar(firstName, lastName);
+      let finalAvatarUrl = avatarUrl;
+      
+      // Upload avatar if file is present
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `temp-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile);
+        
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          finalAvatarUrl = publicUrl;
+        }
+      }
+      
+      if (!finalAvatarUrl) {
+        finalAvatarUrl = generateInitialsAvatar(firstName, lastName);
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -196,17 +212,11 @@ export default function Auth() {
             .eq('user_id', data.user.id);
         }
 
+        setShowEmailConfirmation(true);
         toast({
           title: "Inscription réussie !",
-          description: "📧 Vérifiez votre boîte email pour confirmer votre compte et terminer l'inscription.",
+          description: "📧 Un email de confirmation vous a été envoyé.",
         });
-        
-        setTimeout(() => {
-          toast({
-            title: "Confirmation requise",
-            description: "Cliquez sur le lien dans l'email que vous venez de recevoir pour activer votre compte.",
-          });
-        }, 2000);
       }
     } catch (error) {
       toast({
@@ -218,6 +228,49 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (showEmailConfirmation) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-gradient-card border-border/50">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-foreground">📧 Vérifiez votre email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-center text-muted-foreground">
+              Un email de confirmation a été envoyé à <strong>{email}</strong>
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Cliquez sur le lien dans l'email pour activer votre compte et terminer l'inscription.
+            </p>
+            <div className="flex flex-col gap-2 pt-4">
+              <Button 
+                onClick={() => window.open('https://mail.google.com', '_blank')}
+                className="w-full"
+                variant="default"
+              >
+                Ouvrir Gmail
+              </Button>
+              <Button 
+                onClick={() => window.open('https://outlook.live.com', '_blank')}
+                className="w-full"
+                variant="outline"
+              >
+                Ouvrir Outlook
+              </Button>
+              <Button 
+                onClick={() => setShowEmailConfirmation(false)}
+                className="w-full mt-4"
+                variant="ghost"
+              >
+                Retour à la connexion
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -378,7 +431,7 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="avatar-upload">Photo de profil (optionnel)</Label>
+                  <Label htmlFor="avatar-upload">Photo de profil (obligatoire)</Label>
                   {avatarUrl && (
                     <div className="flex justify-center mb-2">
                       <img 
@@ -392,10 +445,10 @@ export default function Auth() {
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById('avatar-upload')?.click()}
-                    className="w-full justify-start pl-10"
+                    className="w-full"
                     disabled={loading}
                   >
-                    <Camera className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                    <Camera className="mr-2 h-4 w-4" />
                     {avatarUrl ? "Changer la photo" : "Choisir une photo"}
                   </Button>
                   <input
