@@ -117,15 +117,36 @@ export function UltraGoogleMap({
             featureType: "road.highway.controlled_access",
             stylers: [{ visibility: "off" }]
           },
-          // Masquer les numéros de routes et échangeurs
+          // Masquer TOUS les labels des autoroutes (texte et icônes)
+          {
+            featureType: "road.highway",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
           {
             featureType: "road.highway",
             elementType: "labels.icon",
             stylers: [{ visibility: "off" }]
           },
           {
+            featureType: "road.highway",
+            elementType: "labels.text",
+            stylers: [{ visibility: "off" }]
+          },
+          // Masquer TOUS les labels des routes départementales (arterial)
+          {
+            featureType: "road.arterial",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
             featureType: "road.arterial",
             elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.arterial",
+            elementType: "labels.text",
             stylers: [{ visibility: "off" }]
           },
           // Masquer les entreprises

@@ -116,9 +116,14 @@ export function SimpleGoogleMap({
           // Hide highways completely (routes métropolitaines/départementales)
           { featureType: 'road.highway', stylers: [{ visibility: 'off' }] },
           { featureType: 'road.highway.controlled_access', stylers: [{ visibility: 'off' }] },
-          // Hide highway shields (numéros de routes)
+          // Hide ALL highway labels (text and icons/shields)
+          { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
           { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+          { featureType: 'road.highway', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+          // Hide ALL arterial road labels (routes départementales)
+          { featureType: 'road.arterial', elementType: 'labels', stylers: [{ visibility: 'off' }] },
           { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+          { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
           // Keep only local street names visible
           { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
           // Keep city/locality names visible
