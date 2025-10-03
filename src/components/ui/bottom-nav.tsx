@@ -50,6 +50,7 @@ export function BottomNav({ className }: BottomNavProps) {
     },
     enabled: !!user,
     refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+    staleTime: 0, // Les données sont immédiatement considérées comme obsolètes
   });
   
   // Modifier la navigation pour les comptes entreprise

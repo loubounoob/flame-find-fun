@@ -196,6 +196,7 @@ export default function Home() {
     },
     enabled: !!user,
     refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+    staleTime: 0, // Les données sont immédiatement considérées comme obsolètes
   });
 
   const handleLike = async (offerId: string) => {
