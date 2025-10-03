@@ -82,6 +82,9 @@ export function useBookings() {
     }
 
     try {
+      // Archiver d'abord les anciennes réservations pour éviter les blocages
+      const { error: archiveError } = await supabase.rpc('archive_old_bookings');
+      if (archiveError) console.warn('Archive warning:', archiveError);
       // Vérifier s'il y a déjà une réservation active (non archivée) pour cette offre
       const { data: existingBooking } = await supabase
         .from('bookings')
