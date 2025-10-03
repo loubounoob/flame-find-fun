@@ -907,26 +907,31 @@ export default function BusinessDashboard() {
                   const dayAfterTomorrow = new Date(now);
                   dayAfterTomorrow.setDate(now.getDate() + 2);
 
-                  // Séparer les réservations par catégorie temporelle
-                  const todayBookings = bookings.filter(b => {
+                  // Séparer d'abord les réservations confirmées et annulées
+                  const confirmedBookings = bookings.filter(b => b.status !== 'cancelled');
+                  const cancelledBookings = bookings.filter(b => b.status === 'cancelled')
+                    .sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
+
+                  // Séparer les réservations confirmées par catégorie temporelle
+                  const todayBookings = confirmedBookings.filter(b => {
                     const date = new Date(b.booking_date);
                     date.setHours(0, 0, 0, 0);
                     return date.getTime() === now.getTime() && new Date(b.booking_date) >= new Date();
                   }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
-                  const tomorrowBookings = bookings.filter(b => {
+                  const tomorrowBookings = confirmedBookings.filter(b => {
                     const date = new Date(b.booking_date);
                     date.setHours(0, 0, 0, 0);
                     return date.getTime() === tomorrow.getTime();
                   }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
-                  const futureBookings = bookings.filter(b => {
+                  const futureBookings = confirmedBookings.filter(b => {
                     const date = new Date(b.booking_date);
                     date.setHours(0, 0, 0, 0);
                     return date.getTime() >= dayAfterTomorrow.getTime();
                   }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
-                  const pastBookings = bookings.filter(b => {
+                  const pastBookings = confirmedBookings.filter(b => {
                     return new Date(b.booking_date) < new Date();
                   }).sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
 
@@ -1043,6 +1048,14 @@ export default function BusinessDashboard() {
                         <div>
                           <h3 className="text-md font-semibold text-muted-foreground mb-3">Passées</h3>
                           {pastBookings.map(booking => renderBookingCard(booking, 'past'))}
+                        </div>
+                      )}
+
+                      {/* Annulées - Toujours affichées en dernier */}
+                      {cancelledBookings.length > 0 && (
+                        <div>
+                          <h3 className="text-md font-semibold text-destructive mb-3">Annulées</h3>
+                          {cancelledBookings.map(booking => renderBookingCard(booking, 'past'))}
                         </div>
                       )}
                     </div>
