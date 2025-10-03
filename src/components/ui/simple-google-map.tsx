@@ -124,8 +124,6 @@ export function SimpleGoogleMap({
           { featureType: 'road.arterial', elementType: 'labels', stylers: [{ visibility: 'off' }] },
           { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
           { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-          // EXTRA: Hide any road shields/icons globally (catch-all)
-          { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
           // Keep only local street names visible
           { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
           // Keep city/locality names visible

@@ -149,12 +149,6 @@ export function UltraGoogleMap({
             elementType: "labels.text",
             stylers: [{ visibility: "off" }]
           },
-          // Catch-all : masquer tout icône de route (panneaux/plaques jaunes)
-          {
-            featureType: "road",
-            elementType: "labels.icon",
-            stylers: [{ visibility: "off" }]
-          },
           // Masquer les entreprises
           {
             featureType: "poi.business",
