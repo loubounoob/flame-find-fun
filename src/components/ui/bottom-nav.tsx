@@ -43,7 +43,7 @@ export function BottomNav({ className }: BottomNavProps) {
       if (!user) return 0;
       const { count } = await supabase
         .from("notifications")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("read", false);
       return count || 0;
