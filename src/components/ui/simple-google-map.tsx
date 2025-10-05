@@ -63,23 +63,57 @@ export function SimpleGoogleMap({
   
   const { position, isLoading: locationLoading } = useGeolocation();
 
-  // Fetch businesses with simple query
+  // Fetch businesses with profile data (avatar)
   const { data: businesses = [] } = useQuery({
     queryKey: ["simple-businesses-map", filteredOffers],
     queryFn: async () => {
       if (filteredOffers && filteredOffers.length > 0) {
-        return filteredOffers.filter(offer => offer.latitude && offer.longitude);
+        // Get business profiles for filtered offers
+        const businessIds = filteredOffers.map(o => o.business_user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, avatar_url, business_name")
+          .in("user_id", businessIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        
+        return filteredOffers
+          .filter(offer => offer.latitude && offer.longitude)
+          .map(offer => ({
+            ...offer,
+            avatar_url: profileMap.get(offer.business_user_id)?.avatar_url,
+            business_name: profileMap.get(offer.business_user_id)?.business_name
+          }));
       }
       
-      const { data, error } = await supabase
+      // Fetch offers and profiles separately
+      const { data: offers, error: offersError } = await supabase
         .from("offers")
         .select("*")
         .eq("status", "active")
         .not("latitude", "is", null)
         .not("longitude", "is", null);
       
-      if (error) throw error;
-      return data || [];
+      if (offersError) throw offersError;
+      if (!offers || offers.length === 0) return [];
+      
+      // Get all business user IDs
+      const businessIds = offers.map(o => o.business_user_id);
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, avatar_url, business_name")
+        .in("user_id", businessIds);
+      
+      if (profilesError) throw profilesError;
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      return offers.map(offer => ({
+        ...offer,
+        avatar_url: profileMap.get(offer.business_user_id)?.avatar_url,
+        business_name: profileMap.get(offer.business_user_id)?.business_name
+      }));
     },
   });
 
@@ -91,7 +125,7 @@ export function SimpleGoogleMap({
       const loader = new Loader({
         apiKey: apiKey,
         version: 'weekly',
-        libraries: ['places']
+        libraries: ['places', 'marker']
       });
 
       await loader.load();
@@ -177,44 +211,76 @@ export function SimpleGoogleMap({
     }
   };
 
-  // Créer des marqueurs simples avec icônes catégories
+  // Créer des marqueurs circulaires avec photo de profil
   const createSimpleMarker = (offer: any, map: any, google: any) => {
-    const categoryIcon = CATEGORY_ICONS[offer.category as keyof typeof CATEGORY_ICONS] || '📍';
     const categoryColor = CATEGORY_COLORS[offer.category as keyof typeof CATEGORY_COLORS] || '#ff6b35';
+    const avatarUrl = offer.avatar_url || '/placeholder.svg';
 
-    const marker = new google.maps.Marker({
+    // Créer un élément HTML personnalisé pour le marqueur
+    const markerDiv = document.createElement('div');
+    markerDiv.style.cssText = `
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 4px solid ${categoryColor};
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background: white;
+      transition: transform 0.2s;
+    `;
+    
+    const img = document.createElement('img');
+    img.src = avatarUrl;
+    img.style.cssText = `
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    `;
+    img.onerror = () => {
+      img.src = '/placeholder.svg';
+    };
+    
+    markerDiv.appendChild(img);
+    
+    // Effet hover
+    markerDiv.addEventListener('mouseenter', () => {
+      markerDiv.style.transform = 'scale(1.1)';
+    });
+    markerDiv.addEventListener('mouseleave', () => {
+      markerDiv.style.transform = 'scale(1)';
+    });
+
+    // Utiliser AdvancedMarkerElement
+    const marker = new google.maps.marker.AdvancedMarkerElement({
       position: { 
         lat: Number(offer.latitude), 
         lng: Number(offer.longitude) 
       },
       map: map,
       title: offer.title,
-      icon: {
-        url: `data:image/svg+xml,${encodeURIComponent(`
-          <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 5C13 5 7.5 10.5 7.5 17.5C7.5 25 20 45 20 45S32.5 25 32.5 17.5C32.5 10.5 27 5 20 5Z" 
-                  fill="${categoryColor}" stroke="white" stroke-width="2"/>
-            <circle cx="20" cy="17.5" r="8" fill="white"/>
-            <text x="20" y="22" text-anchor="middle" font-size="12">${categoryIcon}</text>
-          </svg>
-        `)}`,
-        scaledSize: new google.maps.Size(40, 50),
-        anchor: new google.maps.Point(20, 50)
-      }
+      content: markerDiv
     });
 
-    // InfoWindow simple
+    // InfoWindow améliorée
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="padding: 8px; max-width: 200px;">
-          <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${offer.title}</h3>
-          <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
-          <p style="margin: 4px 0 0 0; font-size: 11px;">${offer.location || ''}</p>
+        <div style="padding: 12px; max-width: 250px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <img src="${avatarUrl}" 
+                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
+                 onerror="this.src='/placeholder.svg'">
+            <div>
+              <h3 style="margin: 0 0 4px 0; font-size: 15px; font-weight: bold;">${offer.business_name || offer.title}</h3>
+              <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
+            </div>
+          </div>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #888;">${offer.location || ''}</p>
         </div>
       `
     });
 
-    marker.addListener('click', () => {
+    markerDiv.addEventListener('click', () => {
       markersRef.current.forEach(m => {
         if ((m as any).infoWindow) {
           (m as any).infoWindow.close();
@@ -235,7 +301,7 @@ export function SimpleGoogleMap({
     // Mettre en évidence le business sélectionné
     if (selectedBusiness && selectedBusiness.id === offer.id) {
       infoWindow.open(map, marker);
-      map.setCenter(marker.getPosition());
+      map.setCenter(marker.position);
       map.setZoom(16);
     }
   };
