@@ -3,7 +3,6 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { useRecurringPromotions } from '@/hooks/useRecurringPromotions';
 
 declare global {
   interface Window {
@@ -63,45 +62,24 @@ export function UltraGoogleMap({
   const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
   
   const { position, isLoading: locationLoading } = useGeolocation();
-  const { applyPromotionToOffers } = useRecurringPromotions();
 
-  // Fetch businesses with profiles and apply promotions
+  // Fetch businesses with simple query
   const { data: businesses = [] } = useQuery({
-    queryKey: ["businesses-map-with-profiles", filteredOffers],
+    queryKey: ["simple-businesses-map", filteredOffers],
     queryFn: async () => {
-      let offersData = [];
-      
       if (filteredOffers && filteredOffers.length > 0) {
-        offersData = filteredOffers.filter(offer => offer.latitude && offer.longitude);
-      } else {
-        const { data, error } = await supabase
-          .from("offers")
-          .select("*")
-          .eq("status", "active")
-          .not("latitude", "is", null)
-          .not("longitude", "is", null);
-        
-        if (error) throw error;
-        offersData = data || [];
+        return filteredOffers.filter(offer => offer.latitude && offer.longitude);
       }
-
-      // Fetch business profiles with avatars
-      const businessUserIds = [...new Set(offersData.map(o => o.business_user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, avatar_url, business_name")
-        .in("user_id", businessUserIds);
-
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-      // Merge offers with profiles and apply promotions
-      const offersWithProfiles = offersData.map(offer => ({
-        ...offer,
-        business_avatar: profileMap.get(offer.business_user_id)?.avatar_url,
-        business_name: profileMap.get(offer.business_user_id)?.business_name
-      }));
-
-      return applyPromotionToOffers(offersWithProfiles);
+      
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("status", "active")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null);
+      
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -113,7 +91,7 @@ export function UltraGoogleMap({
       const loader = new Loader({
         apiKey: apiKey,
         version: 'weekly',
-        libraries: ['places', 'marker']
+        libraries: ['places']
       });
 
       await loader.load();
@@ -212,30 +190,21 @@ export function UltraGoogleMap({
       // Centrer automatiquement sur la position utilisateur
       map.setCenter(position);
       
-      // Marqueur utilisateur illustré et coloré avec AdvancedMarkerElement
-      const userMarkerDiv = document.createElement('div');
-      userMarkerDiv.innerHTML = `
-        <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-          <!-- Ombre portée -->
-          <ellipse cx="25" cy="46" rx="12" ry="3" fill="#000" opacity="0.2"/>
-          <!-- Corps du personnage -->
-          <circle cx="25" cy="25" r="18" fill="#667eea" stroke="white" stroke-width="3"/>
-          <!-- Visage souriant -->
-          <circle cx="19" cy="22" r="2.5" fill="white"/>
-          <circle cx="31" cy="22" r="2.5" fill="white"/>
-          <path d="M 19 30 Q 25 34 31 30" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <!-- Badge de localisation -->
-          <circle cx="38" cy="15" r="8" fill="#10b981" stroke="white" stroke-width="2"/>
-          <path d="M 38 11 L 38 19 M 34 15 L 42 15" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      `;
-      
-      new google.maps.marker.AdvancedMarkerElement({
+      // Marqueur utilisateur simple
+      new google.maps.Marker({
         position: position,
         map: map,
         title: 'Votre position',
-        content: userMarkerDiv,
-        zIndex: 1000
+        icon: {
+          url: `data:image/svg+xml,${encodeURIComponent(`
+            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
+              <circle cx="10" cy="10" r="3" fill="white"/>
+            </svg>
+          `)}`,
+          scaledSize: new google.maps.Size(20, 20),
+          anchor: new google.maps.Point(10, 10)
+        }
       });
 
       // Clear existing markers
@@ -256,116 +225,44 @@ export function UltraGoogleMap({
     }
   };
 
-  // Créer des marqueurs circulaires avec avatars et badges de réduction
+  // Créer des marqueurs simples avec icônes catégories
   const createSimpleMarker = (offer: any, map: any, google: any) => {
-    const hasPromotion = offer.has_promotion && offer.activePromotion;
-    const discountText = hasPromotion ? `-${offer.activePromotion.discount_percentage}%` : '';
-    
-    // Utiliser l'avatar business ou une icône par défaut
-    const avatarUrl = offer.business_avatar || 'https://uxdddiaheswxgkoannri.supabase.co/storage/v1/object/public/avatars/default-business.png';
-    const categoryColor = CATEGORY_COLORS[offer.category as keyof typeof CATEGORY_COLORS] || '#667eea';
+    const categoryIcon = CATEGORY_ICONS[offer.category as keyof typeof CATEGORY_ICONS] || '📍';
+    const categoryColor = CATEGORY_COLORS[offer.category as keyof typeof CATEGORY_COLORS] || '#ff6b35';
 
-    // Créer un conteneur pour le marqueur avec avatar et badge
-    const markerDiv = document.createElement('div');
-    markerDiv.style.cssText = `
-      position: relative;
-      width: 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      transition: transform 0.2s;
-    `;
-    
-    markerDiv.innerHTML = `
-      <div style="
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: white;
-        padding: 4px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border: 3px solid ${categoryColor};
-      ">
-        <div style="
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background-image: url('${avatarUrl}');
-          background-size: cover;
-          background-position: center;
-        "></div>
-      </div>
-      ${hasPromotion ? `
-        <div style="
-          margin-top: 4px;
-          background: #ef4444;
-          color: white;
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: bold;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          white-space: nowrap;
-        ">${discountText}</div>
-      ` : ''}
-    `;
-
-    markerDiv.addEventListener('mouseenter', () => {
-      markerDiv.style.transform = 'scale(1.1)';
-    });
-    
-    markerDiv.addEventListener('mouseleave', () => {
-      markerDiv.style.transform = 'scale(1)';
-    });
-
-    const marker = new google.maps.marker.AdvancedMarkerElement({
+    const marker = new google.maps.Marker({
       position: { 
         lat: Number(offer.latitude), 
         lng: Number(offer.longitude) 
       },
       map: map,
       title: offer.title,
-      content: markerDiv
+      icon: {
+        url: `data:image/svg+xml,${encodeURIComponent(`
+          <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 5C13 5 7.5 10.5 7.5 17.5C7.5 25 20 45 20 45S32.5 25 32.5 17.5C32.5 10.5 27 5 20 5Z" 
+                  fill="${categoryColor}" stroke="white" stroke-width="2"/>
+            <circle cx="20" cy="17.5" r="8" fill="white"/>
+            <text x="20" y="22" text-anchor="middle" font-size="12">${categoryIcon}</text>
+          </svg>
+        `)}`,
+        scaledSize: new google.maps.Size(40, 50),
+        anchor: new google.maps.Point(20, 50)
+      }
     });
 
-    // InfoWindow avec info de promotion
+    // InfoWindow simple
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="padding: 12px; max-width: 240px; font-family: system-ui, -apple-system, sans-serif;">
-          ${offer.business_avatar ? `
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <img src="${offer.business_avatar}" 
-                   style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
-              <div>
-                <h3 style="margin: 0; font-size: 14px; font-weight: 600;">${offer.title}</h3>
-                ${offer.business_name ? `<p style="margin: 0; font-size: 11px; color: #666;">${offer.business_name}</p>` : ''}
-              </div>
-            </div>
-          ` : `
-            <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${offer.title}</h3>
-          `}
-          ${hasPromotion ? `
-            <div style="
-              background: linear-gradient(135deg, #ef4444, #dc2626);
-              color: white;
-              padding: 8px 12px;
-              border-radius: 8px;
-              margin-bottom: 8px;
-              font-weight: 600;
-              font-size: 13px;
-              text-align: center;
-            ">
-              🔥 ${discountText} de réduction
-            </div>
-          ` : ''}
+        <div style="padding: 8px; max-width: 200px;">
+          <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${offer.title}</h3>
           <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
-          <p style="margin: 4px 0 0 0; font-size: 11px; color: #999;">${offer.location || ''}</p>
+          <p style="margin: 4px 0 0 0; font-size: 11px;">${offer.location || ''}</p>
         </div>
       `
     });
 
-    markerDiv.addEventListener('click', () => {
+    marker.addListener('click', () => {
       markersRef.current.forEach(m => {
         if ((m as any).infoWindow) {
           (m as any).infoWindow.close();

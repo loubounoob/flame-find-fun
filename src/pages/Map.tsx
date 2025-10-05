@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UltraGoogleMap } from "@/components/ui/ultra-google-map";
+import { SimpleGoogleMap } from "@/components/ui/simple-google-map";
 import { Input } from "@/components/ui/input";
 
 import { OfferCard } from "@/components/ui/offer-card";
@@ -103,7 +103,7 @@ export default function Map() {
 
       {/* Map full screen */}
       <div className="flex-1">
-        <UltraGoogleMap
+        <SimpleGoogleMap
           filteredOffers={offersWithCoords}
         />
       </div>
