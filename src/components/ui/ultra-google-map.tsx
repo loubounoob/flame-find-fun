@@ -4,6 +4,27 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
+// Singleton pour le loader Google Maps
+let googleMapsLoader: Loader | null = null;
+let googleMapsPromise: Promise<void> | null = null;
+
+function getGoogleMapsLoader(apiKey: string): Promise<void> {
+  if (googleMapsPromise) {
+    return googleMapsPromise;
+  }
+  
+  if (!googleMapsLoader) {
+    googleMapsLoader = new Loader({
+      apiKey: apiKey,
+      version: 'weekly',
+      libraries: ['places', 'marker']
+    });
+  }
+  
+  googleMapsPromise = googleMapsLoader.load();
+  return googleMapsPromise;
+}
+
 declare global {
   interface Window {
     google: any;
@@ -88,18 +109,13 @@ export function UltraGoogleMap({
     if (!mapRef.current || !position) return;
 
     try {
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places']
-      });
-
-      await loader.load();
+      await getGoogleMapsLoader(apiKey);
       const google = (window as any).google;
 
       const map = new google.maps.Map(mapRef.current, {
         center: position,
         zoom: 15,
+        mapId: 'FLAMEO_MAP', // ID requis pour les AdvancedMarkerElement
         disableDefaultUI: true,
         gestureHandling: 'greedy',
         styles: [
