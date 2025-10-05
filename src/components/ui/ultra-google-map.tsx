@@ -212,30 +212,29 @@ export function UltraGoogleMap({
       // Centrer automatiquement sur la position utilisateur
       map.setCenter(position);
       
-      // Marqueur utilisateur illustré et coloré
-      new google.maps.Marker({
+      // Marqueur utilisateur illustré et coloré avec AdvancedMarkerElement
+      const userMarkerDiv = document.createElement('div');
+      userMarkerDiv.innerHTML = `
+        <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+          <!-- Ombre portée -->
+          <ellipse cx="25" cy="46" rx="12" ry="3" fill="#000" opacity="0.2"/>
+          <!-- Corps du personnage -->
+          <circle cx="25" cy="25" r="18" fill="#667eea" stroke="white" stroke-width="3"/>
+          <!-- Visage souriant -->
+          <circle cx="19" cy="22" r="2.5" fill="white"/>
+          <circle cx="31" cy="22" r="2.5" fill="white"/>
+          <path d="M 19 30 Q 25 34 31 30" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- Badge de localisation -->
+          <circle cx="38" cy="15" r="8" fill="#10b981" stroke="white" stroke-width="2"/>
+          <path d="M 38 11 L 38 19 M 34 15 L 42 15" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      `;
+      
+      new google.maps.marker.AdvancedMarkerElement({
         position: position,
         map: map,
         title: 'Votre position',
-        icon: {
-          url: `data:image/svg+xml,${encodeURIComponent(`
-            <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-              <!-- Ombre portée -->
-              <ellipse cx="25" cy="46" rx="12" ry="3" fill="#000" opacity="0.2"/>
-              <!-- Corps du personnage -->
-              <circle cx="25" cy="25" r="18" fill="#667eea" stroke="white" stroke-width="3"/>
-              <!-- Visage souriant -->
-              <circle cx="19" cy="22" r="2.5" fill="white"/>
-              <circle cx="31" cy="22" r="2.5" fill="white"/>
-              <path d="M 19 30 Q 25 34 31 30" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-              <!-- Badge de localisation -->
-              <circle cx="38" cy="15" r="8" fill="#10b981" stroke="white" stroke-width="2"/>
-              <path d="M 38 11 L 38 19 M 34 15 L 42 15" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          `)}`,
-          scaledSize: new google.maps.Size(50, 50),
-          anchor: new google.maps.Point(25, 50)
-        },
+        content: userMarkerDiv,
         zIndex: 1000
       });
 
