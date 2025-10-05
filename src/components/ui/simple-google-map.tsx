@@ -59,6 +59,7 @@ export function SimpleGoogleMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const userMarkerRef = useRef<any>(null);
   const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
   
   const { position, isLoading: locationLoading } = useGeolocation();
@@ -139,25 +140,6 @@ export function SimpleGoogleMap({
 
       // Centrer automatiquement
       map.setCenter(position || { lat: 48.8566, lng: 2.3522 });
-      
-      // Marqueur utilisateur simple (si géolocalisation disponible)
-      if (position) {
-        new google.maps.Marker({
-          position: position,
-          map: map,
-          title: 'Votre position',
-          icon: {
-            url: `data:image/svg+xml,${encodeURIComponent(`
-              <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
-                <circle cx="10" cy="10" r="3" fill="white"/>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(20, 20),
-            anchor: new google.maps.Point(10, 10)
-          }
-        });
-      }
 
       // Clear existing markers
       markersRef.current.forEach(marker => marker.setMap(null));
@@ -266,10 +248,38 @@ export function SimpleGoogleMap({
     }
   }, [businesses]);
 
-  // Recentrer la carte si position utilisateur change
+  // Créer/mettre à jour le marqueur utilisateur quand la position change
   useEffect(() => {
     if (position && mapInstanceRef.current) {
+      const google = (window as any).google;
+      if (!google) return;
+
+      // Supprimer l'ancien marqueur s'il existe
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+      }
+
+      // Créer le nouveau marqueur utilisateur
+      userMarkerRef.current = new google.maps.Marker({
+        position: position,
+        map: mapInstanceRef.current,
+        title: 'Votre position',
+        icon: {
+          url: `data:image/svg+xml,${encodeURIComponent(`
+            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
+              <circle cx="10" cy="10" r="3" fill="white"/>
+            </svg>
+          `)}`,
+          scaledSize: new google.maps.Size(20, 20),
+          anchor: new google.maps.Point(10, 10)
+        },
+        zIndex: 9999
+      });
+
+      // Centrer la carte sur la position utilisateur
       mapInstanceRef.current.setCenter(position);
+      mapInstanceRef.current.setZoom(15);
     }
   }, [position]);
 
