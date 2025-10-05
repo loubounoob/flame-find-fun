@@ -106,27 +106,17 @@ export function SimpleGoogleMap({
         streetViewControl: false,
         fullscreenControl: false,
         clickableIcons: false,
-        gestureHandling: 'greedy',
-        styles: [
-          // Base map style - keep roads and geography visible
-          { featureType: 'all', stylers: [{ visibility: 'on' }] },
-          // Hide all POIs
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
-          // Hide transit
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          // Simplify highway labels
-          { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-        ]
+        gestureHandling: 'greedy'
       });
 
       mapInstanceRef.current = map;
       onMapLoad?.(map);
 
-      // Centrer automatiquement
-      map.setCenter(position || { lat: 48.8566, lng: 2.3522 });
+      // Fix potential black map by forcing resize after initial render and recenter
+      google.maps.event.addListenerOnce(map, 'idle', () => {
+        google.maps.event.trigger(map, 'resize');
+        map.setCenter(position || { lat: 48.8566, lng: 2.3522 });
+      });
 
       // Clear existing markers
       markersRef.current.forEach(marker => marker.setMap(null));
@@ -291,7 +281,7 @@ export function SimpleGoogleMap({
 
   return (
     <div className="w-full h-full relative">
-      <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
+      <div ref={mapRef} className="w-full h-full min-h-[400px]" />
     </div>
   );
 }
