@@ -21,12 +21,17 @@ interface OfferWithPromotion {
   video_url?: string;
   pricing_options: any;
   business_user_id: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  business_avatar?: string | null;
+  business_name?: string | null;
   has_promotion: boolean;
   activePromotion?: {
     discount_percentage: number;
     original_price: number;
     promotional_price: number;
   };
+  [key: string]: any; // Allow additional properties
 }
 
 export const useRecurringPromotions = () => {
