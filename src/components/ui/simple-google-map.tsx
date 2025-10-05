@@ -185,13 +185,20 @@ export function SimpleGoogleMap({
       }
     });
 
-    // InfoWindow simple
+    // InfoWindow avec un design amélioré
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="padding: 8px; max-width: 200px;">
-          <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${offer.title}</h3>
-          <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
-          <p style="margin: 4px 0 0 0; font-size: 11px;">${offer.location || ''}</p>
+        <div style="padding: 12px; max-width: 220px; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid ${categoryColor}; flex-shrink: 0;">
+              ${offer.avatar_url ? `<img src="${offer.avatar_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="${offer.business_name || offer.title}">` : `<div style="width: 100%; height: 100%; background: ${categoryColor}; display: flex; align-items: center; justify-content: center; font-size: 20px;">${categoryIcon}</div>`}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${offer.title}</h3>
+              <p style="margin: 0; font-size: 12px; color: #666; text-transform: capitalize;">${offer.category.replace('-', ' ')}</p>
+            </div>
+          </div>
+          ${offer.location ? `<p style="margin: 0; font-size: 11px; color: #888; display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">📍</span>${offer.location}</p>` : ''}
         </div>
       `
     });
