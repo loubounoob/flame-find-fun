@@ -60,8 +60,10 @@ export function SimpleGoogleMap({
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
-  const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
+  const loaderRef = useRef<Loader | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { position, isLoading: locationLoading } = useGeolocation();
 
   // Fetch businesses with simple query
@@ -87,15 +89,23 @@ export function SimpleGoogleMap({
   // Initialiser une carte simple et performante
   const initializeMap = async () => {
     if (!mapRef.current) return;
+    
+    if (!apiKey) {
+      setMapError("Clé API Google Maps manquante. Ajoutez VITE_GOOGLE_MAPS_API_KEY dans votre fichier .env");
+      return;
+    }
 
     try {
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places']
-      });
+      // Singleton loader pour éviter les chargements multiples
+      if (!loaderRef.current) {
+        loaderRef.current = new Loader({
+          apiKey: apiKey,
+          version: 'weekly',
+          libraries: ['places']
+        });
+      }
 
-      await loader.load();
+      await loaderRef.current.load();
       const google = (window as any).google;
 
       const map = new google.maps.Map(mapRef.current, {
@@ -106,33 +116,7 @@ export function SimpleGoogleMap({
         streetViewControl: false,
         fullscreenControl: false,
         clickableIcons: false,
-        gestureHandling: 'greedy',
-        styles: [
-          // Hide all POIs
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
-          // Hide transit
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          // Hide highways completely (routes métropolitaines/départementales)
-          { featureType: 'road.highway', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway.controlled_access', stylers: [{ visibility: 'off' }] },
-          // Hide ALL highway labels (text and icons/shields)
-          { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-          // Hide ALL arterial road labels (routes départementales)
-          { featureType: 'road.arterial', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-          // EXTRA: Hide any road shields/icons globally (catch-all)
-          { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          // Keep only local street names visible
-          { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
-          // Keep city/locality names visible
-          { featureType: 'administrative.locality', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
-          { featureType: 'administrative.neighborhood', elementType: 'labels.text', stylers: [{ visibility: 'on' }] }
-        ]
+        gestureHandling: 'greedy'
       });
 
       mapInstanceRef.current = map;
@@ -156,6 +140,7 @@ export function SimpleGoogleMap({
 
     } catch (error) {
       console.error('Error loading map:', error);
+      setMapError("Erreur lors du chargement de la carte. Vérifiez votre clé API et les restrictions.");
     }
   };
 
@@ -303,8 +288,18 @@ export function SimpleGoogleMap({
 
 
   return (
-    <div className="w-full h-full relative">
-      <div ref={mapRef} className="w-full h-full" />
+    <div className="w-full h-full relative min-h-[400px]">
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+          <div className="text-center p-6 max-w-md">
+            <p className="text-sm text-destructive mb-2">❌ {mapError}</p>
+            <p className="text-xs text-muted-foreground">
+              Consultez la console pour plus de détails
+            </p>
+          </div>
+        </div>
+      )}
+      <div ref={mapRef} className="absolute inset-0" />
     </div>
   );
 }
