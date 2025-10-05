@@ -27,13 +27,13 @@ interface RecurringPromotionsProps {
 }
 
 const DAYS_OF_WEEK = [
+  { value: 0, label: 'Dimanche' },
   { value: 1, label: 'Lundi' },
   { value: 2, label: 'Mardi' },
   { value: 3, label: 'Mercredi' },
   { value: 4, label: 'Jeudi' },
   { value: 5, label: 'Vendredi' },
-  { value: 6, label: 'Samedi' },
-  { value: 0, label: 'Dimanche' }
+  { value: 6, label: 'Samedi' }
 ];
 
 const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, businessUserId }) => {
@@ -41,10 +41,10 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
   const [isCreating, setIsCreating] = useState(false);
   const [newPromotion, setNewPromotion] = useState({
     offer_id: '',
-    day_of_week: null as number | null,
-    start_time: '',
-    end_time: '',
-    discount_percentage: null as number | null
+    days_of_week: [] as number[],
+    start_time: '18:00',
+    end_time: '22:00',
+    discount_percentage: 30
   });
 
   useEffect(() => {
@@ -88,25 +88,20 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
   };
 
+  const handleDayToggle = (day: number, checked: boolean) => {
+    setNewPromotion(prev => ({
+      ...prev,
+      days_of_week: checked 
+        ? [...prev.days_of_week, day].sort()
+        : prev.days_of_week.filter(d => d !== day)
+    }));
+  };
 
   const createRecurringPromotion = async () => {
-    if (!newPromotion.offer_id || 
-        newPromotion.day_of_week === null || 
-        !newPromotion.start_time || 
-        !newPromotion.end_time || 
-        !newPromotion.discount_percentage) {
+    if (!newPromotion.offer_id || newPromotion.days_of_week.length === 0) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newPromotion.start_time >= newPromotion.end_time) {
-      toast({
-        title: "Erreur",
-        description: "L'heure de fin doit être après l'heure de début",
+        description: "Veuillez sélectionner une offre et au moins un jour",
         variant: "destructive",
       });
       return;
@@ -118,7 +113,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         .insert({
           business_user_id: businessUserId,
           offer_id: newPromotion.offer_id,
-          days_of_week: [newPromotion.day_of_week],
+          days_of_week: newPromotion.days_of_week,
           start_time: newPromotion.start_time,
           end_time: newPromotion.end_time,
           discount_percentage: newPromotion.discount_percentage
@@ -128,15 +123,15 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
 
       toast({
         title: "Succès",
-        description: "Créneau promotionnel créé avec succès",
+        description: "Promotion récurrente créée avec succès",
       });
 
       setNewPromotion({
         offer_id: '',
-        day_of_week: null,
-        start_time: '',
-        end_time: '',
-        discount_percentage: null
+        days_of_week: [],
+        start_time: '18:00',
+        end_time: '22:00',
+        discount_percentage: 30
       });
       setIsCreating(false);
       loadRecurringPromotions();
@@ -144,7 +139,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
       console.error('Erreur lors de la création:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le créneau promotionnel",
+        description: "Impossible de créer la promotion récurrente",
         variant: "destructive",
       });
     }
@@ -250,22 +245,21 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
             </div>
 
             <div>
-              <Label htmlFor="day-select">Jour de la semaine</Label>
-              <Select 
-                value={newPromotion.day_of_week?.toString()} 
-                onValueChange={(value) => setNewPromotion(prev => ({ ...prev, day_of_week: parseInt(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un jour" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAYS_OF_WEEK.map((day) => (
-                    <SelectItem key={day.value} value={day.value.toString()}>
+              <Label>Jours de la semaine</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <div key={day.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`day-${day.value}`}
+                      checked={newPromotion.days_of_week.includes(day.value)}
+                      onCheckedChange={(checked) => handleDayToggle(day.value, checked as boolean)}
+                    />
+                    <Label htmlFor={`day-${day.value}`} className="text-sm font-normal">
                       {day.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -276,7 +270,6 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                   type="time"
                   value={newPromotion.start_time}
                   onChange={(e) => setNewPromotion(prev => ({ ...prev, start_time: e.target.value }))}
-                  placeholder="Ex: 14:00"
                 />
               </div>
               <div>
@@ -286,7 +279,6 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                   type="time"
                   value={newPromotion.end_time}
                   onChange={(e) => setNewPromotion(prev => ({ ...prev, end_time: e.target.value }))}
-                  placeholder="Ex: 18:00"
                 />
               </div>
             </div>
@@ -299,21 +291,17 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                   type="number"
                   min="1"
                   max="100"
-                  value={newPromotion.discount_percentage ?? ''}
-                  onChange={(e) => setNewPromotion(prev => ({ ...prev, discount_percentage: e.target.value ? parseInt(e.target.value) : null }))}
+                  value={newPromotion.discount_percentage}
+                  onChange={(e) => setNewPromotion(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
                   className="flex-1"
-                  placeholder="Ex: 20"
                 />
                 <Percent className="w-4 h-4 text-muted-foreground" />
               </div>
             </div>
 
             <Button onClick={createRecurringPromotion} className="w-full">
-              Ajouter ce créneau promotionnel
+              Créer la promotion récurrente
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Pour créer plusieurs créneaux, ajoutez-les un par un avec des horaires différents
-            </p>
           </CardContent>
         </Card>
       )}
@@ -324,10 +312,10 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
             <CardContent className="py-8 text-center">
               <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                Aucun créneau promotionnel configuré
+                Aucune promotion récurrente configurée
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Créez vos créneaux promotionnels pour automatiser vos réductions
+                Créez votre première promotion pour automatiser vos offres flash
               </p>
             </CardContent>
           </Card>
