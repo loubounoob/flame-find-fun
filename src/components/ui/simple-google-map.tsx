@@ -240,12 +240,28 @@ export function SimpleGoogleMap({
     }
   };
 
-  // Charger la carte quand la géolocalisation est prête
+  // Initialiser la carte une seule fois
   useEffect(() => {
     if (!mapInstanceRef.current) {
       initializeMap();
     }
-  }, [position, businesses]);
+  }, [position]);
+
+  // Mettre à jour les marqueurs quand les businesses changent
+  useEffect(() => {
+    if (mapInstanceRef.current && window.google) {
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+
+      // Créer les nouveaux marqueurs
+      for (const offer of businesses) {
+        if (offer.latitude && offer.longitude) {
+          createSimpleMarker(offer, mapInstanceRef.current, window.google);
+        }
+      }
+    }
+  }, [businesses]);
 
   // Recentrer la carte si position utilisateur change
   useEffect(() => {
