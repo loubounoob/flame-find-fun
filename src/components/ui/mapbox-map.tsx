@@ -154,7 +154,7 @@ export function MapboxMap({
 
   // Handle selected business
   useEffect(() => {
-    if (!map.current || !selectedBusiness) return;
+    if (!map.current || !selectedBusiness || initialCenter) return; // Skip if we have initialCenter from redirect
 
     if (selectedBusiness.latitude && selectedBusiness.longitude) {
       map.current.flyTo({
@@ -163,19 +163,7 @@ export function MapboxMap({
         duration: 1500
       });
     }
-  }, [selectedBusiness]);
-
-  // Handle redirection with initialCenter and highlightedOfferId
-  useEffect(() => {
-    if (!map.current || !initialCenter) return;
-
-    // Fly to the specified location
-    map.current.flyTo({
-      center: [initialCenter.lng, initialCenter.lat],
-      zoom: initialZoom || 15,
-      duration: 1500
-    });
-  }, [initialCenter, initialZoom]);
+  }, [selectedBusiness, initialCenter]);
 
   // Create circular photo marker for an offer
   const createOfferMarker = (offer: any) => {
