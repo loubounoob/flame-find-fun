@@ -105,22 +105,45 @@ export default function Notifications() {
   });
 
   const markAsRead = async (id: number, metadata?: any) => {
+    // Récupérer la notification complète
+    const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
+    
     // Si c'est une notification de demande d'évaluation, ouvrir le modal
     if (metadata?.requires_rating && metadata?.offer_id) {
       setRatingOfferId(metadata.offer_id);
       setShowRatingModal(true);
     }
 
-    // Marquer comme lu dans la base de données si c'est une vraie notification
-    if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
-      const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
-      if (realNotif && !realNotif.read) { // Éviter les doublons
-        await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("id", realNotif.id);
-        refetchNotifications();
+    // Gestion des redirections selon le type de notification
+    if (realNotif) {
+      // Pour les activités: "Nouvelle réservation !" -> Dashboard
+      if (realNotif.type === 'new_booking') {
+        navigate('/dashboard');
       }
+      
+      // Pour les clients: "Réservation confirmée" -> Page Réservations (onglet Actuelles)
+      // On vérifie que l'utilisateur est bien un client (n'a pas d'offres) avant de rediriger
+      if (realNotif.type === 'booking_confirmation' && user) {
+        const { data: offers } = await supabase
+          .from('offers')
+          .select('id')
+          .eq('business_user_id', user.id)
+          .limit(1);
+        
+        // Rediriger uniquement si c'est un client (pas d'offres créées)
+        if (!offers || offers.length === 0) {
+          navigate('/booking');
+        }
+      }
+    }
+
+    // Marquer comme lu dans la base de données si c'est une vraie notification
+    if (user && realNotif && !realNotif.read) {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", realNotif.id);
+      refetchNotifications();
     }
   };
 

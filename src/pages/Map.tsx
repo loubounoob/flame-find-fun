@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,7 +31,13 @@ interface Offer {
 export default function Map() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchParams] = useSearchParams();
   const { applyPromotionToOffers } = useRecurringPromotions();
+
+  // Get URL parameters for centering on a specific offer
+  const targetLat = searchParams.get('lat');
+  const targetLng = searchParams.get('lng');
+  const targetOfferId = searchParams.get('offerId');
 
   // Get user's location
   useEffect(() => {
@@ -136,6 +143,13 @@ export default function Map() {
       <div className="flex-1">
         <MapboxMap
           filteredOffers={offersWithPromotions}
+          initialCenter={
+            targetLat && targetLng
+              ? { lat: parseFloat(targetLat), lng: parseFloat(targetLng) }
+              : undefined
+          }
+          initialZoom={targetLat && targetLng ? 15 : undefined}
+          highlightedOfferId={targetOfferId || undefined}
         />
       </div>
       <BottomNav />
