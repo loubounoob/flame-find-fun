@@ -165,6 +165,18 @@ export function MapboxMap({
     }
   }, [selectedBusiness]);
 
+  // Handle redirection with initialCenter and highlightedOfferId
+  useEffect(() => {
+    if (!map.current || !initialCenter) return;
+
+    // Fly to the specified location
+    map.current.flyTo({
+      center: [initialCenter.lng, initialCenter.lat],
+      zoom: initialZoom || 15,
+      duration: 1500
+    });
+  }, [initialCenter, initialZoom]);
+
   // Create circular photo marker for an offer
   const createOfferMarker = (offer: any) => {
     if (!map.current || !userLocation) return;
