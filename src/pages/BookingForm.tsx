@@ -7,13 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ArrowLeft, Users, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Users, Clock, Calendar, Flame, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { usePromotionEligibility } from "@/hooks/usePromotionEligibility";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -42,6 +45,22 @@ export default function BookingForm() {
     },
     enabled: !!id,
   });
+
+  // Check promotion eligibility based on booking date and time
+  const promotionEligibility = usePromotionEligibility(id, bookingDate, bookingTime);
+
+  // Calculate price
+  const getBasePrice = (pricingOptions: any) => {
+    if (!pricingOptions || !Array.isArray(pricingOptions)) return 0;
+    const defaultOption = pricingOptions.find((opt: any) => opt.is_default);
+    return defaultOption?.price || pricingOptions[0]?.price || 0;
+  };
+
+  const basePrice = offer ? getBasePrice(offer.pricing_options) : 0;
+  const finalPrice = promotionEligibility.isEligible
+    ? basePrice - (basePrice * promotionEligibility.discountPercentage / 100)
+    : basePrice;
+  const totalPrice = finalPrice * participantCount;
 
   if (!user) {
     navigate("/auth");
@@ -307,6 +326,89 @@ export default function BookingForm() {
                   onChange={(e) => setNotes(e.target.value)}
                   className="bg-background border-border/50 min-h-[100px]"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Promotion eligibility alert */}
+          {bookingDate && bookingTime && (
+            <Alert className={cn(
+              "border-2",
+              promotionEligibility.isEligible 
+                ? "bg-green-500/10 border-green-500/50" 
+                : "bg-orange-500/10 border-orange-500/50"
+            )}>
+              <AlertCircle className={cn(
+                "h-5 w-5",
+                promotionEligibility.isEligible ? "text-green-500" : "text-orange-500"
+              )} />
+              <AlertDescription className="ml-2">
+                {promotionEligibility.isEligible ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-green-500" />
+                      <span className="font-semibold text-green-500">
+                        Cette réservation bénéficie de -{promotionEligibility.discountPercentage}% !
+                      </span>
+                    </div>
+                    {promotionEligibility.scheduleInfo && (
+                      <p className="text-sm text-muted-foreground">
+                        {promotionEligibility.scheduleInfo}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <span className="font-semibold text-orange-500">
+                      Cette réservation ne bénéficie pas de promotion
+                    </span>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Choisissez une date et heure pendant les horaires promotionnels pour bénéficier d'une réduction.
+                    </p>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Price summary */}
+          <Card className="bg-gradient-card border-border/50">
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Prix unitaire</span>
+                  <span className={cn(
+                    promotionEligibility.isEligible && "line-through text-muted-foreground"
+                  )}>
+                    {basePrice.toFixed(2)} €
+                  </span>
+                </div>
+                {promotionEligibility.isEligible && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-500 font-semibold">Prix promotionnel</span>
+                    <span className="text-green-500 font-semibold">
+                      {finalPrice.toFixed(2)} €
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Nombre de personnes</span>
+                  <span>{participantCount}</span>
+                </div>
+                <div className="h-px bg-border/50 my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Total</span>
+                  <div className="text-right">
+                    <span className="font-bold text-2xl text-gradient-primary">
+                      {totalPrice.toFixed(2)} €
+                    </span>
+                    {promotionEligibility.isEligible && (
+                      <Badge className="ml-2 bg-green-500/20 text-green-500 border-green-500/50">
+                        -{promotionEligibility.discountPercentage}%
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
