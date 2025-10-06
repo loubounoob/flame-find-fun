@@ -10,9 +10,6 @@ interface MapboxMapProps {
   selectedBusiness?: any;
   onLocationUpdate?: (lat: number, lng: number) => void;
   onMapLoad?: () => void;
-  initialCenter?: { lat: number; lng: number };
-  initialZoom?: number;
-  highlightedOfferId?: string;
 }
 
 // Category colors (same as Google Maps)
@@ -41,10 +38,7 @@ export function MapboxMap({
   filteredOffers = [], 
   selectedBusiness,
   onLocationUpdate,
-  onMapLoad,
-  initialCenter,
-  initialZoom,
-  highlightedOfferId
+  onMapLoad 
 }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -52,15 +46,11 @@ export function MapboxMap({
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentPopupRef = useRef<mapboxgl.Popup | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 12);
+  const [currentZoom, setCurrentZoom] = useState<number>(12);
 
   // Get user's geolocation
   useEffect(() => {
-    // If initialCenter is provided, use it; otherwise get user location
-    if (initialCenter) {
-      setUserLocation(initialCenter);
-      onLocationUpdate?.(initialCenter.lat, initialCenter.lng);
-    } else if (navigator.geolocation) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const location = {
@@ -84,7 +74,7 @@ export function MapboxMap({
       setUserLocation(defaultLocation);
       onLocationUpdate?.(defaultLocation.lat, defaultLocation.lng);
     }
-  }, [onLocationUpdate, initialCenter]);
+  }, [onLocationUpdate]);
 
   // Initialize map
   useEffect(() => {
@@ -95,7 +85,7 @@ export function MapboxMap({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [userLocation.lng, userLocation.lat],
-      zoom: initialZoom || 12
+      zoom: 12
     });
 
     // Add user location marker (blue circle)
@@ -154,7 +144,7 @@ export function MapboxMap({
 
   // Handle selected business
   useEffect(() => {
-    if (!map.current || !selectedBusiness || initialCenter) return; // Skip if we have initialCenter from redirect
+    if (!map.current || !selectedBusiness) return;
 
     if (selectedBusiness.latitude && selectedBusiness.longitude) {
       map.current.flyTo({
@@ -163,7 +153,7 @@ export function MapboxMap({
         duration: 1500
       });
     }
-  }, [selectedBusiness, initialCenter]);
+  }, [selectedBusiness]);
 
   // Create circular photo marker for an offer
   const createOfferMarker = (offer: any) => {
@@ -174,9 +164,6 @@ export function MapboxMap({
 
     // Get photo URL (priority: image_url > avatar_url > emoji fallback)
     const photoUrl = offer.image_url || offer.profiles?.avatar_url;
-    
-    // Check if this is the highlighted offer
-    const isHighlighted = highlightedOfferId && offer.id === highlightedOfferId;
 
     // Calculate distance between user and offer
     const distance = calculateDistance(
@@ -222,19 +209,12 @@ export function MapboxMap({
     bubbleEl.style.width = '50px';
     bubbleEl.style.height = '50px';
     bubbleEl.style.borderRadius = '50%';
-    bubbleEl.style.border = isHighlighted ? `5px solid ${borderColor}` : `3px solid ${borderColor}`;
-    bubbleEl.style.boxShadow = isHighlighted 
-      ? `0 0 20px ${borderColor}, 0 2px 8px rgba(0,0,0,0.3)` 
-      : '0 2px 8px rgba(0,0,0,0.3)';
+    bubbleEl.style.border = `3px solid ${borderColor}`;
+    bubbleEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
     bubbleEl.style.cursor = 'pointer';
     bubbleEl.style.overflow = 'hidden';
     bubbleEl.style.willChange = 'transform';
     bubbleEl.style.transition = 'transform 150ms ease';
-    
-    // Add pulse animation for highlighted offer
-    if (isHighlighted) {
-      bubbleEl.style.animation = 'pulse 2s ease-in-out infinite';
-    }
 
     // Discount badge for promotional offers (smaller, 65% inside / 35% outside)
     let discountBadgeEl: HTMLDivElement | null = null;
@@ -397,32 +377,6 @@ export function MapboxMap({
       .addTo(map.current);
 
     markersRef.current.push(marker);
-    
-    // Auto-open popup if this is the highlighted offer
-    if (isHighlighted && map.current) {
-      setTimeout(() => {
-        // Close any existing popup
-        if (currentPopupRef.current) {
-          currentPopupRef.current.remove();
-        }
-        
-        // Open this marker's popup
-        marker.togglePopup();
-        currentPopupRef.current = marker.getPopup();
-        
-        // Pan map so popup appears centered on screen
-        if (map.current) {
-          const targetPoint = map.current.project([offer.longitude, offer.latitude]);
-          targetPoint.y -= 150; // Shift up to center popup on screen
-          const targetLatLng = map.current.unproject(targetPoint);
-          
-          map.current.easeTo({
-            center: targetLatLng,
-            duration: 800
-          });
-        }
-      }, 500); // Small delay to ensure map is ready
-    }
 
     // Click to open popup - close any existing popup first and center popup on screen
     bubbleEl.addEventListener('click', (e) => {
@@ -500,14 +454,6 @@ export function MapboxMap({
         }
         .mapbox-popup-compact {
           max-width: none !important;
-        }
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.1);
-          }
         }
       `}</style>
       <div ref={mapContainer} className="w-full h-full" />

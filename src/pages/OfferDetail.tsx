@@ -22,7 +22,7 @@ import {
   Flame
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,7 +31,6 @@ import { useAuth } from "@/hooks/useAuth";
 export default function OfferDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [showBusiness, setShowBusiness] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
@@ -357,16 +356,10 @@ export default function OfferDetail() {
           {/* Details */}
           <Card className="bg-gradient-card border-border/50">
             <CardContent className="p-4 space-y-3">
-              <button 
-                onClick={() => {
-                  // Rediriger vers la carte centrée sur cette offre
-                  navigate(`/map?lat=${offer.latitude}&lng=${offer.longitude}&offerId=${offer.id}`);
-                }}
-                className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity"
-              >
+              <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-primary" />
-                <span className="text-foreground underline">{offer.location}</span>
-              </button>
+                <span className="text-foreground">{offer.location}</span>
+              </div>
             </CardContent>
           </Card>
 
