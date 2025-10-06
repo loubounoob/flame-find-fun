@@ -81,7 +81,7 @@ export function MapboxMap({
     // Create map instance with dark colorful style
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/navigation-night-v1',
       center: [userLocation.lng, userLocation.lat],
       zoom: 12
     });
@@ -162,48 +162,47 @@ export function MapboxMap({
     const stackOffset = existingMarkersAtPosition.length * 8; // 8px offset per marker
     const zIndex = 100 + existingMarkersAtPosition.length;
 
-    // Create marker element
+    // Create marker element (root handles positioning; inner handles visuals)
     const markerEl = document.createElement('div');
-    markerEl.style.width = '50px';
-    markerEl.style.height = '50px';
-    markerEl.style.borderRadius = '50%';
-    markerEl.style.border = `3px solid ${categoryColor}`;
-    markerEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-    markerEl.style.cursor = 'pointer';
-    markerEl.style.overflow = 'hidden';
-    markerEl.style.position = 'absolute';
+    markerEl.style.position = 'relative';
+    markerEl.style.width = '0px';
+    markerEl.style.height = '0px';
     markerEl.style.pointerEvents = 'auto';
-    markerEl.style.zIndex = zIndex.toString();
-    markerEl.style.left = `${stackOffset}px`;
-    markerEl.style.top = `${stackOffset}px`;
-    markerEl.style.transform = 'translate(-50%, -50%)';
-    markerEl.style.willChange = 'transform';
+
+    const bubbleEl = document.createElement('div');
+    bubbleEl.style.width = '50px';
+    bubbleEl.style.height = '50px';
+    bubbleEl.style.borderRadius = '50%';
+    bubbleEl.style.border = `3px solid ${categoryColor}`;
+    bubbleEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+    bubbleEl.style.cursor = 'pointer';
+    bubbleEl.style.overflow = 'hidden';
+    bubbleEl.style.willChange = 'transform';
+    bubbleEl.style.transition = 'transform 150ms ease';
+
+    markerEl.appendChild(bubbleEl);
 
     if (photoUrl) {
       // Use photo as background
-      markerEl.style.backgroundImage = `url(${photoUrl})`;
-      markerEl.style.backgroundSize = 'cover';
-      markerEl.style.backgroundPosition = 'center';
+      bubbleEl.style.backgroundImage = `url(${photoUrl})`;
+      bubbleEl.style.backgroundSize = 'cover';
+      bubbleEl.style.backgroundPosition = 'center';
     } else {
       // Fallback to emoji on colored background
-      markerEl.style.backgroundColor = categoryColor;
-      markerEl.style.display = 'flex';
-      markerEl.style.alignItems = 'center';
-      markerEl.style.justifyContent = 'center';
-      markerEl.style.fontSize = '24px';
-      markerEl.textContent = categoryEmoji;
+      bubbleEl.style.backgroundColor = categoryColor;
+      bubbleEl.style.display = 'flex';
+      bubbleEl.style.alignItems = 'center';
+      bubbleEl.style.justifyContent = 'center';
+      bubbleEl.style.fontSize = '24px';
+      bubbleEl.textContent = categoryEmoji;
     }
 
-    // Hover effect - scale while maintaining position
-    markerEl.addEventListener('mouseenter', () => {
-      markerEl.style.transform = 'translate(-50%, -50%) scale(1.15)';
-      markerEl.style.zIndex = '1000';
-      markerEl.style.transition = 'transform 0.2s ease-out';
+    // Hover effect - scale inner only (keeps geographic position exact)
+    bubbleEl.addEventListener('mouseenter', () => {
+      bubbleEl.style.transform = 'scale(1.08)';
     });
-    markerEl.addEventListener('mouseleave', () => {
-      markerEl.style.transform = 'translate(-50%, -50%) scale(1)';
-      markerEl.style.zIndex = zIndex.toString();
-      markerEl.style.transition = 'transform 0.2s ease-out';
+    bubbleEl.addEventListener('mouseleave', () => {
+      bubbleEl.style.transform = 'scale(1)';
     });
 
     // Create enhanced popup with more information
@@ -293,10 +292,11 @@ export function MapboxMap({
       anchor: 'bottom'
     }).setHTML(popupContent);
 
-    // Create marker with proper positioning
+    // Create marker with stable anchor and slight horizontal offset for stacking
     const marker = new mapboxgl.Marker({ 
       element: markerEl,
-      anchor: 'top-left'
+      anchor: 'center',
+      offset: [stackOffset, 0]
     })
       .setLngLat([offer.longitude, offer.latitude])
       .setPopup(popup)
@@ -304,8 +304,8 @@ export function MapboxMap({
 
     markersRef.current.push(marker);
 
-    // Click to open popup - prevent event propagation
-    markerEl.addEventListener('click', (e) => {
+    // Click to open popup - prevent map interference
+    bubbleEl.addEventListener('click', (e) => {
       e.stopPropagation();
       marker.togglePopup();
     });
