@@ -78,10 +78,10 @@ export function MapboxMap({
   useEffect(() => {
     if (!mapContainer.current || !userLocation || map.current) return;
 
-    // Create map instance
+    // Create map instance with dark colorful style
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/dark-v11',
       center: [userLocation.lng, userLocation.lat],
       zoom: 12
     });
@@ -188,43 +188,90 @@ export function MapboxMap({
       markerEl.style.transform = 'scale(1)';
     });
 
-    // Create popup
+    // Create enhanced popup with more information
+    const businessName = offer.profiles?.business_name || 'Business';
+    const description = offer.description ? offer.description.substring(0, 120) + '...' : '';
+    
     const popupContent = `
-      <div style="padding: 8px; min-width: 200px;">
-        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">
-          ${offer.title}
-        </h3>
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: #666; font-size: 14px;">
-          <span>${categoryEmoji}</span>
+      <div style="padding: 12px; min-width: 280px; max-width: 320px; background: #1a1a1a; color: #fff;">
+        ${photoUrl ? `
+          <div style="margin: -12px -12px 12px -12px; height: 140px; overflow: hidden; border-radius: 8px 8px 0 0;">
+            <img src="${photoUrl}" alt="${offer.title}" style="width: 100%; height: 100%; object-fit: cover;" />
+          </div>
+        ` : ''}
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 28px;">${categoryEmoji}</span>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff; line-height: 1.2;">
+              ${offer.title}
+            </h3>
+            <p style="margin: 2px 0 0 0; font-size: 12px; color: #999;">
+              ${businessName}
+            </p>
+          </div>
+        </div>
+        ${description ? `
+          <p style="margin: 0 0 12px 0; font-size: 13px; color: #ccc; line-height: 1.4;">
+            ${description}
+          </p>
+        ` : ''}
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #999; font-size: 13px;">
+          <span style="color: ${categoryColor};">●</span>
           <span>${offer.category}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; color: #666; font-size: 14px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px; color: #999; font-size: 13px;">
           <span>📍</span>
           <span>${offer.location}</span>
         </div>
-        <button 
-          onclick="window.location.href='/offer/${offer.id}'"
-          style="
-            width: 100%;
-            padding: 8px 16px;
-            background-color: ${categoryColor};
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-          "
-        >
-          Voir l'offre
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button 
+            onclick="window.location.href='/offer/${offer.id}'"
+            style="
+              flex: 1;
+              padding: 10px 16px;
+              background-color: ${categoryColor};
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              font-size: 14px;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)'"
+            onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
+          >
+            Voir les détails
+          </button>
+          <button 
+            onclick="window.location.href='/booking?offer=${offer.id}'"
+            style="
+              flex: 1;
+              padding: 10px 16px;
+              background-color: #fff;
+              color: ${categoryColor};
+              border: 2px solid ${categoryColor};
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              font-size: 14px;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.backgroundColor='${categoryColor}'; this.style.color='#fff'"
+            onmouseout="this.style.backgroundColor='#fff'; this.style.color='${categoryColor}'"
+          >
+            Réserver
+          </button>
+        </div>
       </div>
     `;
 
     const popup = new mapboxgl.Popup({
       offset: 25,
       closeButton: true,
-      closeOnClick: false
+      closeOnClick: false,
+      maxWidth: '340px',
+      className: 'mapbox-popup-dark'
     }).setHTML(popupContent);
 
     // Create marker
