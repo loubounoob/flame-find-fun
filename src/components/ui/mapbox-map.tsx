@@ -197,20 +197,21 @@ export function MapboxMap({
     bubbleEl.style.willChange = 'transform';
     bubbleEl.style.transition = 'transform 150ms ease';
 
-    // Distance label below bubble
+    // Distance label below bubble - more discreet
     const distanceEl = document.createElement('div');
     distanceEl.style.position = 'absolute';
-    distanceEl.style.top = '55px';
+    distanceEl.style.top = '56px';
     distanceEl.style.left = '50%';
     distanceEl.style.transform = 'translateX(-50%)';
-    distanceEl.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    distanceEl.style.color = '#fff';
-    distanceEl.style.padding = '2px 6px';
-    distanceEl.style.borderRadius = '4px';
-    distanceEl.style.fontSize = '10px';
-    distanceEl.style.fontWeight = '600';
+    distanceEl.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+    distanceEl.style.color = 'rgba(255, 255, 255, 0.9)';
+    distanceEl.style.padding = '1px 5px';
+    distanceEl.style.borderRadius = '3px';
+    distanceEl.style.fontSize = '9px';
+    distanceEl.style.fontWeight = '500';
     distanceEl.style.whiteSpace = 'nowrap';
     distanceEl.style.pointerEvents = 'none';
+    distanceEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)';
     distanceEl.textContent = distance;
 
     markerEl.appendChild(bubbleEl);
@@ -338,7 +339,7 @@ export function MapboxMap({
 
     markersRef.current.push(marker);
 
-    // Click to open popup - close any existing popup first
+    // Click to open popup - close any existing popup first and center popup on screen
     bubbleEl.addEventListener('click', (e) => {
       e.stopPropagation();
       
@@ -352,6 +353,19 @@ export function MapboxMap({
       
       if (marker.getPopup().isOpen()) {
         currentPopupRef.current = marker.getPopup();
+        
+        // Pan map so popup appears centered on screen
+        // We move the map center down by ~150px (popup height / 2) to center the popup
+        if (map.current) {
+          const targetPoint = map.current.project([offer.longitude, offer.latitude]);
+          targetPoint.y -= 150; // Shift up to center popup on screen
+          const targetLatLng = map.current.unproject(targetPoint);
+          
+          map.current.easeTo({
+            center: targetLatLng,
+            duration: 400
+          });
+        }
       } else {
         currentPopupRef.current = null;
       }
