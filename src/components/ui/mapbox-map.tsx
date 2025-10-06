@@ -86,12 +86,6 @@ export function MapboxMap({
       zoom: 12
     });
 
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl(),
-      'top-right'
-    );
-
     // Add user location marker (blue circle)
     const userMarkerEl = document.createElement('div');
     userMarkerEl.style.width = '20px';
