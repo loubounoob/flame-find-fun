@@ -179,6 +179,10 @@ export function MapboxMap({
     const stackOffset = existingMarkersAtPosition.length * 8; // 8px offset per marker
     const zIndex = 100 + existingMarkersAtPosition.length;
 
+    // Check if offer is promotional
+    const isPromotional = offer.discount_percentage && offer.discount_percentage > 0;
+    const borderColor = isPromotional ? '#F97316' : categoryColor; // Orange for promos
+
     // Create marker element (root handles positioning; inner handles visuals)
     const markerEl = document.createElement('div');
     markerEl.style.position = 'relative';
@@ -187,21 +191,43 @@ export function MapboxMap({
     markerEl.style.pointerEvents = 'auto';
 
     const bubbleEl = document.createElement('div');
+    bubbleEl.style.position = 'absolute';
+    bubbleEl.style.left = '-25px'; // Center the 50px bubble
+    bubbleEl.style.top = '-25px';
     bubbleEl.style.width = '50px';
     bubbleEl.style.height = '50px';
     bubbleEl.style.borderRadius = '50%';
-    bubbleEl.style.border = `3px solid ${categoryColor}`;
+    bubbleEl.style.border = `3px solid ${borderColor}`;
     bubbleEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
     bubbleEl.style.cursor = 'pointer';
     bubbleEl.style.overflow = 'hidden';
     bubbleEl.style.willChange = 'transform';
     bubbleEl.style.transition = 'transform 150ms ease';
 
-    // Distance label below bubble - more discreet
+    // Discount badge for promotional offers
+    let discountBadgeEl: HTMLDivElement | null = null;
+    if (isPromotional) {
+      discountBadgeEl = document.createElement('div');
+      discountBadgeEl.style.position = 'absolute';
+      discountBadgeEl.style.top = '-8px';
+      discountBadgeEl.style.right = '-8px';
+      discountBadgeEl.style.backgroundColor = '#F97316';
+      discountBadgeEl.style.color = 'white';
+      discountBadgeEl.style.padding = '2px 6px';
+      discountBadgeEl.style.borderRadius = '10px';
+      discountBadgeEl.style.fontSize = '10px';
+      discountBadgeEl.style.fontWeight = '700';
+      discountBadgeEl.style.whiteSpace = 'nowrap';
+      discountBadgeEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.4)';
+      discountBadgeEl.style.zIndex = '10';
+      discountBadgeEl.textContent = `-${offer.discount_percentage}%`;
+    }
+
+    // Distance label below bubble - centered
     const distanceEl = document.createElement('div');
     distanceEl.style.position = 'absolute';
-    distanceEl.style.top = '56px';
-    distanceEl.style.left = '50%';
+    distanceEl.style.top = '31px'; // 25px (bubble center) + 6px spacing
+    distanceEl.style.left = '0';
     distanceEl.style.transform = 'translateX(-50%)';
     distanceEl.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     distanceEl.style.color = 'rgba(255, 255, 255, 0.9)';
@@ -215,6 +241,9 @@ export function MapboxMap({
     distanceEl.textContent = distance;
 
     markerEl.appendChild(bubbleEl);
+    if (discountBadgeEl) {
+      markerEl.appendChild(discountBadgeEl);
+    }
     markerEl.appendChild(distanceEl);
 
     if (photoUrl) {
