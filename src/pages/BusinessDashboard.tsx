@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,9 +34,6 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import RecurringPromotions from "@/components/RecurringPromotions";
 
 export default function BusinessDashboard() {
-  const [searchParams] = useSearchParams();
-  const tabFromUrl = searchParams.get('tab') || 'dashboard';
-  
   const [user, setUser] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
@@ -607,7 +604,7 @@ export default function BusinessDashboard() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={tabFromUrl} defaultValue="dashboard" className="space-y-4">
+        <Tabs defaultValue="dashboard" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
