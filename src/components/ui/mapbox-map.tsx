@@ -44,6 +44,7 @@ export function MapboxMap({
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const currentPopupRef = useRef<mapboxgl.Popup | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Get user's geolocation
@@ -98,6 +99,14 @@ export function MapboxMap({
     userMarkerRef.current = new mapboxgl.Marker({ element: userMarkerEl })
       .setLngLat([userLocation.lng, userLocation.lat])
       .addTo(map.current);
+
+    // Close popup when user starts dragging the map
+    map.current.on('dragstart', () => {
+      if (currentPopupRef.current) {
+        currentPopupRef.current.remove();
+        currentPopupRef.current = null;
+      }
+    });
 
     map.current.on('load', () => {
       onMapLoad?.();
@@ -210,7 +219,7 @@ export function MapboxMap({
     const description = offer.description ? offer.description.substring(0, 80) + '...' : '';
     
     const popupContent = `
-      <div style="background: #1a1a2e; color: #fff; border-radius: 12px; overflow: hidden; min-width: 240px; max-width: 260px;">
+      <div style="background: #1a1a2e; color: #fff; border-radius: 12px; overflow: hidden; min-width: 240px; max-width: 260px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
         ${photoUrl ? `
           <div style="height: 120px; overflow: hidden;">
             <img src="${photoUrl}" alt="${offer.title}" style="width: 100%; height: 100%; object-fit: cover;" />
@@ -285,10 +294,10 @@ export function MapboxMap({
 
     const popup = new mapboxgl.Popup({
       offset: 25,
-      closeButton: true,
+      closeButton: false,
       closeOnClick: false,
       maxWidth: '260px',
-      className: 'mapbox-popup-dark',
+      className: 'mapbox-popup-compact',
       anchor: 'bottom'
     }).setHTML(popupContent);
 
@@ -304,10 +313,30 @@ export function MapboxMap({
 
     markersRef.current.push(marker);
 
-    // Click to open popup - prevent map interference
+    // Click to open popup - close any existing popup first and center on marker
     bubbleEl.addEventListener('click', (e) => {
       e.stopPropagation();
+      
+      // Close any existing popup
+      if (currentPopupRef.current) {
+        currentPopupRef.current.remove();
+      }
+      
+      // Open new popup and center map on it
       marker.togglePopup();
+      
+      if (marker.getPopup().isOpen()) {
+        currentPopupRef.current = marker.getPopup();
+        
+        // Center the map on the marker when popup opens
+        map.current?.easeTo({
+          center: [offer.longitude, offer.latitude],
+          zoom: Math.max(map.current.getZoom(), 14),
+          duration: 500
+        });
+      } else {
+        currentPopupRef.current = null;
+      }
     });
   };
 
@@ -323,6 +352,21 @@ export function MapboxMap({
   }
 
   return (
-    <div ref={mapContainer} className="w-full h-full" />
+    <>
+      <style>{`
+        .mapbox-popup-compact .mapboxgl-popup-content {
+          background: transparent !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+        }
+        .mapbox-popup-compact .mapboxgl-popup-tip {
+          display: none !important;
+        }
+        .mapbox-popup-compact {
+          max-width: none !important;
+        }
+      `}</style>
+      <div ref={mapContainer} className="w-full h-full" />
+    </>
   );
 }
