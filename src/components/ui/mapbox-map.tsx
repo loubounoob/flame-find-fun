@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Set Mapbox access token
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
+mapboxgl.accessToken = 'pk.eyJ1IjoibG91aXNib3UiLCJhIjoiY21nZWo2dXlmMXZxODJqczhzdmF6N3BhcCJ9.4U9I3H3HJf8UKLb-71fI3g';
 
 interface MapboxMapProps {
   filteredOffers?: any[];
