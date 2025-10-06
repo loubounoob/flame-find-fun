@@ -81,7 +81,7 @@ export function MapboxMap({
     // Create map instance with dark colorful style
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/navigation-night-v1',
+      style: 'mapbox://styles/mapbox/dark-v11',
       center: [userLocation.lng, userLocation.lat],
       zoom: 12
     });
