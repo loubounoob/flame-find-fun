@@ -78,7 +78,7 @@ export function MapboxMap({
   useEffect(() => {
     if (!mapContainer.current || !userLocation || map.current) return;
 
-    // Create map instance with dark colorful style
+    // Create map instance with evening/twilight style
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
@@ -205,89 +205,89 @@ export function MapboxMap({
       bubbleEl.style.transform = 'scale(1)';
     });
 
-    // Create enhanced popup with more information
+    // Create compact popup
     const businessName = offer.profiles?.business_name || 'Business';
-    const description = offer.description ? offer.description.substring(0, 120) + '...' : '';
+    const description = offer.description ? offer.description.substring(0, 80) + '...' : '';
     
     const popupContent = `
-      <div style="padding: 12px; min-width: 280px; max-width: 320px; background: #1a1a1a; color: #fff;">
+      <div style="background: #1a1a2e; color: #fff; border-radius: 12px; overflow: hidden; min-width: 240px; max-width: 260px;">
         ${photoUrl ? `
-          <div style="margin: -12px -12px 12px -12px; height: 140px; overflow: hidden; border-radius: 8px 8px 0 0;">
+          <div style="height: 120px; overflow: hidden;">
             <img src="${photoUrl}" alt="${offer.title}" style="width: 100%; height: 100%; object-fit: cover;" />
           </div>
         ` : ''}
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <span style="font-size: 28px;">${categoryEmoji}</span>
-          <div>
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff; line-height: 1.2;">
-              ${offer.title}
-            </h3>
-            <p style="margin: 2px 0 0 0; font-size: 12px; color: #999;">
-              ${businessName}
-            </p>
+        <div style="padding: 12px;">
+          <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+            <span style="font-size: 24px; flex-shrink: 0;">${categoryEmoji}</span>
+            <div style="flex: 1; min-width: 0;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #fff; line-height: 1.3;">
+                ${offer.title}
+              </h3>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #9ca3af;">
+                ${businessName}
+              </p>
+            </div>
           </div>
-        </div>
-        ${description ? `
-          <p style="margin: 0 0 12px 0; font-size: 13px; color: #ccc; line-height: 1.4;">
-            ${description}
-          </p>
-        ` : ''}
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #999; font-size: 13px;">
-          <span style="color: ${categoryColor};">●</span>
-          <span>${offer.category}</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px; color: #999; font-size: 13px;">
-          <span>📍</span>
-          <span>${offer.location}</span>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button 
-            onclick="window.location.href='/offer/${offer.id}'"
-            style="
-              flex: 1;
-              padding: 10px 16px;
-              background-color: ${categoryColor};
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-weight: 600;
-              cursor: pointer;
-              font-size: 14px;
-              transition: all 0.2s;
-            "
-            onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)'"
-            onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
-          >
-            Voir les détails
-          </button>
-          <button 
-            onclick="window.location.href='/booking?offer=${offer.id}'"
-            style="
-              flex: 1;
-              padding: 10px 16px;
-              background-color: #fff;
-              color: ${categoryColor};
-              border: 2px solid ${categoryColor};
-              border-radius: 8px;
-              font-weight: 600;
-              cursor: pointer;
-              font-size: 14px;
-              transition: all 0.2s;
-            "
-            onmouseover="this.style.backgroundColor='${categoryColor}'; this.style.color='#fff'"
-            onmouseout="this.style.backgroundColor='#fff'; this.style.color='${categoryColor}'"
-          >
-            Réserver
-          </button>
+          ${description ? `
+            <p style="margin: 0 0 10px 0; font-size: 12px; color: #d1d5db; line-height: 1.4;">
+              ${description}
+            </p>
+          ` : ''}
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; color: #9ca3af; font-size: 11px;">
+            <span style="color: ${categoryColor};">●</span>
+            <span>${offer.category}</span>
+            <span style="margin-left: 4px;">📍</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${offer.location}</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button 
+              onclick="window.location.href='/offer/${offer.id}'"
+              style="
+                flex: 1;
+                padding: 8px 12px;
+                background-color: ${categoryColor};
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 12px;
+                transition: all 0.2s;
+              "
+              onmouseover="this.style.opacity='0.9'"
+              onmouseout="this.style.opacity='1'"
+            >
+              Voir détails
+            </button>
+            <button 
+              onclick="window.location.href='/booking?offer=${offer.id}'"
+              style="
+                flex: 1;
+                padding: 8px 12px;
+                background-color: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 1px solid ${categoryColor};
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 12px;
+                transition: all 0.2s;
+              "
+              onmouseover="this.style.backgroundColor='${categoryColor}'"
+              onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.1)'"
+            >
+              Réserver
+            </button>
+          </div>
         </div>
       </div>
     `;
 
     const popup = new mapboxgl.Popup({
-      offset: 30,
+      offset: 25,
       closeButton: true,
       closeOnClick: false,
-      maxWidth: '340px',
+      maxWidth: '260px',
       className: 'mapbox-popup-dark',
       anchor: 'bottom'
     }).setHTML(popupContent);
