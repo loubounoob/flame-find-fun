@@ -14,7 +14,7 @@ interface GeolocationState {
 export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
     position: null,
-    isLoading: false,
+    isLoading: true,
     error: null,
   });
 

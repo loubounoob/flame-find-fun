@@ -59,8 +59,11 @@ export function SimpleGoogleMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const [apiKey] = useState('AIzaSyATgautsRC2yNJ6Ww5d6KqqxnIYDtrjJwM');
+  const userMarkerRef = useRef<any>(null);
+  const loaderRef = useRef<Loader | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { position, isLoading: locationLoading } = useGeolocation();
 
   // Fetch businesses with simple query
@@ -86,15 +89,23 @@ export function SimpleGoogleMap({
   // Initialiser une carte simple et performante
   const initializeMap = async () => {
     if (!mapRef.current) return;
+    
+    if (!apiKey) {
+      setMapError("Clé API Google Maps manquante. Ajoutez VITE_GOOGLE_MAPS_API_KEY dans votre fichier .env");
+      return;
+    }
 
     try {
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places']
-      });
+      // Singleton loader pour éviter les chargements multiples
+      if (!loaderRef.current) {
+        loaderRef.current = new Loader({
+          apiKey: apiKey,
+          version: 'weekly',
+          libraries: ['places']
+        });
+      }
 
-      await loader.load();
+      await loaderRef.current.load();
       const google = (window as any).google;
 
       const map = new google.maps.Map(mapRef.current, {
@@ -105,33 +116,7 @@ export function SimpleGoogleMap({
         streetViewControl: false,
         fullscreenControl: false,
         clickableIcons: false,
-        gestureHandling: 'greedy',
-        styles: [
-          // Hide all POIs
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi.park', stylers: [{ visibility: 'off' }] },
-          // Hide transit
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          // Hide highways completely (routes métropolitaines/départementales)
-          { featureType: 'road.highway', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway.controlled_access', stylers: [{ visibility: 'off' }] },
-          // Hide ALL highway labels (text and icons/shields)
-          { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.highway', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-          // Hide ALL arterial road labels (routes départementales)
-          { featureType: 'road.arterial', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.arterial', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { featureType: 'road.arterial', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-          // EXTRA: Hide any road shields/icons globally (catch-all)
-          { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          // Keep only local street names visible
-          { featureType: 'road.local', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
-          // Keep city/locality names visible
-          { featureType: 'administrative.locality', elementType: 'labels.text', stylers: [{ visibility: 'on' }] },
-          { featureType: 'administrative.neighborhood', elementType: 'labels.text', stylers: [{ visibility: 'on' }] }
-        ]
+        gestureHandling: 'greedy'
       });
 
       mapInstanceRef.current = map;
@@ -139,25 +124,6 @@ export function SimpleGoogleMap({
 
       // Centrer automatiquement
       map.setCenter(position || { lat: 48.8566, lng: 2.3522 });
-      
-      // Marqueur utilisateur simple (si géolocalisation disponible)
-      if (position) {
-        new google.maps.Marker({
-          position: position,
-          map: map,
-          title: 'Votre position',
-          icon: {
-            url: `data:image/svg+xml,${encodeURIComponent(`
-              <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
-                <circle cx="10" cy="10" r="3" fill="white"/>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(20, 20),
-            anchor: new google.maps.Point(10, 10)
-          }
-        });
-      }
 
       // Clear existing markers
       markersRef.current.forEach(marker => marker.setMap(null));
@@ -174,6 +140,7 @@ export function SimpleGoogleMap({
 
     } catch (error) {
       console.error('Error loading map:', error);
+      setMapError("Erreur lors du chargement de la carte. Vérifiez votre clé API et les restrictions.");
     }
   };
 
@@ -203,39 +170,20 @@ export function SimpleGoogleMap({
       }
     });
 
-    // InfoWindow avec style amélioré
+    // InfoWindow avec un design amélioré
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="
-          padding: 12px 16px;
-          max-width: 220px;
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        ">
-          <h3 style="
-            margin: 0 0 8px 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: #1a1a1a;
-            line-height: 1.3;
-          ">${offer.title}</h3>
-          <div style="
-            display: inline-block;
-            padding: 4px 8px;
-            background: ${categoryColor};
-            color: white;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            margin-bottom: 6px;
-          ">${offer.category}</div>
-          ${offer.location ? `<p style="
-            margin: 6px 0 0 0;
-            font-size: 12px;
-            color: #666;
-            line-height: 1.4;
-          ">${offer.location}</p>` : ''}
+        <div style="padding: 12px; max-width: 220px; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid ${categoryColor}; flex-shrink: 0;">
+              ${offer.avatar_url ? `<img src="${offer.avatar_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="${offer.business_name || offer.title}">` : `<div style="width: 100%; height: 100%; background: ${categoryColor}; display: flex; align-items: center; justify-content: center; font-size: 20px;">${categoryIcon}</div>`}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${offer.title}</h3>
+              <p style="margin: 0; font-size: 12px; color: #666; text-transform: capitalize;">${offer.category.replace('-', ' ')}</p>
+            </div>
+          </div>
+          ${offer.location ? `<p style="margin: 0; font-size: 11px; color: #888; display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">📍</span>${offer.location}</p>` : ''}
         </div>
       `
     });
@@ -266,17 +214,64 @@ export function SimpleGoogleMap({
     }
   };
 
-  // Charger la carte quand la géolocalisation est prête
+  // Initialiser la carte une seule fois
   useEffect(() => {
     if (!mapInstanceRef.current) {
       initializeMap();
     }
-  }, [position, businesses]);
+  }, []);
 
-  // Recentrer la carte si position utilisateur change
+  // Mettre à jour les marqueurs quand businesses change
+  useEffect(() => {
+    if (mapInstanceRef.current && businesses.length > 0) {
+      const google = (window as any).google;
+      if (!google) return;
+
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+
+      // Créer les nouveaux marqueurs
+      for (const offer of businesses) {
+        if (offer.latitude && offer.longitude) {
+          createSimpleMarker(offer, mapInstanceRef.current, google);
+        }
+      }
+    }
+  }, [businesses]);
+
+  // Créer/mettre à jour le marqueur utilisateur quand la position change
   useEffect(() => {
     if (position && mapInstanceRef.current) {
+      const google = (window as any).google;
+      if (!google) return;
+
+      // Supprimer l'ancien marqueur s'il existe
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+      }
+
+      // Créer le nouveau marqueur utilisateur
+      userMarkerRef.current = new google.maps.Marker({
+        position: position,
+        map: mapInstanceRef.current,
+        title: 'Votre position',
+        icon: {
+          url: `data:image/svg+xml,${encodeURIComponent(`
+            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="8" fill="#1a73e8" stroke="white" stroke-width="2"/>
+              <circle cx="10" cy="10" r="3" fill="white"/>
+            </svg>
+          `)}`,
+          scaledSize: new google.maps.Size(20, 20),
+          anchor: new google.maps.Point(10, 10)
+        },
+        zIndex: 9999
+      });
+
+      // Centrer la carte sur la position utilisateur
       mapInstanceRef.current.setCenter(position);
+      mapInstanceRef.current.setZoom(15);
     }
   }, [position]);
 
@@ -293,8 +288,18 @@ export function SimpleGoogleMap({
 
 
   return (
-    <div className="w-full h-full relative">
-      <div ref={mapRef} className="w-full h-full" />
+    <div className="w-full h-full relative min-h-[400px]">
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+          <div className="text-center p-6 max-w-md">
+            <p className="text-sm text-destructive mb-2">❌ {mapError}</p>
+            <p className="text-xs text-muted-foreground">
+              Consultez la console pour plus de détails
+            </p>
+          </div>
+        </div>
+      )}
+      <div ref={mapRef} className="absolute inset-0" />
     </div>
   );
 }
