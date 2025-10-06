@@ -123,19 +123,13 @@ export const useFlashOffers = () => {
         if (!offer) return;
         const basePrice = getBasePrice(offer.pricing_options);
         const promotionalPrice = Math.max(basePrice - (basePrice * Number(promo.discount_percentage)) / 100, 0);
-        
-        // Calculate the exact end time based on the promotion's end_time
-        const endDateTime = new Date();
-        const [hours, minutes, seconds] = promo.end_time.split(':').map(x => parseInt(x, 10));
-        endDateTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-        
         const candidate: FlashOffer = {
           ...offer,
           discount_percentage: Number(promo.discount_percentage) || 0,
           original_price: basePrice,
           promotional_price: promotionalPrice,
           isFlash: true,
-          endDate: endDateTime
+          endDate: getEndOfDay() // Recurring promotions end at end of day
         };
 
         const existing = flashByOfferId.get(offer.id);
