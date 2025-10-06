@@ -105,22 +105,45 @@ export default function Notifications() {
   });
 
   const markAsRead = async (id: number, metadata?: any) => {
+    // Récupérer la notification réelle pour accéder au type
+    const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
+    
     // Si c'est une notification de demande d'évaluation, ouvrir le modal
     if (metadata?.requires_rating && metadata?.offer_id) {
       setRatingOfferId(metadata.offer_id);
       setShowRatingModal(true);
     }
+    
+    // Redirection pour "Nouvelle réservation !" (activités)
+    if (realNotif?.type === 'new_booking') {
+      navigate('/dashboard');
+    }
+    
+    // Redirection pour "Réservation confirmée" (clients uniquement)
+    if (realNotif?.type === 'booking_confirmation' && user) {
+      // Vérifier si l'utilisateur est un client (n'a pas d'offres)
+      // @ts-ignore - Type instantiation issue with Supabase types
+      const result = await supabase
+        .from('offers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const isClient = !result.data;
+      
+      if (isClient) {
+        // C'est un client, rediriger vers la page réservations
+        navigate('/booking');
+      }
+    }
 
     // Marquer comme lu dans la base de données si c'est une vraie notification
-    if (user && realNotifications.some(n => parseInt(n.id.slice(-6), 16) === id)) {
-      const realNotif = realNotifications.find(n => parseInt(n.id.slice(-6), 16) === id);
-      if (realNotif && !realNotif.read) { // Éviter les doublons
-        await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("id", realNotif.id);
-        refetchNotifications();
-      }
+    if (user && realNotif && !realNotif.read) {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", realNotif.id);
+      refetchNotifications();
     }
   };
 
