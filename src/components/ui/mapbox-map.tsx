@@ -179,8 +179,9 @@ export function MapboxMap({
     const stackOffset = existingMarkersAtPosition.length * 8; // 8px offset per marker
     const zIndex = 100 + existingMarkersAtPosition.length;
 
-    // Check if offer is promotional
-    const isPromotional = offer.discount_percentage && offer.discount_percentage > 0;
+    // Check if offer is promotional (from recurring promotions or regular promotions)
+    const isPromotional = offer.activePromotion?.discount_percentage > 0;
+    const discountPercentage = offer.activePromotion?.discount_percentage || 0;
     const borderColor = isPromotional ? '#F97316' : categoryColor; // Orange for promos
 
     // Create marker element (root handles positioning; inner handles visuals)
@@ -220,7 +221,7 @@ export function MapboxMap({
       discountBadgeEl.style.whiteSpace = 'nowrap';
       discountBadgeEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.4)';
       discountBadgeEl.style.zIndex = '10';
-      discountBadgeEl.textContent = `-${offer.discount_percentage}%`;
+      discountBadgeEl.textContent = `-${discountPercentage}%`;
     }
 
     // Distance label below bubble - centered

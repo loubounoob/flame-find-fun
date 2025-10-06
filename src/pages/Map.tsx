@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapboxMap } from "@/components/ui/mapbox-map";
 import { Input } from "@/components/ui/input";
-
+import { useRecurringPromotions } from "@/hooks/useRecurringPromotions";
 import { OfferCard } from "@/components/ui/offer-card";
 import { Search, MapPin } from "lucide-react";
 import { BottomNav } from "@/components/ui/bottom-nav";
@@ -30,6 +30,7 @@ interface Offer {
 export default function Map() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const { applyPromotionToOffers } = useRecurringPromotions();
 
   // Get user's location
   useEffect(() => {
@@ -99,6 +100,9 @@ export default function Map() {
     offer.latitude !== null && offer.longitude !== null
   );
 
+  // Apply recurring promotions to offers
+  const offersWithPromotions = applyPromotionToOffers(offersWithCoords);
+
 
   // Convert offers to map markers
   const markers = offersWithCoords.map(offer => ({
@@ -131,7 +135,7 @@ export default function Map() {
       {/* Map full screen */}
       <div className="flex-1">
         <MapboxMap
-          filteredOffers={offersWithCoords}
+          filteredOffers={offersWithPromotions}
         />
       </div>
       <BottomNav />
