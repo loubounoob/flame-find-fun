@@ -26,7 +26,6 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 
 export default function OfferDetail() {
@@ -166,43 +165,6 @@ export default function OfferDetail() {
   const averageRating = ratings.length > 0 
     ? ratings.reduce((sum, rating) => sum + rating.rating, 0) / ratings.length 
     : 0;
-
-  // Fetch recurring promotions for this offer
-  const { data: recurringPromotions = [] } = useQuery({
-    queryKey: ["recurringPromotions", id],
-    queryFn: async () => {
-      if (!id) return [];
-      const { data, error } = await supabase
-        .from("recurring_promotions")
-        .select("*")
-        .eq("offer_id", id)
-        .eq("is_active", true);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!id,
-  });
-
-  // Fetch regular promotions for this offer
-  const { data: regularPromotions = [] } = useQuery({
-    queryKey: ["regularPromotions", id],
-    queryFn: async () => {
-      if (!id) return [];
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from("promotions")
-        .select("*")
-        .eq("offer_id", id)
-        .eq("is_active", true)
-        .lte("start_date", now)
-        .gte("end_date", now);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!id,
-  });
 
   if (isLoading || !offer) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
@@ -439,58 +401,6 @@ export default function OfferDetail() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Promotion Schedule */}
-          {(recurringPromotions.length > 0 || regularPromotions.length > 0) && (
-            <Card className="bg-gradient-card border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame size={18} className="text-orange-500" />
-                  <h3 className="font-poppins font-semibold text-foreground">
-                    Horaires de promotion
-                  </h3>
-                </div>
-                
-                <Alert className="bg-orange-500/10 border-orange-500/50">
-                  <Flame className="h-5 w-5 text-orange-500" />
-                  <AlertDescription className="ml-2">
-                    <div className="space-y-2">
-                      {recurringPromotions.map((promo) => {
-                        const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-                        const activeDays = promo.days_of_week.map((d: number) => days[d]).join(', ');
-                        return (
-                          <div key={promo.id}>
-                            <p className="font-semibold text-orange-500">
-                              🔥 -{promo.discount_percentage}% 
-                            </p>
-                            <p className="text-sm text-foreground">
-                              Le {activeDays}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              De {promo.start_time.slice(0, 5)} à {promo.end_time.slice(0, 5)}
-                            </p>
-                          </div>
-                        );
-                      })}
-                      {regularPromotions.map((promo) => (
-                        <div key={promo.id}>
-                          <p className="font-semibold text-orange-500">
-                            🔥 {promo.title || 'Promotion spéciale'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Jusqu'au {new Date(promo.end_date).toLocaleDateString('fr-FR')}
-                          </p>
-                        </div>
-                      ))}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        ⚠️ La promotion s'applique uniquement aux réservations prises pendant ces horaires.
-                      </p>
-                    </div>
-                  </AlertDescription>
-                </Alert>
               </CardContent>
             </Card>
           )}
