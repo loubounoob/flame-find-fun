@@ -203,13 +203,39 @@ export function SimpleGoogleMap({
       }
     });
 
-    // InfoWindow simple
+    // InfoWindow avec style amélioré
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="padding: 8px; max-width: 200px;">
-          <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: bold;">${offer.title}</h3>
-          <p style="margin: 0; font-size: 12px; color: #666;">${offer.category}</p>
-          <p style="margin: 4px 0 0 0; font-size: 11px;">${offer.location || ''}</p>
+        <div style="
+          padding: 12px 16px;
+          max-width: 220px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        ">
+          <h3 style="
+            margin: 0 0 8px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+            line-height: 1.3;
+          ">${offer.title}</h3>
+          <div style="
+            display: inline-block;
+            padding: 4px 8px;
+            background: ${categoryColor};
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 6px;
+          ">${offer.category}</div>
+          ${offer.location ? `<p style="
+            margin: 6px 0 0 0;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+          ">${offer.location}</p>` : ''}
         </div>
       `
     });
