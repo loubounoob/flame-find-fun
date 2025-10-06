@@ -34,8 +34,13 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import RecurringPromotions from "@/components/RecurringPromotions";
 
 export default function BusinessDashboard() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab') || 'dashboard';
+  const [currentTab, setCurrentTab] = useState(tabFromUrl);
+
+  useEffect(() => {
+    setCurrentTab(tabFromUrl);
+  }, [tabFromUrl]);
   
   const [user, setUser] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -607,7 +612,10 @@ export default function BusinessDashboard() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={tabFromUrl} defaultValue="dashboard" className="space-y-4">
+        <Tabs value={currentTab} onValueChange={(val) => {
+            setCurrentTab(val);
+            setSearchParams({ tab: val }, { replace: true });
+          }} className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
