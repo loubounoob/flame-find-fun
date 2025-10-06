@@ -148,6 +148,23 @@ export function MapboxMap({
     // Get photo URL (priority: avatar_url > image_url > emoji fallback)
     const photoUrl = offer.profiles?.avatar_url || offer.image_url;
 
+    // Check if there's already a marker at this position (or very close)
+    const existingMarker = markersRef.current.find(m => {
+      const markerLngLat = m.getLngLat();
+      const distance = Math.sqrt(
+        Math.pow(markerLngLat.lng - offer.longitude, 2) + 
+        Math.pow(markerLngLat.lat - offer.latitude, 2)
+      );
+      return distance < 0.0001; // Very close proximity threshold
+    });
+
+    // Apply offset if markers are too close
+    let offsetX = 0;
+    let offsetY = 0;
+    if (existingMarker) {
+      offsetX = 60; // Offset to the right
+    }
+
     // Create marker element
     const markerEl = document.createElement('div');
     markerEl.style.width = '50px';
@@ -158,6 +175,8 @@ export function MapboxMap({
     markerEl.style.cursor = 'pointer';
     markerEl.style.transition = 'transform 0.2s';
     markerEl.style.overflow = 'hidden';
+    markerEl.style.position = 'relative';
+    markerEl.style.pointerEvents = 'auto';
 
     if (photoUrl) {
       // Use photo as background
@@ -174,12 +193,14 @@ export function MapboxMap({
       markerEl.textContent = categoryEmoji;
     }
 
-    // Hover effect
+    // Hover effect - only scale, no position change
     markerEl.addEventListener('mouseenter', () => {
       markerEl.style.transform = 'scale(1.1)';
+      markerEl.style.zIndex = '1000';
     });
     markerEl.addEventListener('mouseleave', () => {
       markerEl.style.transform = 'scale(1)';
+      markerEl.style.zIndex = '1';
     });
 
     // Create enhanced popup with more information
@@ -261,23 +282,29 @@ export function MapboxMap({
     `;
 
     const popup = new mapboxgl.Popup({
-      offset: 25,
+      offset: [offsetX, offsetY - 30],
       closeButton: true,
       closeOnClick: false,
       maxWidth: '340px',
-      className: 'mapbox-popup-dark'
+      className: 'mapbox-popup-dark',
+      anchor: 'bottom'
     }).setHTML(popupContent);
 
-    // Create marker
-    const marker = new mapboxgl.Marker({ element: markerEl })
+    // Create marker with proper anchor and offset
+    const marker = new mapboxgl.Marker({ 
+      element: markerEl,
+      anchor: 'center',
+      offset: [offsetX, offsetY]
+    })
       .setLngLat([offer.longitude, offer.latitude])
       .setPopup(popup)
       .addTo(map.current);
 
     markersRef.current.push(marker);
 
-    // Click to open popup
-    markerEl.addEventListener('click', () => {
+    // Click to open popup - prevent event propagation
+    markerEl.addEventListener('click', (e) => {
+      e.stopPropagation();
       marker.togglePopup();
     });
   };
