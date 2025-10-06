@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SimpleGoogleMap } from "@/components/ui/simple-google-map";
+import { MapboxMap } from "@/components/ui/mapbox-map";
 import { Input } from "@/components/ui/input";
 
 import { OfferCard } from "@/components/ui/offer-card";
@@ -20,6 +20,11 @@ interface Offer {
   longitude: number | null;
   image_url: string | null;
   business_user_id: string;
+  profiles?: {
+    avatar_url: string | null;
+    business_name: string | null;
+    business_type: string | null;
+  };
 }
 
 export default function Map() {
@@ -56,14 +61,36 @@ export default function Map() {
         query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`);
       }
 
-      const { data, error } = await query;
+      const { data: offersData, error: offersError } = await query;
 
-      if (error) {
-        console.error('Error fetching offers:', error);
-        throw error;
+      if (offersError) {
+        console.error('Error fetching offers:', offersError);
+        throw offersError;
       }
 
-      return data as Offer[];
+      // Fetch profiles for all business users
+      const businessUserIds = [...new Set(offersData?.map(o => o.business_user_id) || [])];
+      
+      if (businessUserIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url, business_name, business_type')
+          .in('user_id', businessUserIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+
+        // Join profiles data with offers
+        const offersWithProfiles = offersData?.map(offer => ({
+          ...offer,
+          profiles: profilesData?.find(p => p.user_id === offer.business_user_id)
+        }));
+
+        return offersWithProfiles as Offer[];
+      }
+
+      return offersData as Offer[];
     }
   });
 
@@ -103,7 +130,7 @@ export default function Map() {
 
       {/* Map full screen */}
       <div className="flex-1">
-        <SimpleGoogleMap
+        <MapboxMap
           filteredOffers={offersWithCoords}
         />
       </div>
