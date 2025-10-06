@@ -162,8 +162,8 @@ export function MapboxMap({
     const categoryColor = CATEGORY_COLORS[offer.category] || CATEGORY_COLORS.default;
     const categoryEmoji = CATEGORY_EMOJIS[offer.category] || CATEGORY_EMOJIS.default;
 
-    // Get photo URL (priority: avatar_url > image_url > emoji fallback)
-    const photoUrl = offer.profiles?.avatar_url || offer.image_url;
+    // Get photo URL (priority: image_url > avatar_url > emoji fallback)
+    const photoUrl = offer.image_url || offer.profiles?.avatar_url;
 
     // Calculate distance between user and offer
     const distance = calculateDistance(
@@ -184,9 +184,9 @@ export function MapboxMap({
     });
 
     // Calculate dynamic offset based on zoom level (stronger/faster separation)
-    // At zoom 12: 8px, at zoom 14: 24px, at zoom 16+: 48px+
+    // At zoom 12: 8px, at zoom 14: 32px, at zoom 16+: 72px+
     const baseOffset = 8;
-    const zoomFactor = Math.max(1, Math.min(6, (currentZoom - 12) * 1.5));
+    const zoomFactor = Math.max(1, Math.min(9, (currentZoom - 12) * 2));
     const stackOffset = existingMarkersAtPosition.length * baseOffset * zoomFactor;
     const zIndex = 100 + existingMarkersAtPosition.length;
 
@@ -300,9 +300,6 @@ export function MapboxMap({
               <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #fff; line-height: 1.3;">
                 ${offer.title}
               </h3>
-              <p style="margin: 2px 0 0 0; font-size: 11px; color: #9ca3af;">
-                ${businessName}
-              </p>
             </div>
           </div>
           ${description ? `
