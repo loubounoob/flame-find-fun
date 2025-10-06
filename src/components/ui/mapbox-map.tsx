@@ -183,10 +183,10 @@ export function MapboxMap({
       return distance < 0.0001; // Very close proximity threshold
     });
 
-    // Calculate dynamic offset based on zoom level
-    // At zoom 12: 8px spacing, at zoom 15: 20px spacing, at zoom 18+: 35px spacing
+    // Calculate dynamic offset based on zoom level (stronger/faster separation)
+    // At zoom 12: 8px, at zoom 14: 24px, at zoom 16+: 48px+
     const baseOffset = 8;
-    const zoomFactor = Math.max(1, Math.min(4, (currentZoom - 12) / 2));
+    const zoomFactor = Math.max(1, Math.min(6, (currentZoom - 12) * 1.5));
     const stackOffset = existingMarkersAtPosition.length * baseOffset * zoomFactor;
     const zIndex = 100 + existingMarkersAtPosition.length;
 
