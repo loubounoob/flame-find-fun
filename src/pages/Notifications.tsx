@@ -116,7 +116,7 @@ export default function Notifications() {
     
     // Redirection pour "Nouvelle réservation !" (activités)
     if (realNotif?.type === 'new_booking') {
-      navigate('/dashboard');
+      navigate('/dashboard?tab=bookings');
     }
     
     // Redirection pour "Réservation confirmée" (clients uniquement)
