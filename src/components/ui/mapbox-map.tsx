@@ -148,8 +148,8 @@ export function MapboxMap({
     // Get photo URL (priority: avatar_url > image_url > emoji fallback)
     const photoUrl = offer.profiles?.avatar_url || offer.image_url;
 
-    // Check if there's already a marker at this position (or very close)
-    const existingMarker = markersRef.current.find(m => {
+    // Check how many markers are already at this position (or very close)
+    const existingMarkersAtPosition = markersRef.current.filter(m => {
       const markerLngLat = m.getLngLat();
       const distance = Math.sqrt(
         Math.pow(markerLngLat.lng - offer.longitude, 2) + 
@@ -158,12 +158,9 @@ export function MapboxMap({
       return distance < 0.0001; // Very close proximity threshold
     });
 
-    // Apply offset if markers are too close
-    let offsetX = 0;
-    let offsetY = 0;
-    if (existingMarker) {
-      offsetX = 60; // Offset to the right
-    }
+    // Calculate slight offset for stacking (80-90% overlap)
+    const stackOffset = existingMarkersAtPosition.length * 8; // 8px offset per marker
+    const zIndex = 100 + existingMarkersAtPosition.length;
 
     // Create marker element
     const markerEl = document.createElement('div');
@@ -173,10 +170,14 @@ export function MapboxMap({
     markerEl.style.border = `3px solid ${categoryColor}`;
     markerEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
     markerEl.style.cursor = 'pointer';
-    markerEl.style.transition = 'transform 0.2s';
     markerEl.style.overflow = 'hidden';
-    markerEl.style.position = 'relative';
+    markerEl.style.position = 'absolute';
     markerEl.style.pointerEvents = 'auto';
+    markerEl.style.zIndex = zIndex.toString();
+    markerEl.style.left = `${stackOffset}px`;
+    markerEl.style.top = `${stackOffset}px`;
+    markerEl.style.transform = 'translate(-50%, -50%)';
+    markerEl.style.willChange = 'transform';
 
     if (photoUrl) {
       // Use photo as background
@@ -193,14 +194,16 @@ export function MapboxMap({
       markerEl.textContent = categoryEmoji;
     }
 
-    // Hover effect - only scale, no position change
+    // Hover effect - scale while maintaining position
     markerEl.addEventListener('mouseenter', () => {
-      markerEl.style.transform = 'scale(1.1)';
+      markerEl.style.transform = 'translate(-50%, -50%) scale(1.15)';
       markerEl.style.zIndex = '1000';
+      markerEl.style.transition = 'transform 0.2s ease-out';
     });
     markerEl.addEventListener('mouseleave', () => {
-      markerEl.style.transform = 'scale(1)';
-      markerEl.style.zIndex = '1';
+      markerEl.style.transform = 'translate(-50%, -50%) scale(1)';
+      markerEl.style.zIndex = zIndex.toString();
+      markerEl.style.transition = 'transform 0.2s ease-out';
     });
 
     // Create enhanced popup with more information
@@ -282,7 +285,7 @@ export function MapboxMap({
     `;
 
     const popup = new mapboxgl.Popup({
-      offset: [offsetX, offsetY - 30],
+      offset: 30,
       closeButton: true,
       closeOnClick: false,
       maxWidth: '340px',
@@ -290,11 +293,10 @@ export function MapboxMap({
       anchor: 'bottom'
     }).setHTML(popupContent);
 
-    // Create marker with proper anchor and offset
+    // Create marker with proper positioning
     const marker = new mapboxgl.Marker({ 
       element: markerEl,
-      anchor: 'center',
-      offset: [offsetX, offsetY]
+      anchor: 'top-left'
     })
       .setLngLat([offer.longitude, offer.latitude])
       .setPopup(popup)
