@@ -149,13 +149,21 @@ export function MapboxMap({
 
   // Create circular photo marker for an offer
   const createOfferMarker = (offer: any) => {
-    if (!map.current) return;
+    if (!map.current || !userLocation) return;
 
     const categoryColor = CATEGORY_COLORS[offer.category] || CATEGORY_COLORS.default;
     const categoryEmoji = CATEGORY_EMOJIS[offer.category] || CATEGORY_EMOJIS.default;
 
     // Get photo URL (priority: avatar_url > image_url > emoji fallback)
     const photoUrl = offer.profiles?.avatar_url || offer.image_url;
+
+    // Calculate distance between user and offer
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      offer.latitude,
+      offer.longitude
+    );
 
     // Check how many markers are already at this position (or very close)
     const existingMarkersAtPosition = markersRef.current.filter(m => {
@@ -189,7 +197,24 @@ export function MapboxMap({
     bubbleEl.style.willChange = 'transform';
     bubbleEl.style.transition = 'transform 150ms ease';
 
+    // Distance label below bubble
+    const distanceEl = document.createElement('div');
+    distanceEl.style.position = 'absolute';
+    distanceEl.style.top = '55px';
+    distanceEl.style.left = '50%';
+    distanceEl.style.transform = 'translateX(-50%)';
+    distanceEl.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    distanceEl.style.color = '#fff';
+    distanceEl.style.padding = '2px 6px';
+    distanceEl.style.borderRadius = '4px';
+    distanceEl.style.fontSize = '10px';
+    distanceEl.style.fontWeight = '600';
+    distanceEl.style.whiteSpace = 'nowrap';
+    distanceEl.style.pointerEvents = 'none';
+    distanceEl.textContent = distance;
+
     markerEl.appendChild(bubbleEl);
+    markerEl.appendChild(distanceEl);
 
     if (photoUrl) {
       // Use photo as background
@@ -313,7 +338,7 @@ export function MapboxMap({
 
     markersRef.current.push(marker);
 
-    // Click to open popup - close any existing popup first and center on marker
+    // Click to open popup - close any existing popup first
     bubbleEl.addEventListener('click', (e) => {
       e.stopPropagation();
       
@@ -322,22 +347,34 @@ export function MapboxMap({
         currentPopupRef.current.remove();
       }
       
-      // Open new popup and center map on it
+      // Open new popup
       marker.togglePopup();
       
       if (marker.getPopup().isOpen()) {
         currentPopupRef.current = marker.getPopup();
-        
-        // Center the map on the marker when popup opens
-        map.current?.easeTo({
-          center: [offer.longitude, offer.latitude],
-          zoom: Math.max(map.current.getZoom(), 14),
-          duration: 500
-        });
       } else {
         currentPopupRef.current = null;
       }
     });
+  };
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m`;
+    } else {
+      return `${distance.toFixed(1)}km`;
+    }
   };
 
   if (!userLocation) {
