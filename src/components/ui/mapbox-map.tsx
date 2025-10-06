@@ -46,6 +46,7 @@ export function MapboxMap({
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentPopupRef = useRef<mapboxgl.Popup | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentZoom, setCurrentZoom] = useState<number>(12);
 
   // Get user's geolocation
   useEffect(() => {
@@ -108,6 +109,13 @@ export function MapboxMap({
       }
     });
 
+    // Track zoom level for dynamic marker spacing
+    map.current.on('zoom', () => {
+      if (map.current) {
+        setCurrentZoom(map.current.getZoom());
+      }
+    });
+
     map.current.on('load', () => {
       onMapLoad?.();
     });
@@ -118,7 +126,7 @@ export function MapboxMap({
     };
   }, [userLocation, onMapLoad]);
 
-  // Update markers when offers change
+  // Update markers when offers change or zoom changes
   useEffect(() => {
     if (!map.current || !filteredOffers) return;
 
@@ -132,7 +140,7 @@ export function MapboxMap({
         createOfferMarker(offer);
       }
     });
-  }, [filteredOffers]);
+  }, [filteredOffers, currentZoom]);
 
   // Handle selected business
   useEffect(() => {
@@ -175,8 +183,11 @@ export function MapboxMap({
       return distance < 0.0001; // Very close proximity threshold
     });
 
-    // Calculate slight offset for stacking (80-90% overlap)
-    const stackOffset = existingMarkersAtPosition.length * 8; // 8px offset per marker
+    // Calculate dynamic offset based on zoom level
+    // At zoom 12: 8px spacing, at zoom 15: 20px spacing, at zoom 18+: 35px spacing
+    const baseOffset = 8;
+    const zoomFactor = Math.max(1, Math.min(4, (currentZoom - 12) / 2));
+    const stackOffset = existingMarkersAtPosition.length * baseOffset * zoomFactor;
     const zIndex = 100 + existingMarkersAtPosition.length;
 
     // Check if offer is promotional (from recurring promotions or regular promotions)
@@ -205,22 +216,23 @@ export function MapboxMap({
     bubbleEl.style.willChange = 'transform';
     bubbleEl.style.transition = 'transform 150ms ease';
 
-    // Discount badge for promotional offers
+    // Discount badge for promotional offers (smaller, 65% inside / 35% outside)
     let discountBadgeEl: HTMLDivElement | null = null;
     if (isPromotional) {
       discountBadgeEl = document.createElement('div');
       discountBadgeEl.style.position = 'absolute';
-      discountBadgeEl.style.top = '-8px';
-      discountBadgeEl.style.right = '-8px';
+      discountBadgeEl.style.top = '-3px';
+      discountBadgeEl.style.right = '-3px';
       discountBadgeEl.style.backgroundColor = '#F97316';
       discountBadgeEl.style.color = 'white';
-      discountBadgeEl.style.padding = '2px 6px';
-      discountBadgeEl.style.borderRadius = '10px';
-      discountBadgeEl.style.fontSize = '10px';
+      discountBadgeEl.style.padding = '2px 5px';
+      discountBadgeEl.style.borderRadius = '8px';
+      discountBadgeEl.style.fontSize = '9px';
       discountBadgeEl.style.fontWeight = '700';
       discountBadgeEl.style.whiteSpace = 'nowrap';
       discountBadgeEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.4)';
       discountBadgeEl.style.zIndex = '10';
+      discountBadgeEl.style.lineHeight = '1';
       discountBadgeEl.textContent = `-${discountPercentage}%`;
     }
 
