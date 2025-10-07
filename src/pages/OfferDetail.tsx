@@ -9,8 +9,8 @@ import {
   ArrowLeft, 
   Heart, 
   MapPin, 
-  Clock, 
-  Calendar, 
+  Clock as ClockIcon, 
+  Calendar as CalendarIcon, 
   Star, 
   Users, 
   Phone,
@@ -26,6 +26,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOfferSchedule } from "@/hooks/useOfferSchedule";
 
 
 export default function OfferDetail() {
@@ -33,6 +34,8 @@ export default function OfferDetail() {
   const { user } = useAuth();
   const [showBusiness, setShowBusiness] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+
+  const { schedules, promotions } = useOfferSchedule(id || "");
 
   const { data: offer, isLoading } = useQuery({
     queryKey: ["offer", id],
@@ -362,6 +365,66 @@ export default function OfferDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Horaires et Promotions */}
+          {(schedules.length > 0 || promotions.length > 0) && (
+            <Card className="bg-gradient-card border-border/50">
+              <CardContent className="p-4 space-y-4">
+                <h3 className="font-poppins font-semibold text-foreground flex items-center gap-2">
+                  <CalendarIcon size={18} className="text-primary" />
+                  Disponibilités
+                </h3>
+                
+                {/* Horaires */}
+                {schedules.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <ClockIcon size={16} className="text-secondary" />
+                      <span className="font-medium text-foreground">Horaires d'ouverture</span>
+                    </div>
+                    <div className="space-y-1 pl-6">
+                      {schedules.map((schedule, index) => {
+                        const daysMap = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+                        const dayNames = schedule.days_of_week
+                          .sort((a, b) => a - b)
+                          .map(d => daysMap[d])
+                          .join(", ");
+                        return (
+                          <div key={schedule.id} className="text-sm text-muted-foreground">
+                            <span className="font-medium">{dayNames}</span> : {schedule.start_time} - {schedule.end_time}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Promotions */}
+                {promotions.length > 0 && (
+                  <div className="space-y-2 pt-3 border-t border-border/50">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Flame size={16} className="text-warning" />
+                      <span className="font-medium text-foreground">Promotions actives</span>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      {promotions.map((promo) => {
+                        const daysMap = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+                        const dayNames = promo.days_of_week
+                          .sort((a, b) => a - b)
+                          .map(d => daysMap[d])
+                          .join(", ");
+                        return (
+                          <Badge key={promo.id} variant="secondary" className="bg-gradient-flame text-white">
+                            -{promo.discount_percentage}% • {dayNames} {promo.start_time}-{promo.end_time}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
 
           {/* Médias de l'entreprise */}

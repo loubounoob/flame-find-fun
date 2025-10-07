@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
 
 import { 
   Plus, 
@@ -32,6 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import RecurringPromotions from "@/components/RecurringPromotions";
+import ScheduleManager from "@/components/ScheduleManager";
+import OfferScheduleCard from "@/components/OfferScheduleCard";
 
 export default function BusinessDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -616,8 +619,9 @@ export default function BusinessDashboard() {
             setCurrentTab(val);
             setSearchParams({ tab: val }, { replace: true });
           }} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="schedules">Horaires</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
 
@@ -897,7 +901,37 @@ export default function BusinessDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="schedules" className="space-y-4">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-poppins font-bold text-foreground mb-2">Gestion des horaires</h2>
+                <p className="text-sm text-muted-foreground">
+                  Définissez les horaires de disponibilité pour chaque offre
+                </p>
+              </div>
 
+              {offers.length === 0 ? (
+                <Card className="bg-gradient-card border-border/50">
+                  <CardContent className="p-8 text-center">
+                    <Clock size={48} className="mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      Créez d'abord une offre pour gérer ses horaires
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {offers.map((offer) => (
+                    <OfferScheduleCard 
+                      key={offer.id} 
+                      offer={offer}
+                      businessUserId={user?.id || ""}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
           <TabsContent value="bookings" className="space-y-4">
             <div className="space-y-4">

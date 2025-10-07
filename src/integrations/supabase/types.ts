@@ -399,6 +399,50 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_schedules: {
+        Row: {
+          business_user_id: string
+          created_at: string | null
+          days_of_week: number[]
+          end_time: string
+          id: string
+          is_active: boolean | null
+          offer_id: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          business_user_id: string
+          created_at?: string | null
+          days_of_week: number[]
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          offer_id: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          business_user_id?: string
+          created_at?: string | null
+          days_of_week?: number[]
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          offer_id?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_schedules_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_views: {
         Row: {
           created_at: string

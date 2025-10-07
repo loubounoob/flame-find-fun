@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ArrowLeft, Users, Clock, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Users, Clock, Calendar, Flame, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useOfferSchedule } from "@/hooks/useOfferSchedule";
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -26,6 +28,13 @@ export default function BookingForm() {
   const [bookingTime, setBookingTime] = useState("");
   const [bookingDate, setBookingDate] = useState<Date>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scheduleStatus, setScheduleStatus] = useState<{
+    isWithinSchedule: boolean;
+    isPromoted: boolean;
+    discountPercentage: number;
+    scheduleInfo: string;
+    promotionInfo?: string;
+  } | null>(null);
 
   const { data: offer, isLoading } = useQuery({
     queryKey: ["offer", id],
@@ -42,6 +51,18 @@ export default function BookingForm() {
     },
     enabled: !!id,
   });
+
+  const { checkSchedule } = useOfferSchedule(id || "");
+
+  // Vérifier la disponibilité quand la date ou l'heure change
+  useEffect(() => {
+    if (bookingDate && bookingTime && id) {
+      const status = checkSchedule(bookingDate, bookingTime);
+      setScheduleStatus(status);
+    } else {
+      setScheduleStatus(null);
+    }
+  }, [bookingDate, bookingTime, id, checkSchedule]);
 
   if (!user) {
     navigate("/auth");
@@ -66,6 +87,16 @@ export default function BookingForm() {
       toast({
         title: "Date requise",
         description: "Veuillez sélectionner une date pour votre réservation.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Vérifier que la réservation est dans les horaires d'ouverture
+    if (scheduleStatus && !scheduleStatus.isWithinSchedule) {
+      toast({
+        title: "Horaire non disponible",
+        description: "Cette activité n'est pas disponible à cet horaire.",
         variant: "destructive"
       });
       return;
@@ -308,13 +339,45 @@ export default function BookingForm() {
                   className="bg-background border-border/50 min-h-[100px]"
                 />
               </div>
+
+              {/* Feedback de disponibilité */}
+              {scheduleStatus && bookingDate && bookingTime && (
+                <div className="pt-2">
+                  {scheduleStatus.isWithinSchedule ? (
+                    <div className="space-y-2">
+                      {scheduleStatus.isPromoted ? (
+                        <Badge className="bg-gradient-flame text-white w-full justify-center py-2 animate-pulse-glow">
+                          <Flame className="h-4 w-4 mr-2" />
+                          Réservation disponible • {scheduleStatus.promotionInfo}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          ✅ Réservation disponible
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Badge variant="destructive" className="w-full justify-center py-2">
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Activité non disponible à cet horaire
+                      </Badge>
+                      {scheduleStatus.scheduleInfo && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Horaires : {scheduleStatus.scheduleInfo}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Button 
             type="submit" 
             className="w-full bg-gradient-primary hover:opacity-90 h-12 font-semibold"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (scheduleStatus && !scheduleStatus.isWithinSchedule)}
           >
             {isSubmitting ? "Réservation en cours..." : "Confirmer la réservation"}
           </Button>
