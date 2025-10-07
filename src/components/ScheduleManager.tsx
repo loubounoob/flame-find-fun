@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -127,98 +126,90 @@ export default function ScheduleManager({ offerId, businessUserId, schedules, on
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Horaires de disponibilité</CardTitle>
-        <CardDescription>
-          Définissez les créneaux horaires pendant lesquels les clients peuvent réserver
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Liste des horaires existants */}
-        {schedules.length > 0 && (
-          <div className="space-y-3">
-            <Label>Créneaux configurés</Label>
-            {schedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:border-primary/30 transition-colors bg-card/50"
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">
-                    {schedule.days_of_week.map(day => getDayLabel(day)).join(", ")}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {schedule.start_time} - {schedule.end_time}
-                  </div>
+    <div className="space-y-6">
+      {/* Liste des horaires existants */}
+      {schedules.length > 0 && (
+        <div className="space-y-3">
+          <Label>Créneaux configurés</Label>
+          {schedules.map((schedule) => (
+            <div
+              key={schedule.id}
+              className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:border-primary/30 transition-colors bg-card/50"
+            >
+              <div className="flex-1">
+                <div className="font-medium text-foreground">
+                  {schedule.days_of_week.map(day => getDayLabel(day)).join(", ")}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteSchedule(schedule.id)}
-                  className="hover:bg-destructive/10"
+                <div className="text-sm text-muted-foreground mt-1">
+                  {schedule.start_time} - {schedule.end_time}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDeleteSchedule(schedule.id)}
+                className="hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Formulaire d'ajout */}
+      <div className="space-y-4 pt-4 border-t">
+        <div>
+          <Label>Jours de la semaine</Label>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            {DAYS_OF_WEEK.map((day) => (
+              <div key={day.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`day-${day.value}`}
+                  checked={selectedDays.includes(day.value)}
+                  onCheckedChange={() => handleDayToggle(day.value)}
+                />
+                <label
+                  htmlFor={`day-${day.value}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                  {day.label}
+                </label>
               </div>
             ))}
           </div>
-        )}
-
-        {/* Formulaire d'ajout */}
-        <div className="space-y-4 pt-4 border-t">
-          <div>
-            <Label>Jours de la semaine</Label>
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              {DAYS_OF_WEEK.map((day) => (
-                <div key={day.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`day-${day.value}`}
-                    checked={selectedDays.includes(day.value)}
-                    onCheckedChange={() => handleDayToggle(day.value)}
-                  />
-                  <label
-                    htmlFor={`day-${day.value}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {day.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start-time">Heure de début</Label>
-              <Input
-                id="start-time"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="end-time">Heure de fin</Label>
-              <Input
-                id="end-time"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <Button
-            onClick={handleAddSchedule}
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter un créneau
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="start-time">Heure de début</Label>
+            <Input
+              id="start-time"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="end-time">Heure de fin</Label>
+            <Input
+              id="end-time"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleAddSchedule}
+          disabled={isSubmitting}
+          className="w-full"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Ajouter un créneau
+        </Button>
+      </div>
+    </div>
   );
 }
