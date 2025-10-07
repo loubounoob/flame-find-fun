@@ -35,8 +35,8 @@ const DAYS_OF_WEEK = [
 
 export default function ScheduleManager({ offerId, businessUserId, schedules, onSchedulesUpdated }: ScheduleManagerProps) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("18:00");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDayToggle = (day: number) => {
@@ -83,8 +83,8 @@ export default function ScheduleManager({ offerId, businessUserId, schedules, on
       });
 
       setSelectedDays([]);
-      setStartTime("09:00");
-      setEndTime("18:00");
+      setStartTime("");
+      setEndTime("");
       onSchedulesUpdated();
     } catch (error) {
       console.error("Error adding schedule:", error);
@@ -137,18 +137,18 @@ export default function ScheduleManager({ offerId, businessUserId, schedules, on
       <CardContent className="space-y-6">
         {/* Liste des horaires existants */}
         {schedules.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Créneaux configurés</Label>
             {schedules.map((schedule) => (
               <div
                 key={schedule.id}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:border-primary/30 transition-colors bg-card/50"
               >
                 <div className="flex-1">
-                  <div className="font-medium">
+                  <div className="font-medium text-foreground">
                     {schedule.days_of_week.map(day => getDayLabel(day)).join(", ")}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground mt-1">
                     {schedule.start_time} - {schedule.end_time}
                   </div>
                 </div>
@@ -156,6 +156,7 @@ export default function ScheduleManager({ offerId, businessUserId, schedules, on
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDeleteSchedule(schedule.id)}
+                  className="hover:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
