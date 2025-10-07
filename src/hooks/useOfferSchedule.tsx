@@ -28,6 +28,11 @@ interface ScheduleCheckResult {
   promotionInfo?: string;
 }
 
+// Fonction pour formater l'heure sans les secondes
+const formatTime = (time: string) => {
+  return time.substring(0, 5); // Prend seulement HH:MM
+};
+
 export const useOfferSchedule = (offerId: string) => {
   const { data: schedules } = useQuery({
     queryKey: ["offer-schedules", offerId],
@@ -62,11 +67,13 @@ export const useOfferSchedule = (offerId: string) => {
     const timeToCheck = time || date.toTimeString().slice(0, 5);
 
     // Si pas d'horaires définis, considérer disponible 24/7
-    const isWithinSchedule = !schedules || schedules.length === 0 || schedules.some(schedule => 
-      schedule.days_of_week.includes(dayOfWeek) &&
-      timeToCheck >= schedule.start_time &&
-      timeToCheck <= schedule.end_time
-    );
+    const isWithinSchedule = !schedules || schedules.length === 0 || schedules.some(schedule => {
+      const scheduleStart = formatTime(schedule.start_time);
+      const scheduleEnd = formatTime(schedule.end_time);
+      return schedule.days_of_week.includes(dayOfWeek) &&
+        timeToCheck >= scheduleStart &&
+        timeToCheck <= scheduleEnd;
+    });
 
     // Vérifier les promotions seulement si dans les horaires
     let isPromoted = false;
@@ -74,11 +81,13 @@ export const useOfferSchedule = (offerId: string) => {
     let promotionInfo = "";
 
     if (isWithinSchedule && promotions && promotions.length > 0) {
-      const activePromo = promotions.find(promo => 
-        promo.days_of_week.includes(dayOfWeek) &&
-        timeToCheck >= promo.start_time &&
-        timeToCheck <= promo.end_time
-      );
+      const activePromo = promotions.find(promo => {
+        const promoStart = formatTime(promo.start_time);
+        const promoEnd = formatTime(promo.end_time);
+        return promo.days_of_week.includes(dayOfWeek) &&
+          timeToCheck >= promoStart &&
+          timeToCheck <= promoEnd;
+      });
 
       if (activePromo) {
         isPromoted = true;
@@ -103,7 +112,7 @@ export const useOfferSchedule = (offerId: string) => {
           const sortedDays = [...new Set(days)].sort((a, b) => a - b);
           const dayNames = sortedDays.map(d => daysMap[d]).join(", ");
           const [start, end] = timeRange.split("-");
-          return `${dayNames} : ${start} - ${end}`;
+          return `${dayNames} : ${formatTime(start)} - ${formatTime(end)}`;
         })
         .join(" | ");
     } else {

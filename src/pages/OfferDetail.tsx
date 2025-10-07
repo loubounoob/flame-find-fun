@@ -391,7 +391,7 @@ export default function OfferDetail() {
                           .join(", ");
                         return (
                           <div key={schedule.id} className="text-sm text-muted-foreground">
-                            <span className="font-medium">{dayNames}</span> : {schedule.start_time} - {schedule.end_time}
+                            <span className="font-medium">{dayNames}</span> : {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
                           </div>
                         );
                       })}
@@ -415,7 +415,7 @@ export default function OfferDetail() {
                           .join(", ");
                         return (
                           <Badge key={promo.id} variant="secondary" className="bg-gradient-flame text-white">
-                            -{promo.discount_percentage}% • {dayNames} {promo.start_time}-{promo.end_time}
+                            -{promo.discount_percentage}% • {dayNames} {promo.start_time.substring(0, 5)}-{promo.end_time.substring(0, 5)}
                           </Badge>
                         );
                       })}

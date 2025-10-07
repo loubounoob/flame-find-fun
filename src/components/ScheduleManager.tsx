@@ -141,7 +141,7 @@ export default function ScheduleManager({ offerId, businessUserId, schedules, on
                   {schedule.days_of_week.map(day => getDayLabel(day)).join(", ")}
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  {schedule.start_time} - {schedule.end_time}
+                  {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
                 </div>
               </div>
               <Button
