@@ -555,19 +555,14 @@ export default function BusinessDashboard() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-poppins font-bold text-foreground">
-              {user.user_metadata?.company_name || "Dashboard Entreprise"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Bienvenue, {user.user_metadata?.first_name}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handleLogout}>
-              <LogOut size={20} />
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-2xl font-poppins font-bold text-foreground">
+            {user.user_metadata?.company_name || "Dashboard Entreprise"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Bienvenue, {user.user_metadata?.first_name}
+          </p>
+        </div>
         </div>
       </header>
 
