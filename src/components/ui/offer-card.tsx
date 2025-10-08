@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Flame, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Flame, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,8 +11,7 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  CarouselApi,
 } from "@/components/ui/carousel";
 
 interface OfferCardProps {
@@ -51,12 +50,22 @@ export function OfferCard({
   const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const queryClient = useQueryClient();
   const { getDistance } = useDistance();
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const images = image_urls && image_urls.length > 0 
     ? image_urls 
     : image 
     ? [image] 
     : ["https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"];
+
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    carouselApi.on("select", () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -88,30 +97,48 @@ export function OfferCard({
         <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
           <div className="relative aspect-[3/2]">
             {images.length > 1 ? (
-              <Carousel className="w-full h-full">
-                <CarouselContent>
-                  {images.map((img, index) => (
-                    <CarouselItem key={index}>
-                      <div className="relative h-full">
-                        <img 
-                          src={img} 
-                          alt={`${title} - ${index + 1}`}
-                          className="w-full h-full object-cover aspect-[3/2]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      </div>
-                    </CarouselItem>
+              <div className="relative">
+                <Carousel 
+                  className="w-full h-full" 
+                  opts={{ loop: true }}
+                  setApi={setCarouselApi}
+                >
+                  <CarouselContent>
+                    {images.map((img, index) => (
+                      <CarouselItem key={index}>
+                        <div className="relative h-full">
+                          <img 
+                            src={img} 
+                            alt={`${title} - ${index + 1}`}
+                            className="w-full h-full object-cover aspect-[3/2]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+                
+                {/* Dots indicateurs */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        index === currentSlide 
+                          ? 'bg-white w-2 h-2' 
+                          : 'bg-white/50'
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        carouselApi?.scrollTo(index);
+                      }}
+                      aria-label={`Aller à l'image ${index + 1}`}
+                    />
                   ))}
-                </CarouselContent>
-                <CarouselPrevious 
-                  className="left-2 h-7 w-7 bg-black/50 border-none text-white hover:bg-black/70"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <CarouselNext 
-                  className="right-2 h-7 w-7 bg-black/50 border-none text-white hover:bg-black/70"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Carousel>
+                </div>
+              </div>
             ) : (
               <>
                 <img 

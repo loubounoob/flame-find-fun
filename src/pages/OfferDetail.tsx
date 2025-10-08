@@ -9,8 +9,7 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  CarouselApi,
 } from "@/components/ui/carousel";
 import { 
   ArrowLeft, 
@@ -28,7 +27,7 @@ import {
   Video,
   Flame
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +40,8 @@ export default function OfferDetail() {
   const { user } = useAuth();
   const [showBusiness, setShowBusiness] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const { schedules, promotions } = useOfferSchedule(id || "");
 
@@ -176,6 +177,15 @@ export default function OfferDetail() {
     ? ratings.reduce((sum, rating) => sum + rating.rating, 0) / ratings.length 
     : 0;
 
+  // Effect pour suivre le slide actuel
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    carouselApi.on("select", () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
+
   if (isLoading || !offer) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-muted-foreground">Chargement...</div>
@@ -246,27 +256,43 @@ export default function OfferDetail() {
           ) : (
             <>
               {Array.isArray(offer.image_urls) && offer.image_urls.length > 0 ? (
-                <Carousel className="w-full aspect-[16/10]" opts={{ loop: true }}>
-                  <CarouselContent className="-ml-0">
-                    {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
-                      <CarouselItem key={idx} className="pl-0">
-                        <div className="relative w-full aspect-[16/10]">
-                          <img 
-                            src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
-                            alt={`${offer.title} - Photo ${idx + 1}`}
-                            className="w-full h-full object-cover aspect-[16/10]"
-                          />
-                          {/* Image counter */}
-                          <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs">
-                            {idx + 1}/{(offer.image_urls as string[]).length}
+                <div className="relative">
+                  <Carousel 
+                    className="w-full aspect-[16/10]" 
+                    opts={{ loop: true }}
+                    setApi={setCarouselApi}
+                  >
+                    <CarouselContent className="-ml-0">
+                      {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
+                        <CarouselItem key={idx} className="pl-0">
+                          <div className="relative w-full aspect-[16/10]">
+                            <img 
+                              src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                              alt={`${offer.title} - Photo ${idx + 1}`}
+                              className="w-full h-full object-cover aspect-[16/10]"
+                            />
                           </div>
-                        </div>
-                      </CarouselItem>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                  
+                  {/* Dots indicateurs */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {(offer.image_urls as string[]).map((_, idx: number) => (
+                      <button
+                        key={idx}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          idx === currentSlide 
+                            ? 'bg-white w-2 h-2' 
+                            : 'bg-white/50'
+                        }`}
+                        onClick={() => carouselApi?.scrollTo(idx)}
+                        aria-label={`Aller à l'image ${idx + 1}`}
+                      />
                     ))}
-                  </CarouselContent>
-                  <CarouselPrevious className="left-2 bg-black/50 border-none text-white hover:bg-black/70" />
-                  <CarouselNext className="right-2 bg-black/50 border-none text-white hover:bg-black/70" />
-                </Carousel>
+                  </div>
+                </div>
               ) : (
                 <img 
                   src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
