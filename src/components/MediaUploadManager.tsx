@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -169,6 +169,17 @@ export default function MediaUploadManager({
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
+      
+      // Check if adding these files would exceed the limit
+      if (mediaLibrary.length + files.length > 10) {
+        toast({
+          title: "Limite atteinte",
+          description: `Vous ne pouvez avoir que 10 médias maximum. Actuellement: ${mediaLibrary.length}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       uploadMutation.mutate(files);
     }
   };
@@ -206,7 +217,7 @@ export default function MediaUploadManager({
         </CardHeader>
         <CardContent>
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center transition-colors ${
               dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
             }`}
             onDragEnter={handleDrag}
@@ -214,15 +225,15 @@ export default function MediaUploadManager({
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            <div className="space-y-4">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Upload className="h-8 w-8 text-primary" />
+            <div className="space-y-3">
+              <div className="mx-auto w-12 h-12 md:w-14 md:h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                <Upload className="h-6 w-6 md:h-7 md:w-7 text-primary" />
               </div>
               <div>
-                <p className="text-lg font-medium">
+                <p className="text-sm md:text-base font-medium">
                   Glissez vos fichiers ici ou cliquez pour sélectionner
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   Images, vidéos • Max 10MB par fichier
                 </p>
               </div>
@@ -234,13 +245,13 @@ export default function MediaUploadManager({
                   onChange={handleFileInput}
                   className="hidden"
                   id="file-upload"
-                  disabled={isUploading}
+                  disabled={isUploading || mediaLibrary.length >= 10}
                 />
                 <Label htmlFor="file-upload">
                   <Button 
                     variant="outline" 
-                    disabled={isUploading}
-                    className="cursor-pointer"
+                    disabled={isUploading || mediaLibrary.length >= 10}
+                    className="cursor-pointer text-sm"
                     asChild
                   >
                     <span>
@@ -268,7 +279,9 @@ export default function MediaUploadManager({
       {/* Media Library */}
       <Card>
         <CardHeader>
-          <CardTitle>Bibliothèque média ({mediaLibrary.length})</CardTitle>
+          <CardTitle className="text-base md:text-lg">
+            Bibliothèque média ({mediaLibrary.length}/10)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {mediaLibrary.length === 0 ? (

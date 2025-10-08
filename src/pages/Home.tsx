@@ -329,7 +329,11 @@ export default function Home() {
         </div>
         
         <div className="space-y-4">
-          {sortedOffers.map((offer) => {            
+          {sortedOffers.map((offer) => {
+            const imageUrls = Array.isArray(offer.image_urls) 
+              ? offer.image_urls.filter((url): url is string => typeof url === 'string')
+              : [];
+            
             return (
               <OfferCard
                 key={offer.id}
@@ -338,7 +342,8 @@ export default function Home() {
                 business_user_id={offer.business_user_id}
                 location={offer.location}
                 category={offer.category}
-                image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
+                image={offer.image_url || undefined}
+                image_urls={imageUrls.length > 0 ? imageUrls : undefined}
                 description={offer.description}
                 flames={flamesCounts[offer.id] || 0}
                 latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
