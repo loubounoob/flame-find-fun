@@ -84,7 +84,6 @@ interface UserProfile {
 const menuItems = [
   { icon: Edit3, label: "Modifier le profil", href: "/profile/edit" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Paramètres", href: "/settings" },
 ];
 
 export default function Profile() {
