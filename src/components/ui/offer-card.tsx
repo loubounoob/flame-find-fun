@@ -2,11 +2,18 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Flame, Calendar } from "lucide-react";
+import { MapPin, Flame, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDistance } from "@/hooks/useDistance";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface OfferCardProps {
   id: string;
@@ -44,25 +51,12 @@ export function OfferCard({
   const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const queryClient = useQueryClient();
   const { getDistance } = useDistance();
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   const images = image_urls && image_urls.length > 0 
     ? image_urls 
     : image 
     ? [image] 
     : ["https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"];
-
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
-
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -92,52 +86,40 @@ export function OfferCard({
     <div className="mb-4">
       <Link to={`/offer/${id}`}>
         <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
-          <div className="relative aspect-[3/2] group">
-            <img 
-              src={images[currentImageIndex]} 
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            
-            {/* Navigation arrows - only show if multiple images */}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                
-                {/* Dots indicator */}
-                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {images.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCurrentImageIndex(idx);
-                      }}
-                      className={`w-1.5 h-1.5 rounded-full transition-all ${
-                        idx === currentImageIndex 
-                          ? 'bg-white w-4' 
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                    />
+          <div className="relative aspect-[3/2]">
+            {images.length > 1 ? (
+              <Carousel className="w-full h-full">
+                <CarouselContent>
+                  {images.map((img, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative h-full">
+                        <img 
+                          src={img} 
+                          alt={`${title} - ${index + 1}`}
+                          className="w-full h-full object-cover aspect-[3/2]"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      </div>
+                    </CarouselItem>
                   ))}
-                </div>
+                </CarouselContent>
+                <CarouselPrevious 
+                  className="left-2 h-7 w-7 bg-black/50 border-none text-white hover:bg-black/70"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <CarouselNext 
+                  className="right-2 h-7 w-7 bg-black/50 border-none text-white hover:bg-black/70"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Carousel>
+            ) : (
+              <>
+                <img 
+                  src={images[0]} 
+                  alt={title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               </>
             )}
             
