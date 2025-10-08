@@ -1,60 +1,56 @@
 import { cn } from "@/lib/utils";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
+const SOUND_PREFERENCE_KEY = 'video_sound_preference';
 
 interface VideoPlayerProps {
   src: string;
   poster?: string;
   className?: string;
-  autoPlay?: boolean;
-  muted?: boolean;
 }
 
 export function VideoPlayer({ 
   src, 
   poster, 
-  className, 
-  autoPlay = false, 
-  muted = true 
+  className
 }: VideoPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(muted);
+  // Récupérer la préférence de son depuis localStorage
+  const getSoundPreference = () => {
+    const stored = localStorage.getItem(SOUND_PREFERENCE_KEY);
+    return stored === 'unmuted';
+  };
+
+  const [isMuted, setIsMuted] = useState(!getSoundPreference());
   const [showControls, setShowControls] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const togglePlay = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      const newMutedState = !isMuted;
+      videoRef.current.muted = newMutedState;
+      setIsMuted(newMutedState);
+      
+      // Sauvegarder la préférence
+      localStorage.setItem(SOUND_PREFERENCE_KEY, newMutedState ? 'muted' : 'unmuted');
     }
   };
 
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      const handlePlay = () => setIsPlaying(true);
-      const handlePause = () => setIsPlaying(false);
+      // Appliquer la préférence de son au montage
+      video.muted = isMuted;
       
-      video.addEventListener('play', handlePlay);
-      video.addEventListener('pause', handlePause);
-      
-      return () => {
-        video.removeEventListener('play', handlePlay);
-        video.removeEventListener('pause', handlePause);
-      };
+      // Démarrer la lecture automatiquement
+      video.play().catch(() => {
+        // Ignorer les erreurs d'autoplay
+      });
     }
-  }, []);
+  }, [isMuted]);
 
   return (
     <div 
@@ -66,42 +62,26 @@ export function VideoPlayer({
         ref={videoRef}
         src={src}
         poster={poster}
-        autoPlay={autoPlay}
+        autoPlay
         muted={isMuted}
         loop
         playsInline
         className="w-full h-full object-cover"
-        onClick={togglePlay}
       />
       
-      {/* Controls overlay */}
+      {/* Mute button - visible on hover */}
       <div 
         className={cn(
-          "absolute inset-0 transition-opacity duration-300",
-          showControls || !isPlaying ? "opacity-100" : "opacity-0"
+          "absolute inset-0 pointer-events-none transition-opacity duration-300",
+          showControls ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Center play/pause button - only show when paused or on hover */}
-        {(!isPlaying || showControls) && (
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <button
-              onClick={togglePlay}
-              className="bg-black/50 backdrop-blur-sm rounded-full p-3 text-white hover:bg-black/70 transition-colors"
-            >
-              {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-            </button>
-          </div>
-        )}
-        
-        {/* Mute button - always accessible on hover */}
-        {showControls && (
-          <button
-            onClick={toggleMute}
-            className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white hover:bg-black/70 transition-colors"
-          >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-        )}
+        <button
+          onClick={toggleMute}
+          className="pointer-events-auto absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white hover:bg-black/70 transition-colors"
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
       </div>
     </div>
   );
