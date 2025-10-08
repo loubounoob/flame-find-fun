@@ -18,6 +18,7 @@ import { Bell, Search, Star, Zap, Flame, Filter } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { Link } from "react-router-dom";
 import { SearchSuggestions } from "@/components/SearchSuggestions";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Mock data for demonstration
 const mockOffers = [
@@ -97,6 +98,7 @@ const mockOffers = [
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentFlashOfferIndex, setCurrentFlashOfferIndex] = useState(0);
   const [filters, setFilters] = useState({
     category: "all",
     maxDistance: [10],
@@ -281,42 +283,70 @@ export default function Home() {
         </div>
         
         {/* Promotional Offers */}
-        <div className="space-y-4">
-          {flashOffersLoading ? (
-            <div className="text-center py-8">
-              <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
-              <p className="text-muted-foreground">Chargement des offres flash...</p>
+        {flashOffersLoading ? (
+          <div className="text-center py-8">
+            <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
+            <p className="text-muted-foreground">Chargement des offres flash...</p>
+          </div>
+        ) : filteredFlashOffers.length > 0 ? (
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+            setApi={(api) => {
+              if (!api) return;
+              
+              api.on('select', () => {
+                setCurrentFlashOfferIndex(api.selectedScrollSnap());
+              });
+            }}
+          >
+            <CarouselContent>
+              {filteredFlashOffers.map((offer) => (
+                <CarouselItem key={offer.id}>
+                  <PromoCard
+                    id={offer.id}
+                    promotionId={offer.id}
+                    offerId={offer.id}
+                    businessUserId={offer.business_user_id}
+                    title={offer.title}
+                    business={offer.business_user_id}
+                    description={offer.description}
+                    location={offer.location}
+                    category={offer.category}
+                    image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
+                    video={offer.video_url}
+                    originalPrice={offer.original_price}
+                    promotionalPrice={offer.promotional_price}
+                    discountText={`${offer.discount_percentage}% de réduction`}
+                    endDate={offer.endDate.toISOString()}
+                    flames={flamesCounts[offer.id] || 0}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="flex justify-center gap-2 mt-4">
+              {filteredFlashOffers.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentFlashOfferIndex 
+                      ? 'w-8 bg-primary' 
+                      : 'w-2 bg-muted-foreground/30'
+                  }`}
+                />
+              ))}
             </div>
-          ) : filteredFlashOffers.length > 0 ? (
-            filteredFlashOffers.map((offer) => (
-              <PromoCard
-                key={offer.id}
-                id={offer.id}
-                promotionId={offer.id}
-                offerId={offer.id}
-                businessUserId={offer.business_user_id}
-                title={offer.title}
-                business={offer.business_user_id}
-                description={offer.description}
-                location={offer.location}
-                category={offer.category}
-                image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
-                video={offer.video_url}
-                originalPrice={offer.original_price}
-                promotionalPrice={offer.promotional_price}
-                discountText={`${offer.discount_percentage}% de réduction`}
-                endDate={offer.endDate.toISOString()}
-                flames={flamesCounts[offer.id] || 0}
-              />
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
-              <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
-            </div>
-          )}
-        </div>
+          </Carousel>
+        ) : (
+          <div className="text-center py-8">
+            <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">Aucune offre flash disponible pour le moment.</p>
+            <p className="text-sm text-muted-foreground mt-1">Revenez plus tard pour découvrir les meilleures promos !</p>
+          </div>
+        )}
       </section>
 
       {/* Regular Offers Section */}
