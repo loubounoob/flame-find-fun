@@ -10,6 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { useAuth } from "@/hooks/useAuth";
 import { useDistance } from "@/hooks/useDistance";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselApi,
+} from "@/components/ui/carousel";
+import { VideoPlayer } from "@/components/ui/video-player";
 
 interface PromoCardProps {
   id: string;
@@ -22,6 +29,7 @@ interface PromoCardProps {
   location: string;
   category: string;
   image?: string;
+  image_urls?: string[];
   video?: string;
   originalPrice: number;
   promotionalPrice: number;
@@ -45,6 +53,7 @@ export function PromoCard({
   location,
   category,
   image,
+  image_urls,
   video,
   originalPrice,
   promotionalPrice,
@@ -65,7 +74,27 @@ export function PromoCard({
   const [isExpired, setIsExpired] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [currentFlames, setCurrentFlames] = useState(initialFlames);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
   const isLiked = hasGivenFlameToOffer(offerId);
+
+  // Prepare media array
+  const mediaItems = image_urls && image_urls.length > 0 
+    ? image_urls 
+    : image 
+    ? [image] 
+    : video
+    ? [video]
+    : [];
+
+  // Carousel tracking
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    carouselApi.on("select", () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
 
   // Real-time countdown
   useEffect(() => {
@@ -170,21 +199,72 @@ export function PromoCard({
 
       {/* Media */}
       <div className="relative aspect-video overflow-hidden">
-        {video ? (
-          <video
-            src={video}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-        ) : image ? (
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          />
+        {mediaItems.length > 1 ? (
+          <div className="relative">
+            <Carousel 
+              className="w-full h-full" 
+              opts={{ loop: true }}
+              setApi={setCarouselApi}
+            >
+              <CarouselContent>
+                {mediaItems.map((mediaUrl, index) => {
+                  const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(mediaUrl);
+                  return (
+                    <CarouselItem key={index}>
+                      <div className="relative h-full aspect-video">
+                        {isVideo ? (
+                          <VideoPlayer 
+                            src={mediaUrl}
+                            className="w-full h-full"
+                          />
+                        ) : (
+                          <img 
+                            src={mediaUrl} 
+                            alt={`${title} - ${index + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        )}
+                      </div>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+            </Carousel>
+            
+            {/* Navigation dots */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {mediaItems.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    index === currentSlide 
+                      ? 'bg-white w-2 h-2' 
+                      : 'bg-white/50'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    carouselApi?.scrollTo(index);
+                  }}
+                  aria-label={`Aller à l'image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : mediaItems.length === 1 ? (
+          <>
+            {/\.(mp4|webm|ogg|mov)$/i.test(mediaItems[0]) ? (
+              <VideoPlayer 
+                src={mediaItems[0]}
+                className="w-full h-full"
+              />
+            ) : (
+              <img
+                src={mediaItems[0]}
+                alt={title}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            )}
+          </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
             <Zap size={48} className="text-primary/50" />
@@ -192,7 +272,7 @@ export function PromoCard({
         )}
         
         {/* Category Badge */}
-        <div className="absolute bottom-3 left-3">
+        <div className="absolute bottom-3 left-3 z-10">
           <Badge className="bg-background/90 text-foreground">
             {category}
           </Badge>

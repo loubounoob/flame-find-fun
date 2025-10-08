@@ -288,27 +288,36 @@ export default function Home() {
               <p className="text-muted-foreground">Chargement des offres flash...</p>
             </div>
           ) : filteredFlashOffers.length > 0 ? (
-            filteredFlashOffers.map((offer) => (
-              <PromoCard
-                key={offer.id}
-                id={offer.id}
-                promotionId={offer.id}
-                offerId={offer.id}
-                businessUserId={offer.business_user_id}
-                title={offer.title}
-                business={offer.business_user_id}
-                description={offer.description}
-                location={offer.location}
-                category={offer.category}
-                image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
-                video={offer.video_url}
-                originalPrice={offer.original_price}
-                promotionalPrice={offer.promotional_price}
-                discountText={`${offer.discount_percentage}% de réduction`}
-                endDate={offer.endDate.toISOString()}
-                flames={flamesCounts[offer.id] || 0}
-              />
-            ))
+            <>
+              {filteredFlashOffers.map((offer) => {
+                const imageUrls = Array.isArray(offer.image_urls) 
+                  ? offer.image_urls.filter((url): url is string => typeof url === 'string')
+                  : [];
+                
+                return (
+                  <PromoCard
+                    key={offer.id}
+                    id={offer.id}
+                    promotionId={offer.id}
+                    offerId={offer.id}
+                    businessUserId={offer.business_user_id}
+                    title={offer.title}
+                    business={offer.business_user_id}
+                    description={offer.description}
+                    location={offer.location}
+                    category={offer.category}
+                    image={offer.image_url || undefined}
+                    image_urls={imageUrls.length > 0 ? imageUrls : undefined}
+                    video={offer.video_url}
+                    originalPrice={offer.original_price}
+                    promotionalPrice={offer.promotional_price}
+                    discountText={`${offer.discount_percentage}% de réduction`}
+                    endDate={offer.endDate.toISOString()}
+                    flames={flamesCounts[offer.id] || 0}
+                  />
+                );
+              })}
+            </>
           ) : (
             <div className="text-center py-8">
               <Zap className="mx-auto text-4xl text-muted-foreground mb-2" />
