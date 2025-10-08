@@ -334,7 +334,7 @@ export function MapboxMap({
               Voir détails
             </button>
             <button 
-              onclick="window.location.href='/booking/${offer.id}'"
+              onclick="window.location.href='/booking-form/${offer.id}'"
               style="
                 flex: 1;
                 padding: 8px 12px;
