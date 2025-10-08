@@ -35,7 +35,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import RecurringPromotions from "@/components/RecurringPromotions";
 import ScheduleManager from "@/components/ScheduleManager";
 import OfferScheduleCard from "@/components/OfferScheduleCard";
-import MediaUploadManager from "@/components/MediaUploadManager";
+import { OfferMediaUpload } from "@/components/OfferMediaUpload";
 
 export default function BusinessDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -811,32 +811,19 @@ export default function BusinessDashboard() {
 
 
                   <div className="space-y-2">
-                    <Label>Photos de l'offre (sélectionnez plusieurs photos)</Label>
+                    <Label>Médias de l'offre</Label>
                     {user && (
-                      <MediaUploadManager
+                      <OfferMediaUpload
                         businessUserId={user.id}
-                        onMediaSelect={(url) => {
-                          const currentUrls = formData.selectedImageUrls;
-                          if (currentUrls.includes(url)) {
-                            setFormData({
-                              ...formData,
-                              selectedImageUrls: currentUrls.filter(u => u !== url)
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              selectedImageUrls: [...currentUrls, url]
-                            });
-                          }
-                        }}
                         selectedUrls={formData.selectedImageUrls}
-                        acceptedTypes={['image/*']}
+                        onMediaChange={(urls) => {
+                          setFormData({
+                            ...formData,
+                            selectedImageUrls: urls
+                          });
+                        }}
+                        maxFiles={10}
                       />
-                    )}
-                    {formData.selectedImageUrls.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {formData.selectedImageUrls.length} photo{formData.selectedImageUrls.length > 1 ? 's' : ''} sélectionnée{formData.selectedImageUrls.length > 1 ? 's' : ''}
-                      </p>
                     )}
                   </div>
 

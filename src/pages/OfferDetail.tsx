@@ -235,7 +235,7 @@ export default function OfferDetail() {
       </header>
 
       <div className="space-y-6">
-        {/* Media */}
+        {/* Media Carousel */}
         <div className="relative aspect-[16/10]">
           {offer.video_url ? (
             <VideoPlayer 
@@ -245,25 +245,31 @@ export default function OfferDetail() {
             />
           ) : (
             <>
-              {Array.isArray(offer.image_urls) && offer.image_urls.length > 1 ? (
-                <Carousel className="w-full h-full">
-                  <CarouselContent>
+              {Array.isArray(offer.image_urls) && offer.image_urls.length > 0 ? (
+                <Carousel className="w-full h-full" opts={{ loop: true }}>
+                  <CarouselContent className="h-full">
                     {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
-                      <CarouselItem key={idx}>
-                        <img 
-                          src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
-                          alt={`${offer.title} - Photo ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                      <CarouselItem key={idx} className="h-full">
+                        <div className="relative w-full h-full">
+                          <img 
+                            src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                            alt={`${offer.title} - Photo ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Image counter */}
+                          <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs">
+                            {idx + 1}/{(offer.image_urls as string[]).length}
+                          </div>
+                        </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-2" />
-                  <CarouselNext className="right-2" />
+                  <CarouselPrevious className="left-2 bg-black/50 border-none text-white hover:bg-black/70" />
+                  <CarouselNext className="right-2 bg-black/50 border-none text-white hover:bg-black/70" />
                 </Carousel>
               ) : (
                 <img 
-                  src={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                  src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
                   alt={offer.title}
                   className="w-full h-full object-cover"
                 />
@@ -272,7 +278,7 @@ export default function OfferDetail() {
           )}
           
           {/* Floating badges */}
-          <div className="absolute top-4 left-4 right-4 flex justify-between">
+          <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
             <Badge variant="secondary" className="bg-secondary/90 backdrop-blur-sm">
               {offer.category}
             </Badge>
