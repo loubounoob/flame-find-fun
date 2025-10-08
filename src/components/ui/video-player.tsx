@@ -52,6 +52,35 @@ export function VideoPlayer({
     }
   }, [isMuted]);
 
+  // Observer pour détecter quand la vidéo n'est plus visible
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Vidéo visible : lecture
+            video.play().catch(() => {});
+          } else {
+            // Vidéo non visible : pause
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Au moins 50% de la vidéo doit être visible
+      }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <div 
       className={cn("relative group overflow-hidden", className)}
