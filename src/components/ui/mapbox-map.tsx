@@ -162,8 +162,8 @@ export function MapboxMap({
     const categoryColor = CATEGORY_COLORS[offer.category] || CATEGORY_COLORS.default;
     const categoryEmoji = CATEGORY_EMOJIS[offer.category] || CATEGORY_EMOJIS.default;
 
-    // Get photo URL (priority: image_url > avatar_url > emoji fallback)
-    const photoUrl = offer.image_url || offer.profiles?.avatar_url;
+    // Get photo URL (priority: image_urls[0] > image_url > avatar_url > emoji fallback)
+    const photoUrl = (Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || offer.profiles?.avatar_url;
 
     // Calculate distance between user and offer
     const distance = calculateDistance(

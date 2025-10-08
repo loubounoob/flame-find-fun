@@ -8,6 +8,7 @@ interface FlashOffer {
   category: string;
   location: string;
   image_url?: string;
+  image_urls?: any;
   video_url?: string;
   pricing_options: any;
   business_user_id: string;

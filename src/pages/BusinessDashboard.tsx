@@ -35,6 +35,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import RecurringPromotions from "@/components/RecurringPromotions";
 import ScheduleManager from "@/components/ScheduleManager";
 import OfferScheduleCard from "@/components/OfferScheduleCard";
+import MediaUploadManager from "@/components/MediaUploadManager";
 
 export default function BusinessDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,7 +61,8 @@ export default function BusinessDashboard() {
     address: "",
     max_participants: "",
     image_file: null,
-    custom_category: ""
+    custom_category: "",
+    selectedImageUrls: [] as string[]
   });
   const [isCreateOfferOpen, setIsCreateOfferOpen] = useState(false);
   const [promotions, setPromotions] = useState<any[]>([]);
@@ -308,9 +310,10 @@ export default function BusinessDashboard() {
     if (!user) return;
 
     try {
-      let imageUrl = null;
+      let imageUrls = [...formData.selectedImageUrls];
       if (formData.image_file) {
-        imageUrl = await handleImageUpload(formData.image_file);
+        const uploadedUrl = await handleImageUpload(formData.image_file);
+        if (uploadedUrl) imageUrls.push(uploadedUrl);
       }
 
       const { data: offerData, error } = await supabase
@@ -322,7 +325,8 @@ export default function BusinessDashboard() {
           category: formData.category === "Autre" ? formData.custom_category : formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
-          image_url: imageUrl,
+          image_url: imageUrls[0] || null,
+          image_urls: imageUrls,
           status: 'active'
         })
         .select()
@@ -343,7 +347,8 @@ export default function BusinessDashboard() {
         address: "",
         max_participants: "",
         image_file: null,
-        custom_category: ""
+        custom_category: "",
+        selectedImageUrls: []
       });
       setShowCreateForm(false);
       
@@ -362,9 +367,10 @@ export default function BusinessDashboard() {
     if (!user || !editingOffer) return;
 
     try {
-      let imageUrl = editingOffer.image_url;
+      let imageUrls = [...formData.selectedImageUrls];
       if (formData.image_file) {
-        imageUrl = await handleImageUpload(formData.image_file);
+        const uploadedUrl = await handleImageUpload(formData.image_file);
+        if (uploadedUrl) imageUrls.push(uploadedUrl);
       }
 
       const { error } = await supabase
@@ -375,7 +381,8 @@ export default function BusinessDashboard() {
           category: formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
-          image_url: imageUrl
+          image_url: imageUrls[0] || null,
+          image_urls: imageUrls
         })
         .eq('id', editingOffer.id);
 
@@ -507,7 +514,8 @@ export default function BusinessDashboard() {
       address: offer.address || "",
       max_participants: "",
       image_file: null,
-      custom_category: ""
+      custom_category: "",
+      selectedImageUrls: offer.image_urls || []
     });
     setShowCreateForm(true);
   };
@@ -522,7 +530,8 @@ export default function BusinessDashboard() {
       address: "",
       max_participants: "",
       image_file: null,
-      custom_category: ""
+      custom_category: "",
+      selectedImageUrls: []
     });
   };
 
@@ -802,31 +811,33 @@ export default function BusinessDashboard() {
 
 
                   <div className="space-y-2">
-                    <Label htmlFor="image-upload">Photo de l'offre</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('image-upload')?.click()}
-                      className="w-full justify-start"
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      <span className="truncate">
-                        {formData.image_file ? formData.image_file.name : "Choisir une photo"}
-                      </span>
-                    </Button>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setFormData({...formData, image_file: file});
-                        }
-                      }}
-                    />
+                    <Label>Photos de l'offre (sélectionnez plusieurs photos)</Label>
+                    {user && (
+                      <MediaUploadManager
+                        businessUserId={user.id}
+                        onMediaSelect={(url) => {
+                          const currentUrls = formData.selectedImageUrls;
+                          if (currentUrls.includes(url)) {
+                            setFormData({
+                              ...formData,
+                              selectedImageUrls: currentUrls.filter(u => u !== url)
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              selectedImageUrls: [...currentUrls, url]
+                            });
+                          }
+                        }}
+                        selectedUrls={formData.selectedImageUrls}
+                        acceptedTypes={['image/*']}
+                      />
+                    )}
+                    {formData.selectedImageUrls.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {formData.selectedImageUrls.length} photo{formData.selectedImageUrls.length > 1 ? 's' : ''} sélectionnée{formData.selectedImageUrls.length > 1 ? 's' : ''}
+                      </p>
+                    )}
                   </div>
 
                   <Button 

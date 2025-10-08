@@ -133,7 +133,16 @@ export default function BookingForm() {
       const finalBookingDate = new Date(bookingDate);
       finalBookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const timeNote = `Date: ${format(bookingDate, 'dd/MM/yyyy')} - Heure: ${bookingTime}${notes ? ` - Notes: ${notes}` : ''}`;
+      // Construire les notes avec l'info de promotion si applicable
+      let bookingNotes = `Date: ${format(bookingDate, 'dd/MM/yyyy')} - Heure: ${bookingTime}`;
+      
+      if (scheduleStatus?.isPromoted && scheduleStatus.discountPercentage > 0) {
+        bookingNotes += ` - promotion: Réduction ${scheduleStatus.discountPercentage}%`;
+      }
+      
+      if (notes) {
+        bookingNotes += ` - Notes: ${notes}`;
+      }
 
       const { error } = await supabase
         .from("bookings")
@@ -143,7 +152,7 @@ export default function BookingForm() {
           business_user_id: offer.business_user_id,
           booking_date: finalBookingDate.toISOString(),
           participant_count: participantCount,
-          notes: timeNote,
+          notes: bookingNotes,
           status: "confirmed"
         });
 
@@ -196,7 +205,7 @@ export default function BookingForm() {
           <CardContent className="p-4">
             <div className="flex gap-4">
               <img 
-                src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                src={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
                 alt={offer.title}
                 className="w-20 h-20 rounded-lg object-cover"
               />

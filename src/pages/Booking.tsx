@@ -86,7 +86,7 @@ export default function Booking() {
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <div className="w-16 h-16 bg-gradient-primary rounded-lg flex-shrink-0 bg-cover bg-center" 
-                         style={{ backgroundImage: booking.offer?.image_url ? `url(${booking.offer.image_url})` : undefined }}>
+                         style={{ backgroundImage: (Array.isArray(booking.offer?.image_urls) && typeof booking.offer.image_urls[0] === 'string' ? booking.offer.image_urls[0] : booking.offer?.image_url) ? `url(${Array.isArray(booking.offer?.image_urls) && typeof booking.offer.image_urls[0] === 'string' ? booking.offer.image_urls[0] : booking.offer?.image_url})` : undefined }}>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">

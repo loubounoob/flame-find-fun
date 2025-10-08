@@ -482,6 +482,7 @@ export type Database = {
           has_promotion: boolean | null
           id: string
           image_url: string | null
+          image_urls: Json | null
           latitude: number | null
           location: string
           longitude: number | null
@@ -501,6 +502,7 @@ export type Database = {
           has_promotion?: boolean | null
           id?: string
           image_url?: string | null
+          image_urls?: Json | null
           latitude?: number | null
           location: string
           longitude?: number | null
@@ -520,6 +522,7 @@ export type Database = {
           has_promotion?: boolean | null
           id?: string
           image_url?: string | null
+          image_urls?: Json | null
           latitude?: number | null
           location?: string
           longitude?: number | null

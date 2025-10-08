@@ -5,6 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { ShareButton } from "@/components/ShareButton";
 import { RatingModal } from "@/components/RatingModal";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { 
   ArrowLeft, 
   Heart, 
@@ -237,11 +244,31 @@ export default function OfferDetail() {
               className="w-full h-full"
             />
           ) : (
-            <img 
-              src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
-              alt={offer.title}
-              className="w-full h-full object-cover"
-            />
+            <>
+              {Array.isArray(offer.image_urls) && offer.image_urls.length > 1 ? (
+                <Carousel className="w-full h-full">
+                  <CarouselContent>
+                    {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
+                      <CarouselItem key={idx}>
+                        <img 
+                          src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                          alt={`${offer.title} - Photo ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2" />
+                  <CarouselNext className="right-2" />
+                </Carousel>
+              ) : (
+                <img 
+                  src={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                  alt={offer.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </>
           )}
           
           {/* Floating badges */}

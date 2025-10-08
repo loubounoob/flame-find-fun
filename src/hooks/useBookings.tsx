@@ -20,6 +20,7 @@ interface Booking {
     category: string;
     location: string;
     image_url?: string;
+    image_urls?: any;
   };
 }
 
@@ -46,7 +47,7 @@ export function useBookings() {
         .from('bookings')
         .select(`
           *,
-          offer:offers(title, category, location, image_url)
+          offer:offers(title, category, location, image_url, image_urls)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });

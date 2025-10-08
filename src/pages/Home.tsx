@@ -300,7 +300,7 @@ export default function Home() {
                 description={offer.description}
                 location={offer.location}
                 category={offer.category}
-                image={offer.image_url}
+                image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
                 video={offer.video_url}
                 originalPrice={offer.original_price}
                 promotionalPrice={offer.promotional_price}
@@ -338,7 +338,7 @@ export default function Home() {
                 business_user_id={offer.business_user_id}
                 location={offer.location}
                 category={offer.category}
-                image={offer.image_url}
+                image={(Array.isArray(offer.image_urls) && typeof offer.image_urls[0] === 'string' ? offer.image_urls[0] : offer.image_url) || undefined}
                 description={offer.description}
                 flames={flamesCounts[offer.id] || 0}
                 latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
