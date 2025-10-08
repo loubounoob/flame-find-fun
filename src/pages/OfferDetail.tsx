@@ -273,7 +273,7 @@ export default function OfferDetail() {
                                   src={imgUrl}
                                   className="w-full h-full"
                                   autoPlay={true}
-                                  muted={true}
+                                  muted={false}
                                 />
                               ) : (
                                 <img 

@@ -115,7 +115,7 @@ export function OfferCard({
                                 src={img}
                                 className="w-full h-full aspect-[3/2]"
                                 autoPlay={true}
-                                muted={true}
+                                muted={false}
                               />
                             ) : (
                               <>
