@@ -263,17 +263,27 @@ export default function OfferDetail() {
                     setApi={setCarouselApi}
                   >
                     <CarouselContent className="-ml-0">
-                      {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
-                        <CarouselItem key={idx} className="pl-0">
-                          <div className="relative w-full aspect-[16/10]">
-                            <img 
-                              src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
-                              alt={`${offer.title} - Photo ${idx + 1}`}
-                              className="w-full h-full object-cover aspect-[16/10]"
-                            />
-                          </div>
-                        </CarouselItem>
-                      ))}
+                      {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => {
+                        const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(imgUrl);
+                        return (
+                          <CarouselItem key={idx} className="pl-0">
+                            <div className="relative w-full aspect-[16/10]">
+                              {isVideo ? (
+                                <VideoPlayer 
+                                  src={imgUrl}
+                                  className="w-full h-full"
+                                />
+                              ) : (
+                                <img 
+                                  src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
+                                  alt={`${offer.title} - Photo ${idx + 1}`}
+                                  className="w-full h-full object-cover aspect-[16/10]"
+                                />
+                              )}
+                            </div>
+                          </CarouselItem>
+                        );
+                      })}
                     </CarouselContent>
                   </Carousel>
                   
