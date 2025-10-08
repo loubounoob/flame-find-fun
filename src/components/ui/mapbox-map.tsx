@@ -319,6 +319,25 @@ export function MapboxMap({
               style="
                 flex: 1;
                 padding: 8px 12px;
+                background-color: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 1px solid ${categoryColor};
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 12px;
+                transition: all 0.2s;
+              "
+              onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.15)'"
+              onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.1)'"
+            >
+              Voir détails
+            </button>
+            <button 
+              onclick="window.location.href='/booking/${offer.id}'"
+              style="
+                flex: 1;
+                padding: 8px 12px;
                 background-color: ${categoryColor};
                 color: white;
                 border: none;
@@ -330,25 +349,6 @@ export function MapboxMap({
               "
               onmouseover="this.style.opacity='0.9'"
               onmouseout="this.style.opacity='1'"
-            >
-              Voir détails
-            </button>
-            <button 
-              onclick="window.location.href='/booking?offer=${offer.id}'"
-              style="
-                flex: 1;
-                padding: 8px 12px;
-                background-color: rgba(255, 255, 255, 0.1);
-                color: #fff;
-                border: 1px solid ${categoryColor};
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 12px;
-                transition: all 0.2s;
-              "
-              onmouseover="this.style.backgroundColor='${categoryColor}'"
-              onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.1)'"
             >
               Réserver
             </button>
@@ -454,6 +454,12 @@ export function MapboxMap({
         }
         .mapbox-popup-compact {
           max-width: none !important;
+        }
+        .mapboxgl-ctrl-logo {
+          display: none !important;
+        }
+        .mapboxgl-ctrl-attrib {
+          display: none !important;
         }
       `}</style>
       <div ref={mapContainer} className="w-full h-full" />
