@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { VideoPlayer } from "@/components/ui/video-player";
 import { MapPin, Flame, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
@@ -105,30 +104,18 @@ export function OfferCard({
                   setApi={setCarouselApi}
                 >
                   <CarouselContent>
-                    {images.map((img, index) => {
-                      const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(img);
-                      return (
-                        <CarouselItem key={index}>
-                          <div className="relative h-full">
-                            {isVideo ? (
-                              <VideoPlayer 
-                                src={img}
-                                className="w-full h-full aspect-[3/2]"
-                              />
-                            ) : (
-                              <>
-                                <img 
-                                  src={img} 
-                                  alt={`${title} - ${index + 1}`}
-                                  className="w-full h-full object-cover aspect-[3/2]"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                              </>
-                            )}
-                          </div>
-                        </CarouselItem>
-                      );
-                    })}
+                    {images.map((img, index) => (
+                      <CarouselItem key={index}>
+                        <div className="relative h-full">
+                          <img 
+                            src={img} 
+                            alt={`${title} - ${index + 1}`}
+                            className="w-full h-full object-cover aspect-[3/2]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        </div>
+                      </CarouselItem>
+                    ))}
                   </CarouselContent>
                 </Carousel>
                 
