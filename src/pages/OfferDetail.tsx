@@ -236,7 +236,7 @@ export default function OfferDetail() {
 
       <div className="space-y-6">
         {/* Media Carousel */}
-        <div className="relative aspect-[16/10]">
+        <div className="relative w-full aspect-[16/10] overflow-hidden">
           {offer.video_url ? (
             <VideoPlayer 
               src={offer.video_url}
@@ -246,15 +246,15 @@ export default function OfferDetail() {
           ) : (
             <>
               {Array.isArray(offer.image_urls) && offer.image_urls.length > 0 ? (
-                <Carousel className="w-full h-full" opts={{ loop: true }}>
-                  <CarouselContent className="h-full">
+                <Carousel className="w-full aspect-[16/10]" opts={{ loop: true }}>
+                  <CarouselContent className="-ml-0">
                     {(offer.image_urls as string[]).map((imgUrl: string, idx: number) => (
-                      <CarouselItem key={idx} className="h-full">
-                        <div className="relative w-full h-full">
+                      <CarouselItem key={idx} className="pl-0">
+                        <div className="relative w-full aspect-[16/10]">
                           <img 
                             src={imgUrl || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
                             alt={`${offer.title} - Photo ${idx + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover aspect-[16/10]"
                           />
                           {/* Image counter */}
                           <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs">
@@ -271,7 +271,7 @@ export default function OfferDetail() {
                 <img 
                   src={offer.image_url || "https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"} 
                   alt={offer.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover aspect-[16/10]"
                 />
               )}
             </>
