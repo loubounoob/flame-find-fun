@@ -236,8 +236,30 @@ export default function BusinessProfile() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de se déconnecter. Veuillez réessayer.",
+          variant: "destructive"
+        });
+        return;
+      }
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt sur Ludigo!",
+      });
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!user || !profile) {
