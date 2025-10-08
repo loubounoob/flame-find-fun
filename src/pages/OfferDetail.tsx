@@ -272,7 +272,7 @@ export default function OfferDetail() {
                                 <VideoPlayer 
                                   src={imgUrl}
                                   className="w-full h-full"
-                                  autoPlay={false}
+                                  autoPlay={true}
                                   muted={true}
                                 />
                               ) : (

@@ -114,7 +114,7 @@ export function OfferCard({
                               <VideoPlayer 
                                 src={img}
                                 className="w-full h-full aspect-[3/2]"
-                                autoPlay={false}
+                                autoPlay={true}
                                 muted={true}
                               />
                             ) : (
