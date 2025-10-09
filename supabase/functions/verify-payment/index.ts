@@ -19,15 +19,41 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Service role client for database operations
-  const supabaseService = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
     logStep("Function started");
+
+    // 1. Authentication check - verify JWT token
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      throw new Error("Missing authorization header");
+    }
+
+    // Create client with user's JWT token for authentication
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        auth: { persistSession: false },
+        global: {
+          headers: { authorization: authHeader }
+        }
+      }
+    );
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Unauthorized: Invalid token");
+    }
+
+    logStep("User authenticated", { userId: user.id });
+
+    // Service role client for database operations (only after auth check)
+    const supabaseService = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     // Parse request body
     const { sessionId, bookingId } = await req.json();
@@ -76,10 +102,19 @@ serve(async (req) => {
 
     if (bookingError) {
       logStep("ERROR fetching booking", bookingError);
-      throw new Error(`Failed to fetch booking: ${bookingError.message}`);
+      throw new Error("Failed to fetch booking");
     }
 
-    logStep("Booking retrieved", { bookingId: actualBookingId, currentStatus: booking.status });
+    // 2. Authorization check - verify the booking belongs to the authenticated user
+    if (booking.user_id !== user.id) {
+      logStep("ERROR: User does not own this booking", { 
+        bookingUserId: booking.user_id, 
+        authenticatedUserId: user.id 
+      });
+      throw new Error("Unauthorized: You do not own this booking");
+    }
+
+    logStep("Booking retrieved and authorized", { bookingId: actualBookingId, currentStatus: booking.status });
 
     // If already processed, return success
     if (booking.status === 'confirmed' && booking.payment_confirmed) {
@@ -174,12 +209,18 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in verify-payment", { message: errorMessage });
+    
+    // Return generic error message to client, log details server-side
+    const isAuthError = errorMessage.includes("Unauthorized") || errorMessage.includes("authorization");
+    const status = isAuthError ? 401 : 500;
+    const clientMessage = isAuthError ? errorMessage : "Payment verification failed";
+    
     return new Response(JSON.stringify({ 
       success: false, 
-      error: errorMessage 
+      error: clientMessage 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: status,
     });
   }
 });
