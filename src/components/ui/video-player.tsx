@@ -61,6 +61,8 @@ export function VideoPlayer({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            // Réappliquer l'état muted avant la lecture
+            video.muted = isMuted;
             // Vidéo visible : lecture
             video.play().catch(() => {});
           } else {
@@ -79,7 +81,7 @@ export function VideoPlayer({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [isMuted]);
 
   return (
     <div 
