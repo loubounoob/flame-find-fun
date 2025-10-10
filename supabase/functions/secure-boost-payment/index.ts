@@ -6,6 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation helpers
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+const VALID_BOOST_TYPES = ['visibility', 'featured', 'premium'];
+
+const validateBoostInput = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data.offerId || !isValidUUID(data.offerId)) {
+    errors.push("Invalid offer ID format");
+  }
+  if (!data.boostType || !VALID_BOOST_TYPES.includes(data.boostType)) {
+    errors.push(`Boost type must be one of: ${VALID_BOOST_TYPES.join(', ')}`);
+  }
+  if (typeof data.amount !== 'number' || data.amount <= 0 || data.amount > 10000) {
+    errors.push("Amount must be a positive number not exceeding €10,000");
+  }
+  if (typeof data.duration !== 'number' || data.duration < 1 || data.duration > 365) {
+    errors.push("Duration must be between 1 and 365 days");
+  }
+
+  return errors;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -37,11 +64,22 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    const { offerId, boostType, amount, duration } = await req.json();
+    const requestBody = await req.json();
+    const { offerId, boostType, amount, duration } = requestBody;
 
-    // Validate inputs
-    if (!offerId || !boostType || !amount || !duration || amount <= 0 || duration <= 0) {
-      throw new Error("Invalid boost payment parameters");
+    console.log('Boost payment request received');
+
+    // Validate input
+    const validationErrors = validateBoostInput(requestBody);
+    if (validationErrors.length > 0) {
+      console.error('Validation errors:', validationErrors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input parameters',
+        details: validationErrors 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Call secure database function
@@ -65,8 +103,13 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Boost payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Boost payment error:", errorMessage);
+    
+    // Return generic error to client, log details server-side
+    return new Response(JSON.stringify({ 
+      error: 'Boost payment failed. Please try again.' 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

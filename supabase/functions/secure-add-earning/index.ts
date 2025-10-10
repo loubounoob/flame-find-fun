@@ -6,6 +6,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation helpers
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+const validateEarningInput = (data: any) => {
+  const errors: string[] = [];
+
+  if (typeof data.amount !== 'number' || data.amount <= 0 || data.amount > 100000) {
+    errors.push("Amount must be a positive number not exceeding €100,000");
+  }
+  if (!data.bookingId || !isValidUUID(data.bookingId)) {
+    errors.push("Invalid booking ID format");
+  }
+  if (data.description && typeof data.description !== 'string') {
+    errors.push("Description must be a string");
+  }
+  if (data.description && data.description.length > 500) {
+    errors.push("Description must not exceed 500 characters");
+  }
+
+  return errors;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +62,21 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    const { amount, bookingId, description } = await req.json();
+    const requestBody = await req.json();
+    const { amount, bookingId, description } = requestBody;
+
+    // Validate input
+    const validationErrors = validateEarningInput(requestBody);
+    if (validationErrors.length > 0) {
+      console.error('Validation errors:', validationErrors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input parameters',
+        details: validationErrors 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Call secure database function
     const { data, error } = await supabaseClient.rpc('secure_add_earning', {
@@ -59,8 +98,13 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Add earning error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Add earning error:", errorMessage);
+    
+    // Return generic error to client, log details server-side
+    return new Response(JSON.stringify({ 
+      error: 'Failed to add earning. Please try again.' 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -13,6 +13,37 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-PAYMENT] ${step}${detailsStr}`);
 };
 
+// Input validation helpers
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+const validatePaymentInput = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data.bookingId || !isValidUUID(data.bookingId)) {
+    errors.push("Invalid booking ID format");
+  }
+  if (!data.offerId || !isValidUUID(data.offerId)) {
+    errors.push("Invalid offer ID format");
+  }
+  if (!data.businessUserId || !isValidUUID(data.businessUserId)) {
+    errors.push("Invalid business user ID format");
+  }
+  if (typeof data.amount !== 'number' || data.amount <= 0 || data.amount > 100000) {
+    errors.push("Amount must be between €0.01 and €100,000");
+  }
+  if (typeof data.participantCount !== 'number' || data.participantCount < 1 || data.participantCount > 1000) {
+    errors.push("Participant count must be between 1 and 1000");
+  }
+  if (data.description && (typeof data.description !== 'string' || data.description.length > 500)) {
+    errors.push("Description must be a string not exceeding 500 characters");
+  }
+
+  return errors;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -47,7 +78,8 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body
+    // Parse and validate request body
+    const requestBody = await req.json();
     const { 
       bookingId, 
       offerId, 
@@ -57,7 +89,7 @@ serve(async (req) => {
       bookingDate, 
       bookingTime, 
       description 
-    } = await req.json();
+    } = requestBody;
 
     logStep("Request data received", { 
       bookingId, 
@@ -67,8 +99,17 @@ serve(async (req) => {
       participantCount 
     });
 
-    if (!bookingId || !offerId || !businessUserId || !amount) {
-      throw new Error("Missing required parameters");
+    // Validate input
+    const validationErrors = validatePaymentInput(requestBody);
+    if (validationErrors.length > 0) {
+      logStep("Validation errors", validationErrors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input parameters',
+        details: validationErrors 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Initialize Stripe
@@ -152,7 +193,11 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in create-payment", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    
+    // Return generic error to client, log details server-side
+    return new Response(JSON.stringify({ 
+      error: 'Payment creation failed. Please try again.' 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
