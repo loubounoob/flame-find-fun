@@ -25,14 +25,17 @@ import { Link } from "react-router-dom";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function Settings() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [darkMode, setDarkMode] = useState(() => {
     // Check if user has a preference saved or default to true (dark mode)
     const savedTheme = localStorage.getItem('theme');
     return savedTheme ? savedTheme === 'dark' : true;
   });
-  const [language, setLanguage] = useState("fr");
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -78,23 +81,23 @@ export default function Settings() {
 
   const handleExportData = () => {
     toast({
-      title: "Export démarré",
-      description: "Tes données seront envoyées par email sous 24h.",
+      title: t('settings.exportData'),
+      description: t('settings.exportDataSuccess'),
     });
   };
 
   const handleDeleteAccount = () => {
     toast({
-      title: "Suppression de compte",
-      description: "Un email de confirmation a été envoyé.",
+      title: t('settings.deleteAccount'),
+      description: t('settings.deleteAccountWarning'),
       variant: "destructive"
     });
   };
 
   const handleClearCache = () => {
     toast({
-      title: "Cache vidé",
-      description: "Le cache de l'application a été supprimé.",
+      title: t('settings.clearCache'),
+      description: t('settings.clearCacheSuccess'),
     });
   };
 
@@ -111,7 +114,7 @@ export default function Settings() {
             </Button>
           </Link>
           <h1 className="text-xl font-poppins font-bold text-foreground">
-            Paramètres
+            {t('settings.title')}
           </h1>
         </div>
       </header>
@@ -123,14 +126,14 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <User size={20} />
-                Profil
+                {t('settings.profile')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Link to="/profile/edit">
                 <Button variant="outline" className="w-full justify-start">
                   <Edit className="mr-3" size={16} />
-                  Modifier mon profil
+                  {t('settings.editProfile')}
                 </Button>
               </Link>
             </CardContent>
@@ -142,7 +145,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Eye size={20} />
-              Apparence
+              {t('settings.appearance')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -150,8 +153,8 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 {darkMode ? <Moon size={20} className="text-primary" /> : <Sun size={20} className="text-warning" />}
                 <div>
-                  <h4 className="font-medium text-foreground">Mode sombre</h4>
-                  <p className="text-sm text-muted-foreground">Interface adaptée pour la nuit</p>
+                  <h4 className="font-medium text-foreground">{t('settings.darkMode')}</h4>
+                  <p className="text-sm text-muted-foreground">{t('settings.darkModeDesc')}</p>
                 </div>
               </div>
               <Switch 
@@ -164,11 +167,15 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <Globe size={20} className="text-info" />
                 <div>
-                  <h4 className="font-medium text-foreground">Langue</h4>
-                  <p className="text-sm text-muted-foreground">Français</p>
+                  <h4 className="font-medium text-foreground">{t('settings.language')}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.languageAuto')} • {t('settings.languageCurrent')}: {language === 'fr' ? 'Français' : 'English'}
+                  </p>
                 </div>
               </div>
-              <Badge variant="outline">FR</Badge>
+              <Badge variant="outline" className="opacity-60">
+                {language.toUpperCase()}
+              </Badge>
             </div>
           </CardContent>
         </Card>
@@ -178,7 +185,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Shield size={20} />
-              Confidentialité et sécurité
+              {t('settings.privacy')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -186,8 +193,8 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <MapPin size={20} className="text-success" />
                 <div>
-                  <h4 className="font-medium text-foreground">Géolocalisation</h4>
-                  <p className="text-sm text-muted-foreground">Pour trouver les offres près de toi</p>
+                  <h4 className="font-medium text-foreground">{t('settings.location')}</h4>
+                  <p className="text-sm text-muted-foreground">{t('settings.locationDesc')}</p>
                 </div>
               </div>
               <Switch 
@@ -196,17 +203,9 @@ export default function Settings() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-foreground">Profil visible</h4>
-                <p className="text-sm text-muted-foreground">Les autres utilisateurs peuvent voir ton profil</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-
             <Button variant="outline" className="w-full" onClick={handleExportData}>
               <Download className="mr-2" size={16} />
-              Exporter mes données
+              {t('settings.exportData')}
             </Button>
           </CardContent>
         </Card>
@@ -216,7 +215,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Smartphone size={20} />
-              Performance et données
+              {t('settings.performance')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -224,8 +223,8 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <Volume2 size={20} className="text-secondary" />
                 <div>
-                  <h4 className="font-medium text-foreground">Sons</h4>
-                  <p className="text-sm text-muted-foreground">Sons de l'interface</p>
+                  <h4 className="font-medium text-foreground">{t('settings.sounds')}</h4>
+                  <p className="text-sm text-muted-foreground">{t('settings.soundsDesc')}</p>
                 </div>
               </div>
               <Switch 
@@ -238,8 +237,8 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <Vibrate size={20} className="text-primary" />
                 <div>
-                  <h4 className="font-medium text-foreground">Vibrations</h4>
-                  <p className="text-sm text-muted-foreground">Retour haptique</p>
+                  <h4 className="font-medium text-foreground">{t('settings.vibrations')}</h4>
+                  <p className="text-sm text-muted-foreground">{t('settings.vibrationsDesc')}</p>
                 </div>
               </div>
               <Switch 
@@ -250,8 +249,8 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-foreground">Lecture automatique des vidéos</h4>
-                <p className="text-sm text-muted-foreground">En Wi-Fi uniquement</p>
+                <h4 className="font-medium text-foreground">{t('settings.autoPlay')}</h4>
+                <p className="text-sm text-muted-foreground">{t('settings.autoPlayDesc')}</p>
               </div>
               <Switch 
                 checked={autoPlay}
@@ -260,27 +259,12 @@ export default function Settings() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Utilisation des données</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={dataUsage === "wifi" ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setDataUsage("wifi")}
-                >
-                  Wi-Fi uniquement
-                </Button>
-                <Button 
-                  variant={dataUsage === "all" ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setDataUsage("all")}
-                >
-                  Wi-Fi + Mobile
-                </Button>
-              </div>
+              <h4 className="font-medium text-foreground">{t('settings.dataUsage')}</h4>
+              <p className="text-sm text-muted-foreground">{t('settings.dataUsageDesc')}</p>
             </div>
 
             <Button variant="outline" className="w-full" onClick={handleClearCache}>
-              Vider le cache (127 MB)
+              {t('settings.clearCache')}
             </Button>
           </CardContent>
         </Card>
@@ -290,24 +274,24 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <HelpCircle size={20} />
-              Support et aide
+              {t('settings.support')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button variant="ghost" className="w-full justify-start">
               <HelpCircle className="mr-3" size={16} />
-              Centre d'aide
+              {t('settings.helpCenter')}
             </Button>
             
             <Button variant="ghost" className="w-full justify-start">
               <Star className="mr-3" size={16} />
-              Noter l'application
+              {t('settings.rateApp')}
             </Button>
             
             <div className="pt-2 border-t border-border/50">
               <div className="text-center text-sm text-muted-foreground">
-                <p>Ludigo v2.1.0</p>
-                <p className="mt-1">Développé avec 🔥</p>
+                <p>{t('settings.version')}</p>
+                <p className="mt-1">{t('settings.madeWith')}</p>
               </div>
             </div>
           </CardContent>

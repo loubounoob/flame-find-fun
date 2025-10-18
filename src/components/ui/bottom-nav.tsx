@@ -4,37 +4,39 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from 'react-i18next';
 
 interface BottomNavProps {
   className?: string;
 }
 
-const navItems = [
-  { 
-    icon: Home, 
-    label: "Accueil", 
-    path: "/" 
-  },
-  { 
-    icon: MapPin, 
-    label: "Carte", 
-    path: "/map" 
-  },
-  { 
-    icon: Heart, 
-    label: "Réservations", 
-    path: "/booking" 
-  },
-  { 
-    icon: User, 
-    label: "Profil", 
-    path: "/profile" 
-  },
-];
-
 export function BottomNav({ className }: BottomNavProps) {
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  
+  const navItems = [
+    { 
+      icon: Home, 
+      label: t('navigation.home'), 
+      path: "/" 
+    },
+    { 
+      icon: MapPin, 
+      label: t('navigation.map'), 
+      path: "/map" 
+    },
+    { 
+      icon: Heart, 
+      label: "Réservations", 
+      path: "/booking" 
+    },
+    { 
+      icon: User, 
+      label: t('navigation.profile'), 
+      path: "/profile" 
+    },
+  ];
   
   // Récupérer le nombre de notifications non lues
   const { data: unreadCount = 0 } = useQuery({
@@ -58,22 +60,22 @@ export function BottomNav({ className }: BottomNavProps) {
     const businessNavItems = [
       { 
         icon: Home, 
-        label: "Accueil", 
+        label: t('navigation.home'), 
         path: "/" 
       },
       { 
         icon: BarChart3, 
-        label: "Dashboard", 
+        label: t('navigation.dashboard'), 
         path: "/business-dashboard" 
       },
       { 
         icon: Map, 
-        label: "Carte", 
+        label: t('navigation.map'), 
         path: "/map" 
       },
       { 
         icon: User, 
-        label: "Profil", 
+        label: t('navigation.profile'), 
         path: "/business-profile" 
       },
     ];

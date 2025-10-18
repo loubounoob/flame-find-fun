@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { useOfferScoring } from "@/hooks/useOfferScoring";
 import { useFlashOffers } from "@/hooks/useFlashOffers";
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 import { FeedContainer } from "@/components/ui/feed-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +97,8 @@ const mockOffers = [
 ];
 
 export default function Home() {
+  const { t } = useTranslation();
+  useLanguage(); // Initialize language detection
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({

@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useFlames } from "@/hooks/useFlames";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDistance } from "@/hooks/useDistance";
+import { useTranslation } from 'react-i18next';
 import {
   Carousel,
   CarouselContent,
@@ -51,6 +52,7 @@ export function OfferCard({
   const { giveFlame, removeFlame, hasGivenFlameToOffer, canGiveFlame } = useFlames();
   const queryClient = useQueryClient();
   const { getDistance } = useDistance();
+  const { t } = useTranslation();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -173,7 +175,7 @@ export function OfferCard({
             {/* Compteur de flammes en bas à droite de l'image */}
             <div className="absolute bottom-3 right-3 bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
               <Flame size={12} className="fill-current" />
-              {flames}
+              {flames} {t('offers.flames')}
             </div>
             
             {discount && (
@@ -228,7 +230,7 @@ export function OfferCard({
                   className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
                 <span className="text-sm">
-                  {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
+                  {hasGivenFlameToOffer(id) ? 'Retirer' : t('offers.flames')}
                 </span>
               </Button>
               
@@ -246,7 +248,7 @@ export function OfferCard({
                 }}
               >
                 <Calendar size={14} className="mr-1" />
-                {price ? `${price} - Réserver` : 'Réserver'}
+                {price ? `${price} - ${t('offers.book')}` : t('offers.book')}
               </Button>
             </div>
           </CardContent>
