@@ -30,7 +30,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 
 export default function Settings() {
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const { language, changeLanguage } = useLanguage();
   const [darkMode, setDarkMode] = useState(() => {
     // Check if user has a preference saved or default to true (dark mode)
     const savedTheme = localStorage.getItem('theme');
@@ -163,20 +163,27 @@ export default function Settings() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Globe size={20} className="text-info" />
-                <div>
-                  <h4 className="font-medium text-foreground">{t('settings.language')}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('settings.languageAuto')} • {t('settings.languageCurrent')}: {language === 'fr' ? 'Français' : 'English'}
-                  </p>
-                </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Globe size={20} className="text-info" />
+              <div>
+                <h4 className="font-medium text-foreground">{t('settings.language')}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.languageAuto')} • {t('settings.languageCurrent')}: {language === 'fr' ? 'Français' : 'English'}
+                </p>
               </div>
-              <Badge variant="outline" className="opacity-60">
-                {language.toUpperCase()}
-              </Badge>
             </div>
+            <Badge 
+              variant="outline" 
+              className="cursor-pointer hover:bg-primary/10 transition-colors opacity-60 hover:opacity-100"
+              onClick={() => {
+                const newLang = language === 'fr' ? 'en' : 'fr';
+                changeLanguage(newLang, 'manual');
+              }}
+            >
+              {language.toUpperCase()}
+            </Badge>
+          </div>
           </CardContent>
         </Card>
 
