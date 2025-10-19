@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
 interface GeolocationPosition {
   lat: number;
@@ -13,7 +12,6 @@ interface GeolocationState {
 }
 
 export function useGeolocation() {
-  const { t } = useTranslation();
   const [state, setState] = useState<GeolocationState>({
     position: null,
     isLoading: false,
@@ -27,7 +25,7 @@ export function useGeolocation() {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: t('errors.geolocationNotSupported'),
+        error: 'La géolocalisation n\'est pas supportée par ce navigateur.',
       }));
       return;
     }
@@ -47,16 +45,16 @@ export function useGeolocation() {
         let errorMessage = '';
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = t('errors.geolocationDenied');
+            errorMessage = 'L\'accès à la géolocalisation a été refusé.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = t('errors.geolocationUnavailable');
+            errorMessage = 'Les informations de localisation ne sont pas disponibles.';
             break;
           case error.TIMEOUT:
-            errorMessage = t('errors.geolocationTimeout');
+            errorMessage = 'La demande de géolocalisation a expiré.';
             break;
           default:
-            errorMessage = t('errors.geolocationUnknown');
+            errorMessage = 'Une erreur inconnue s\'est produite.';
             break;
         }
         setState(prev => ({

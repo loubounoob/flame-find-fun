@@ -22,7 +22,6 @@ import { BottomNav } from "@/components/ui/bottom-nav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
-import { useTranslation } from "react-i18next";
 
 // Function to calculate real user statistics
 const calculateUserStats = async (userId: string) => {
@@ -83,8 +82,8 @@ interface UserProfile {
 }
 
 const menuItems = [
-  { icon: Edit3, label: "profile.editProfile", href: "/profile/edit" },
-  { icon: Bell, label: "navigation.notifications", href: "/notifications" },
+  { icon: Edit3, label: "Modifier le profil", href: "/profile/edit" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
 ];
 
 export default function Profile() {
@@ -93,7 +92,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -157,8 +155,8 @@ export default function Profile() {
     try {
       await supabase.auth.signOut();
       toast({
-        title: t('auth.logoutSuccess'),
-        description: t('auth.seeYou'),
+        title: "Déconnexion réussie",
+        description: "À bientôt sur Ludigo!",
       });
       navigate('/auth');
     } catch (error) {
@@ -171,7 +169,7 @@ export default function Profile() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('profile.loadingProfile')}</p>
+          <p className="text-muted-foreground">Chargement du profil...</p>
         </div>
       </div>
     );
@@ -182,7 +180,7 @@ export default function Profile() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-          {t('profile.title')}
+          Profil
         </h1>
       </header>
 
@@ -210,7 +208,7 @@ export default function Profile() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar size={14} className="text-secondary" />
-                    <span className="text-sm text-muted-foreground">{t('profile.since')} {userProfile.joinDate}</span>
+                    <span className="text-sm text-muted-foreground">Depuis {userProfile.joinDate}</span>
                   </div>
                 </div>
               </div>
@@ -223,20 +221,20 @@ export default function Profile() {
         {/* Stats */}
         <Card className="bg-gradient-card border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg">{t('profile.myStats')}</CardTitle>
+            <CardTitle className="text-lg">Mes statistiques</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 bg-gradient-secondary rounded-xl">
                 <Trophy size={20} className="mx-auto mb-2 text-secondary-foreground" />
                 <div className="text-lg font-bold text-secondary-foreground">{userProfile.stats.totalFlames}</div>
-                <div className="text-xs text-secondary-foreground/80">{t('profile.totalFlames')}</div>
+                <div className="text-xs text-secondary-foreground/80">Total flammes</div>
               </div>
               
               <div className="text-center p-3 bg-gradient-primary rounded-xl">
                 <Calendar size={20} className="mx-auto mb-2 text-primary-foreground" />
                 <div className="text-lg font-bold text-primary-foreground">{userProfile.stats.offersBooked}</div>
-                <div className="text-xs text-primary-foreground/80">{t('profile.bookings')}</div>
+                <div className="text-xs text-primary-foreground/80">Réservations</div>
               </div>
             </div>
           </CardContent>
@@ -245,7 +243,7 @@ export default function Profile() {
         {/* Menu Options */}
         <Card className="bg-gradient-card border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg">{t('profile.settings')}</CardTitle>
+            <CardTitle className="text-lg">Paramètres</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {menuItems.map((item, index) => (
@@ -253,7 +251,7 @@ export default function Profile() {
                 <Link to={item.href}>
                   <div className="flex items-center gap-3 p-4 hover:bg-muted/20 transition-colors">
                     <item.icon size={20} className="text-muted-foreground" />
-                    <span className="flex-1 text-foreground">{t(item.label)}</span>
+                    <span className="flex-1 text-foreground">{item.label}</span>
                     <span className="text-muted-foreground">›</span>
                   </div>
                 </Link>
@@ -272,14 +270,14 @@ export default function Profile() {
               onClick={handleLogout}
             >
               <LogOut size={20} className="mr-2" />
-              {t('profile.logout')}
+              Se déconnecter
             </Button>
           </CardContent>
         </Card>
 
         {/* Version info */}
         <div className="text-center text-xs text-muted-foreground">
-          {t('app.version')} • {t('app.madeWith')}
+          Ludigo v1.0.0 • Made with 🔥
         </div>
       </div>
 

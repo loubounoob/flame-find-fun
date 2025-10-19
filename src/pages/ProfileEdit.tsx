@@ -27,19 +27,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { Label } from "@/components/ui/label";
-import { useTranslation } from "react-i18next";
 
 export default function ProfileEdit() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      if (!user) throw new Error(t('errors.noUser'));
+      if (!user) throw new Error("No user");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -80,7 +78,7 @@ export default function ProfileEdit() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      if (!user) throw new Error(t('errors.noUser'));
+      if (!user) throw new Error("No user");
       
       const { error } = await supabase
         .from("profiles")
@@ -101,15 +99,15 @@ export default function ProfileEdit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast({
-        title: t('profile.profileUpdated'),
-        description: t('profile.profileUpdatedDesc'),
+        title: "Profil mis à jour !",
+        description: "Vos informations ont été sauvegardées avec succès.",
       });
       navigate("/profile");
     },
     onError: () => {
       toast({
-        title: t('profile.updateError'),
-        description: t('profile.updateErrorDesc'),
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour.",
         variant: "destructive",
       });
     },
@@ -134,7 +132,7 @@ export default function ProfileEdit() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">{t('common.loading')}</div>
+        <div className="text-muted-foreground">Chargement...</div>
       </div>
     );
   }
@@ -150,7 +148,7 @@ export default function ProfileEdit() {
             </Button>
           </Link>
           <h1 className="text-xl font-poppins font-bold text-foreground">
-            {t('profile.editProfile')}
+            Modifier le profil
           </h1>
         </div>
       </header>
@@ -159,7 +157,7 @@ export default function ProfileEdit() {
         {/* Profile Photo */}
         <Card className="bg-gradient-card border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg">{t('profile.profilePhoto')}</CardTitle>
+            <CardTitle className="text-lg">Photo de profil</CardTitle>
           </CardHeader>
           <CardContent>
             <ProfilePhotoUpload
@@ -178,26 +176,26 @@ export default function ProfileEdit() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User size={20} className="text-primary" />
-              {t('profile.personalInfo')}
+              Informations personnelles
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">{t('profile.firstName')}</Label>
+                <Label htmlFor="firstName">Prénom</Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  placeholder={t('profile.firstName')}
+                  placeholder="Prénom"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">{t('profile.lastName')}</Label>
+                <Label htmlFor="lastName">Nom de famille</Label>
                 <Input
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  placeholder={t('profile.lastName')}
+                  placeholder="Nom de famille"
                 />
               </div>
             </div>
@@ -205,20 +203,20 @@ export default function ProfileEdit() {
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail size={16} />
-                {t('profile.email')}
+                Email
               </Label>
               <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder={t('profile.email')}
+                placeholder="Email"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="birthDate" className="flex items-center gap-2">
                 <Calendar size={16} />
-                {t('profile.birthDate')}
+                Date de naissance
               </Label>
               <Input
                 type="date"
@@ -228,11 +226,11 @@ export default function ProfileEdit() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">{t('profile.bio')}</Label>
+              <Label htmlFor="bio">Bio</Label>
               <Textarea
                 value={formData.bio}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
-                placeholder={t('profile.bioPlaceholder')}
+                placeholder="Parlez-nous de vous..."
                 rows={4}
               />
             </div>
@@ -244,19 +242,19 @@ export default function ProfileEdit() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <MapPin size={20} className="text-secondary" />
-              {t('profile.locationInfo')}
+              Localisation
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="location" className="flex items-center gap-2">
                 <MapPin size={16} />
-                {t('profile.location')}
+                Localisation
               </Label>
               <Input
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder={t('profile.cityPlaceholder')}
+                placeholder="Ville, Pays"
               />
             </div>
           </CardContent>
@@ -268,7 +266,7 @@ export default function ProfileEdit() {
           size="lg"
           disabled={updateProfileMutation.isPending}
         >
-          {updateProfileMutation.isPending ? t('common.saving') : t('profile.saveChanges')}
+          {updateProfileMutation.isPending ? "Sauvegarde..." : "Sauvegarder les modifications"}
         </Button>
       </div>
 

@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useFlames } from "@/hooks/useFlames";
 import { useAuth } from "@/hooks/useAuth";
 import { useDistance } from "@/hooks/useDistance";
-import { useTranslation } from 'react-i18next';
 import {
   Carousel,
   CarouselContent,
@@ -69,7 +68,6 @@ export function PromoCard({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t } = useTranslation();
   const { hasGivenFlameToOffer, giveFlame, removeFlame, isLoading: flameLoading } = useFlames();
   const { getDistance } = useDistance();
   const [timeLeft, setTimeLeft] = useState("");
@@ -326,7 +324,7 @@ export function PromoCard({
             <div className="flex items-center gap-1">
               <div className="bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
                 <Flame size={12} className="fill-current" />
-                {currentFlames} {t('offers.flames')}
+                {currentFlames}
               </div>
             </div>
             {maxParticipants && (
@@ -362,7 +360,7 @@ export function PromoCard({
             disabled={isExpired || flameLoading}
           >
             <Flame size={16} className={cn("mr-1", isLiked ? "fill-current" : "", "text-white")} />
-            {isLiked ? "Retirer" : t('offers.flames')}
+            {isLiked ? "Retirer" : "Flamme"}
           </Button>
           
           <Button
@@ -376,7 +374,7 @@ export function PromoCard({
             disabled={isExpired}
           >
             <Zap size={16} className="mr-1" />
-            {isExpired ? "Expiré" : t('offers.book')}
+            {isExpired ? "Expiré" : "Réserver"}
           </Button>
         </div>
       </div>

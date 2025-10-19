@@ -7,13 +7,11 @@ import { useBookings } from "@/hooks/useBookings";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookingArchive } from "@/hooks/useBookingArchive";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export default function Booking() {
   const { user } = useAuth();
   const { bookings, isLoading, cancelBooking } = useBookings();
   const [filter, setFilter] = useState<'all' | 'current' | 'archived'>('current');
-  const { t } = useTranslation();
   
   // Active le système d'archivage automatique
   useBookingArchive();
@@ -30,8 +28,8 @@ export default function Booking() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center pb-20">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">{t('auth.connectionRequired')}</h2>
-          <p className="text-muted-foreground">{t('auth.connectToBook')}</p>
+          <h2 className="text-xl font-semibold mb-2">Connexion requise</h2>
+          <p className="text-muted-foreground">Connectez-vous pour voir vos réservations.</p>
         </div>
       </div>
     );
@@ -43,7 +41,7 @@ export default function Booking() {
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
-            {t('bookings.title')}
+            Mes Réservations
           </h1>
         </div>
       </header>
@@ -59,7 +57,7 @@ export default function Booking() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {t('bookings.current')} ({currentBookings.length})
+            Actuelles ({currentBookings.length})
           </button>
           <button
             onClick={() => setFilter('archived')}
@@ -69,18 +67,18 @@ export default function Booking() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {t('bookings.archived')} ({archivedBookings.length})
+            Archivées ({archivedBookings.length})
           </button>
         </div>
 
         <div className="space-y-4">
           {isLoading ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">{t('bookings.loadingBookings')}</p>
+              <p className="text-muted-foreground">Chargement de vos réservations...</p>
             </div>
           ) : displayedBookings.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">{t('bookings.noBookings')}</p>
+              <p className="text-muted-foreground">Aucune réservation pour le moment.</p>
             </div>
           ) : (
             displayedBookings.map((booking) => (
@@ -100,7 +98,7 @@ export default function Booking() {
                           variant={booking.status === "confirmed" ? "default" : "secondary"}
                           className={booking.status === "confirmed" ? "bg-gradient-success text-white" : ""}
                         >
-                          {booking.status === "confirmed" ? t('bookings.confirmed') : booking.status}
+                          {booking.status === "confirmed" ? "Confirmé" : booking.status}
                         </Badge>
                       </div>
                       
@@ -115,10 +113,10 @@ export default function Booking() {
                            <MapPin size={14} />
                            <span>{booking.offer?.location}</span>
                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users size={14} />
-                            <span>{booking.participant_count} {t(`bookings.${booking.participant_count > 1 ? 'participants' : 'participant'}`)}</span>
-                          </div>
+                         <div className="flex items-center gap-1">
+                           <Users size={14} />
+                           <span>{booking.participant_count} participant{booking.participant_count > 1 ? 's' : ''}</span>
+                         </div>
                          {booking.notes && !booking.notes.startsWith('Date:') && (
                            <div className="flex items-center gap-1">
                              <Clock size={14} />
@@ -132,9 +130,9 @@ export default function Booking() {
                           )}
                        </div>
                       
-                       <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
-                          {t('bookings.bookedOn')} {new Date(booking.created_at).toLocaleDateString()}
+                          Réservé le {new Date(booking.created_at).toLocaleDateString('fr-FR')}
                         </span>
                         {booking.status === "confirmed" && filter === 'current' && (
                           <Button 
@@ -144,7 +142,7 @@ export default function Booking() {
                             onClick={() => cancelBooking(booking.id)}
                           >
                             <X size={14} className="mr-1" />
-                            {t('bookings.cancel')}
+                            Annuler
                           </Button>
                         )}
                       </div>
