@@ -822,13 +822,18 @@ export default function BusinessDashboard() {
                     )}
                   </div>
 
-                  <Button 
-                    onClick={editingOffer ? updateOffer : createOffer}
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={!formData.title || !formData.description || !formData.category}
-                  >
-                    {editingOffer ? "Modifier l'offre" : "Créer l'offre"}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={editingOffer ? updateOffer : createOffer}
+                      className="w-full bg-gradient-primary hover:opacity-90"
+                      disabled={!formData.title || !formData.description || !formData.category}
+                    >
+                      {editingOffer ? "Modifier l'offre" : "Créer l'offre"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      ⚠️ N'oubliez pas de configurer les horaires de l'offre dans l'onglet "Horaires" pour la rendre active
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1027,9 +1032,62 @@ export default function BusinessDashboard() {
                               </Badge>
                             </div>
                             {booking.notes && (
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                Note: {booking.notes}
-                              </p>
+                              <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border/50">
+                                <div className="space-y-1.5">
+                                  {booking.notes.split(' - ').map((note: string, idx: number) => {
+                                    // Parse promotion info
+                                    if (note.includes('promotion:')) {
+                                      const promoMatch = note.match(/promotion:\s*Réduction\s*(\d+)%/i);
+                                      if (promoMatch) {
+                                        return (
+                                          <div key={idx} className="flex items-center gap-2 text-sm">
+                                            <Zap size={14} className="text-orange-500 flex-shrink-0" />
+                                            <span className="font-medium text-orange-600">
+                                              Réduction {promoMatch[1]}%
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+                                    }
+                                    // Parse date info
+                                    if (note.includes('Date:')) {
+                                      const dateMatch = note.match(/Date:\s*(.+)/);
+                                      if (dateMatch) {
+                                        return (
+                                          <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Calendar size={14} className="flex-shrink-0" />
+                                            <span>{dateMatch[1]}</span>
+                                          </div>
+                                        );
+                                      }
+                                    }
+                                    // Parse time info
+                                    if (note.includes('Heure:')) {
+                                      const timeMatch = note.match(/Heure:\s*(.+)/);
+                                      if (timeMatch) {
+                                        return (
+                                          <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Clock size={14} className="flex-shrink-0" />
+                                            <span>{timeMatch[1]}</span>
+                                          </div>
+                                        );
+                                      }
+                                    }
+                                    // Other notes
+                                    if (note.includes('Notes:')) {
+                                      const notesMatch = note.match(/Notes:\s*(.+)/);
+                                      if (notesMatch) {
+                                        return (
+                                          <div key={idx} className="text-sm text-muted-foreground mt-2 pt-2 border-t border-border/30">
+                                            <span className="font-medium">Note:</span> {notesMatch[1]}
+                                          </div>
+                                        );
+                                      }
+                                    }
+                                    return null;
+                                  })}
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>

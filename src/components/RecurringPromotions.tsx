@@ -112,6 +112,61 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
       return;
     }
 
+    // Validate against offer schedules
+    try {
+      const { data: schedules, error: scheduleError } = await supabase
+        .from('offer_schedules')
+        .select('*')
+        .eq('offer_id', newPromotion.offer_id)
+        .eq('is_active', true);
+
+      if (scheduleError) throw scheduleError;
+
+      if (!schedules || schedules.length === 0) {
+        toast({
+          title: "Erreur",
+          description: "Cette offre n'a pas d'horaires configurés. Veuillez d'abord définir les horaires de l'offre.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if promotion times fall within schedule times for the selected day
+      const daySchedules = schedules.filter(s => s.days_of_week.includes(newPromotion.day_of_week));
+      
+      if (daySchedules.length === 0) {
+        toast({
+          title: "Erreur",
+          description: "Cette offre n'est pas disponible le jour sélectionné.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const isWithinSchedule = daySchedules.some(schedule => {
+        return newPromotion.start_time >= schedule.start_time && 
+               newPromotion.end_time <= schedule.end_time;
+      });
+
+      if (!isWithinSchedule) {
+        const exampleSchedule = daySchedules[0];
+        toast({
+          title: "Erreur",
+          description: `Les horaires de promotion doivent être compris dans les horaires d'ouverture (${exampleSchedule.start_time.substring(0, 5)} - ${exampleSchedule.end_time.substring(0, 5)})`,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error validating schedules:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de valider les horaires",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('recurring_promotions')

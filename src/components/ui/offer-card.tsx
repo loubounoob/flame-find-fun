@@ -54,10 +54,18 @@ export function OfferCard({
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const images = image_urls && image_urls.length > 0 
-    ? image_urls 
-    : image 
-    ? [image] 
+  // Filter out videos from home page display - only show images
+  const imageUrls = image_urls && image_urls.length > 0 
+    ? image_urls.filter(url => {
+        const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(url);
+        return !isVideo;
+      })
+    : [];
+  
+  const images = imageUrls.length > 0
+    ? imageUrls
+    : image && !/\.(mp4|webm|ogg|mov)$/i.test(image)
+    ? [image]
     : ["https://images.unsplash.com/photo-1586985564150-0fb8542ab05e?w=800&h=600&fit=crop"];
 
   useEffect(() => {
@@ -105,30 +113,18 @@ export function OfferCard({
                   setApi={setCarouselApi}
                 >
                   <CarouselContent>
-                    {images.map((img, index) => {
-                      const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(img);
-                      return (
-                        <CarouselItem key={index}>
-                          <div className="relative h-full">
-                            {isVideo ? (
-                              <VideoPlayer 
-                                src={img}
-                                className="w-full h-full aspect-[3/2]"
-                              />
-                            ) : (
-                              <>
-                                <img 
-                                  src={img} 
-                                  alt={`${title} - ${index + 1}`}
-                                  className="w-full h-full object-cover aspect-[3/2]"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                              </>
-                            )}
-                          </div>
-                        </CarouselItem>
-                      );
-                    })}
+                    {images.map((img, index) => (
+                      <CarouselItem key={index}>
+                        <div className="relative h-full">
+                          <img 
+                            src={img} 
+                            alt={`${title} - ${index + 1}`}
+                            className="w-full h-full object-cover aspect-[3/2]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        </div>
+                      </CarouselItem>
+                    ))}
                   </CarouselContent>
                 </Carousel>
                 
@@ -153,14 +149,14 @@ export function OfferCard({
                 </div>
               </div>
             ) : (
-              <>
+              <div className="relative h-full">
                 <img 
                   src={images[0]} 
                   alt={title}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              </>
+              </div>
             )}
             
             <Badge 

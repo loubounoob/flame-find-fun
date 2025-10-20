@@ -51,6 +51,34 @@ export function OfferMediaUpload({
           continue;
         }
 
+        // Validate video file size (max 50MB for short videos)
+        if (isVideo) {
+          const maxSizeMB = 50;
+          const maxSizeBytes = maxSizeMB * 1024 * 1024;
+          if (file.size > maxSizeBytes) {
+            toast({
+              title: "Fichier trop volumineux",
+              description: `Les vidéos doivent faire moins de ${maxSizeMB}MB. Votre vidéo fait ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
+              variant: "destructive"
+            });
+            continue;
+          }
+        }
+
+        // Validate image file size (max 10MB)
+        if (isImage) {
+          const maxSizeMB = 10;
+          const maxSizeBytes = maxSizeMB * 1024 * 1024;
+          if (file.size > maxSizeBytes) {
+            toast({
+              title: "Fichier trop volumineux",
+              description: `Les images doivent faire moins de ${maxSizeMB}MB.`,
+              variant: "destructive"
+            });
+            continue;
+          }
+        }
+
         // Upload file to Supabase storage
         const fileExt = file.name.split('.').pop();
         const fileName = `offer-media/${businessUserId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -108,6 +136,9 @@ export function OfferMediaUpload({
               <h3 className="font-semibold text-sm mb-1">Médias de l'offre</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Ajoutez des photos et vidéos pour cette offre ({selectedUrls.length}/{maxFiles})
+              </p>
+              <p className="text-xs text-muted-foreground/70 mb-3">
+                ℹ️ Les vidéos apparaîtront uniquement dans les détails de l'offre (max 50MB)
               </p>
             </div>
 
