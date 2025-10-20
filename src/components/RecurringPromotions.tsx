@@ -26,6 +26,18 @@ interface RecurringPromotionsProps {
   businessUserId: string;
 }
 
+interface GroupedPromotion {
+  id: string;
+  offer_id: string;
+  offer_title: string;
+  days_of_week: number[];
+  start_time: string;
+  end_time: string;
+  discount_percentage: number;
+  is_active: boolean;
+  promotion_ids: string[];
+}
+
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Lundi' },
   { value: 2, label: 'Mardi' },
@@ -38,10 +50,11 @@ const DAYS_OF_WEEK = [
 
 const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, businessUserId }) => {
   const [recurringPromotions, setRecurringPromotions] = useState<RecurringPromotion[]>([]);
+  const [groupedPromotions, setGroupedPromotions] = useState<GroupedPromotion[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newPromotion, setNewPromotion] = useState({
     offer_id: '',
-    day_of_week: null as number | null,
+    days_of_week: [] as number[],
     start_time: '',
     end_time: '',
     discount_percentage: null as number | null
@@ -75,8 +88,10 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         }));
 
         setRecurringPromotions(promotionsWithTitles);
+        groupPromotions(promotionsWithTitles);
       } else {
         setRecurringPromotions([]);
+        setGroupedPromotions([]);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des promotions récurrentes:', error);
@@ -88,16 +103,47 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
   };
 
+  const groupPromotions = (promotions: RecurringPromotion[]) => {
+    const grouped: { [key: string]: GroupedPromotion } = {};
+
+    promotions.forEach(promo => {
+      const key = `${promo.offer_id}_${promo.start_time}_${promo.end_time}_${promo.discount_percentage}`;
+      
+      if (grouped[key]) {
+        grouped[key].days_of_week = [...new Set([...grouped[key].days_of_week, ...promo.days_of_week])];
+        grouped[key].promotion_ids.push(promo.id);
+        if (!grouped[key].is_active && promo.is_active) {
+          grouped[key].is_active = true;
+        }
+      } else {
+        grouped[key] = {
+          id: promo.id,
+          offer_id: promo.offer_id,
+          offer_title: promo.offer_title || 'Offre inconnue',
+          days_of_week: [...promo.days_of_week],
+          start_time: promo.start_time,
+          end_time: promo.end_time,
+          discount_percentage: promo.discount_percentage,
+          is_active: promo.is_active,
+          promotion_ids: [promo.id]
+        };
+      }
+    });
+
+    setGroupedPromotions(Object.values(grouped).sort((a, b) => 
+      a.offer_title.localeCompare(b.offer_title)
+    ));
+  };
 
   const createRecurringPromotion = async () => {
     if (!newPromotion.offer_id || 
-        newPromotion.day_of_week === null || 
+        newPromotion.days_of_week.length === 0 || 
         !newPromotion.start_time || 
         !newPromotion.end_time || 
         !newPromotion.discount_percentage) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs",
+        description: "Veuillez remplir tous les champs et sélectionner au moins un jour",
         variant: "destructive",
       });
       return;
@@ -131,31 +177,35 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         return;
       }
 
-      // Check if promotion times fall within schedule times for the selected day
-      const daySchedules = schedules.filter(s => s.days_of_week.includes(newPromotion.day_of_week));
-      
-      if (daySchedules.length === 0) {
-        toast({
-          title: "Erreur",
-          description: "Cette offre n'est pas disponible le jour sélectionné.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Validate each selected day
+      for (const day of newPromotion.days_of_week) {
+        const daySchedules = schedules.filter(s => s.days_of_week.includes(day));
+        
+        if (daySchedules.length === 0) {
+          const dayName = DAYS_OF_WEEK.find(d => d.value === day)?.label;
+          toast({
+            title: "Erreur",
+            description: `Cette offre n'est pas disponible le ${dayName}.`,
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const isWithinSchedule = daySchedules.some(schedule => {
-        return newPromotion.start_time >= schedule.start_time && 
-               newPromotion.end_time <= schedule.end_time;
-      });
-
-      if (!isWithinSchedule) {
-        const exampleSchedule = daySchedules[0];
-        toast({
-          title: "Erreur",
-          description: `Les horaires de promotion doivent être compris dans les horaires d'ouverture (${exampleSchedule.start_time.substring(0, 5)} - ${exampleSchedule.end_time.substring(0, 5)})`,
-          variant: "destructive",
+        const isWithinSchedule = daySchedules.some(schedule => {
+          return newPromotion.start_time >= schedule.start_time && 
+                 newPromotion.end_time <= schedule.end_time;
         });
-        return;
+
+        if (!isWithinSchedule) {
+          const dayName = DAYS_OF_WEEK.find(d => d.value === day)?.label;
+          const exampleSchedule = daySchedules[0];
+          toast({
+            title: "Erreur",
+            description: `Les horaires de promotion pour ${dayName} doivent être compris dans les horaires d'ouverture (${exampleSchedule.start_time.substring(0, 5)} - ${exampleSchedule.end_time.substring(0, 5)})`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
     } catch (error) {
       console.error('Error validating schedules:', error);
@@ -405,7 +455,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span>{promotion.start_time} - {promotion.end_time}</span>
+                        <span>{promotion.start_time.substring(0, 5)} - {promotion.end_time.substring(0, 5)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Percent className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
