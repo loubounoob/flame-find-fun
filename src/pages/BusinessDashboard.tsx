@@ -826,10 +826,22 @@ export default function BusinessDashboard() {
                     <Button 
                       onClick={editingOffer ? updateOffer : createOffer}
                       className="w-full bg-gradient-primary hover:opacity-90"
-                      disabled={!formData.title || !formData.description || !formData.category}
+                      disabled={
+                        !formData.title || 
+                        !formData.description || 
+                        !formData.category ||
+                        !formData.max_participants ||
+                        !formData.address ||
+                        formData.selectedImageUrls.length === 0
+                      }
                     >
                       {editingOffer ? "Modifier l'offre" : "Créer l'offre"}
                     </Button>
+                    {(!formData.title || !formData.description || !formData.category || !formData.max_participants || !formData.address || formData.selectedImageUrls.length === 0) && (
+                      <p className="text-xs text-destructive text-center">
+                        Tous les champs sont obligatoires (titre, activité, description, participants max, adresse et au moins 1 média)
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
