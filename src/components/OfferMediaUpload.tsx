@@ -137,9 +137,6 @@ export function OfferMediaUpload({
               <p className="text-xs text-muted-foreground mb-3">
                 Ajoutez des photos et vidéos pour cette offre ({selectedUrls.length}/{maxFiles})
               </p>
-              <p className="text-xs text-muted-foreground/70 mb-3">
-                ℹ️ Les vidéos apparaîtront uniquement dans les détails de l'offre (max 50MB)
-              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">

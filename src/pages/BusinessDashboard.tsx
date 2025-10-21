@@ -830,9 +830,6 @@ export default function BusinessDashboard() {
                     >
                       {editingOffer ? "Modifier l'offre" : "Créer l'offre"}
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      ⚠️ N'oubliez pas de configurer les horaires de l'offre dans l'onglet "Horaires" pour la rendre active
-                    </p>
                   </div>
                 </CardContent>
               </Card>
