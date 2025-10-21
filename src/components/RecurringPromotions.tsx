@@ -255,12 +255,12 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
   };
 
-  const deleteRecurringPromotion = async (id: string) => {
+  const deleteRecurringPromotion = async (promotionIds: string[]) => {
     try {
       const { error } = await supabase
         .from('recurring_promotions')
         .delete()
-        .eq('id', id);
+        .in('id', promotionIds);
 
       if (error) throw error;
 
@@ -280,12 +280,12 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
   };
 
-  const togglePromotionStatus = async (id: string, currentStatus: boolean) => {
+  const togglePromotionStatus = async (promotionIds: string[], currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('recurring_promotions')
         .update({ is_active: !currentStatus })
-        .eq('id', id);
+        .in('id', promotionIds);
 
       if (error) throw error;
 
@@ -422,15 +422,12 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
             <Button onClick={createRecurringPromotion} className="w-full">
               Ajouter ce créneau promotionnel
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Pour créer plusieurs créneaux, ajoutez-les un par un avec des horaires différents
-            </p>
           </CardContent>
         </Card>
       )}
 
       <div className="space-y-4">
-        {recurringPromotions.length === 0 ? (
+        {groupedPromotions.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
               <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -443,7 +440,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
             </CardContent>
           </Card>
         ) : (
-          recurringPromotions.map((promotion) => (
+          groupedPromotions.map((promotion) => (
             <Card key={promotion.id} className={promotion.is_active ? 'border-primary' : 'border-muted'}>
               <CardContent className="py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -473,7 +470,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => togglePromotionStatus(promotion.id, promotion.is_active)}
+                      onClick={() => togglePromotionStatus(promotion.promotion_ids, promotion.is_active)}
                       className="flex-1 sm:flex-none text-xs sm:text-sm"
                     >
                       {promotion.is_active ? 'Désactiver' : 'Activer'}
@@ -481,7 +478,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => deleteRecurringPromotion(promotion.id)}
+                      onClick={() => deleteRecurringPromotion(promotion.promotion_ids)}
                       className="px-2 sm:px-3"
                     >
                       <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
