@@ -223,7 +223,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         .insert({
           business_user_id: businessUserId,
           offer_id: newPromotion.offer_id,
-          days_of_week: [newPromotion.day_of_week],
+          days_of_week: newPromotion.days_of_week,
           start_time: newPromotion.start_time,
           end_time: newPromotion.end_time,
           discount_percentage: newPromotion.discount_percentage
@@ -238,7 +238,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
 
       setNewPromotion({
         offer_id: '',
-        day_of_week: null,
+        days_of_week: [],
         start_time: '',
         end_time: '',
         discount_percentage: null
@@ -355,22 +355,28 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
             </div>
 
             <div>
-              <Label htmlFor="day-select">Jour de la semaine</Label>
-              <Select 
-                value={newPromotion.day_of_week?.toString()} 
-                onValueChange={(value) => setNewPromotion(prev => ({ ...prev, day_of_week: parseInt(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un jour" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAYS_OF_WEEK.map((day) => (
-                    <SelectItem key={day.value} value={day.value.toString()}>
+              <Label>Jours de la semaine</Label>
+              <div className="space-y-2 mt-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <div key={day.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`day-${day.value}`}
+                      checked={newPromotion.days_of_week.includes(day.value)}
+                      onCheckedChange={(checked) => {
+                        setNewPromotion(prev => ({
+                          ...prev,
+                          days_of_week: checked
+                            ? [...prev.days_of_week, day.value]
+                            : prev.days_of_week.filter(d => d !== day.value)
+                        }));
+                      }}
+                    />
+                    <Label htmlFor={`day-${day.value}`} className="cursor-pointer">
                       {day.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

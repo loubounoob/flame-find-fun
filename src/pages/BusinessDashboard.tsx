@@ -1032,7 +1032,7 @@ export default function BusinessDashboard() {
                               </Badge>
                             </div>
                             {booking.notes && (
-                              <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border/50">
+                              <div className="mt-3 space-y-1.5">
                                 <div className="space-y-1.5">
                                   {booking.notes.split(' - ').map((note: string, idx: number) => {
                                     // Parse promotion info
