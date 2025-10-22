@@ -26,13 +26,17 @@ interface RecurringPromotionsProps {
   businessUserId: string;
 }
 
+interface DaySchedule {
+  day: number;
+  start_time: string;
+  end_time: string;
+}
+
 interface GroupedPromotion {
   id: string;
   offer_id: string;
   offer_title: string;
-  days_of_week: number[];
-  start_time: string;
-  end_time: string;
+  schedules: DaySchedule[];
   discount_percentage: number;
   is_active: boolean;
   promotion_ids: string[];
@@ -52,11 +56,10 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
   const [recurringPromotions, setRecurringPromotions] = useState<RecurringPromotion[]>([]);
   const [groupedPromotions, setGroupedPromotions] = useState<GroupedPromotion[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [daySchedules, setDaySchedules] = useState<Record<number, { start_time: string; end_time: string }>>({});
   const [newPromotion, setNewPromotion] = useState({
     offer_id: '',
-    days_of_week: [] as number[],
-    start_time: '',
-    end_time: '',
     discount_percentage: null as number | null
   });
 
@@ -107,10 +110,19 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     const grouped: { [key: string]: GroupedPromotion } = {};
 
     promotions.forEach(promo => {
-      const key = `${promo.offer_id}_${promo.start_time}_${promo.end_time}_${promo.discount_percentage}`;
+      const key = `${promo.offer_id}_${promo.discount_percentage}`;
       
       if (grouped[key]) {
-        grouped[key].days_of_week = [...new Set([...grouped[key].days_of_week, ...promo.days_of_week])];
+        // Add schedule for this day
+        promo.days_of_week.forEach(day => {
+          if (!grouped[key].schedules.find(s => s.day === day)) {
+            grouped[key].schedules.push({
+              day,
+              start_time: promo.start_time,
+              end_time: promo.end_time
+            });
+          }
+        });
         grouped[key].promotion_ids.push(promo.id);
         if (!grouped[key].is_active && promo.is_active) {
           grouped[key].is_active = true;
@@ -120,14 +132,21 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
           id: promo.id,
           offer_id: promo.offer_id,
           offer_title: promo.offer_title || 'Offre inconnue',
-          days_of_week: [...promo.days_of_week],
-          start_time: promo.start_time,
-          end_time: promo.end_time,
+          schedules: promo.days_of_week.map(day => ({
+            day,
+            start_time: promo.start_time,
+            end_time: promo.end_time
+          })),
           discount_percentage: promo.discount_percentage,
           is_active: promo.is_active,
           promotion_ids: [promo.id]
         };
       }
+    });
+
+    // Sort schedules by day
+    Object.values(grouped).forEach(group => {
+      group.schedules.sort((a, b) => a.day - b.day);
     });
 
     setGroupedPromotions(Object.values(grouped).sort((a, b) => 
@@ -137,9 +156,7 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
 
   const createRecurringPromotion = async () => {
     if (!newPromotion.offer_id || 
-        newPromotion.days_of_week.length === 0 || 
-        !newPromotion.start_time || 
-        !newPromotion.end_time || 
+        selectedDays.length === 0 || 
         !newPromotion.discount_percentage) {
       toast({
         title: "Erreur",
@@ -149,13 +166,29 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
       return;
     }
 
-    if (newPromotion.start_time >= newPromotion.end_time) {
+    // Vérifier que tous les jours ont des horaires
+    const missingSchedules = selectedDays.filter(day => !daySchedules[day]?.start_time || !daySchedules[day]?.end_time);
+    if (missingSchedules.length > 0) {
       toast({
         title: "Erreur",
-        description: "L'heure de fin doit être après l'heure de début",
+        description: "Veuillez définir les horaires pour tous les jours sélectionnés",
         variant: "destructive",
       });
       return;
+    }
+
+    // Vérifier que toutes les heures de fin sont après les heures de début
+    for (const day of selectedDays) {
+      const schedule = daySchedules[day];
+      if (schedule.start_time >= schedule.end_time) {
+        const dayName = DAYS_OF_WEEK.find(d => d.value === day)?.label;
+        toast({
+          title: "Erreur",
+          description: `L'heure de fin doit être après l'heure de début pour ${dayName}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Validate against offer schedules
@@ -177,11 +210,12 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         return;
       }
 
-      // Validate each selected day
-      for (const day of newPromotion.days_of_week) {
-        const daySchedules = schedules.filter(s => s.days_of_week.includes(day));
+      // Validate each selected day with its specific schedule
+      for (const day of selectedDays) {
+        const daySchedule = daySchedules[day];
+        const offerDaySchedules = schedules.filter(s => s.days_of_week.includes(day));
         
-        if (daySchedules.length === 0) {
+        if (offerDaySchedules.length === 0) {
           const dayName = DAYS_OF_WEEK.find(d => d.value === day)?.label;
           toast({
             title: "Erreur",
@@ -191,14 +225,14 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
           return;
         }
 
-        const isWithinSchedule = daySchedules.some(schedule => {
-          return newPromotion.start_time >= schedule.start_time && 
-                 newPromotion.end_time <= schedule.end_time;
+        const isWithinSchedule = offerDaySchedules.some(schedule => {
+          return daySchedule.start_time >= schedule.start_time && 
+                 daySchedule.end_time <= schedule.end_time;
         });
 
         if (!isWithinSchedule) {
           const dayName = DAYS_OF_WEEK.find(d => d.value === day)?.label;
-          const exampleSchedule = daySchedules[0];
+          const exampleSchedule = offerDaySchedules[0];
           toast({
             title: "Erreur",
             description: `Les horaires de promotion pour ${dayName} doivent être compris dans les horaires d'ouverture (${exampleSchedule.start_time.substring(0, 5)} - ${exampleSchedule.end_time.substring(0, 5)})`,
@@ -218,31 +252,33 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
 
     try {
+      // Create one promotion per day with its specific schedule
+      const promotionsToCreate = selectedDays.map(day => ({
+        business_user_id: businessUserId,
+        offer_id: newPromotion.offer_id,
+        days_of_week: [day],
+        start_time: daySchedules[day].start_time,
+        end_time: daySchedules[day].end_time,
+        discount_percentage: newPromotion.discount_percentage
+      }));
+
       const { error } = await supabase
         .from('recurring_promotions')
-        .insert({
-          business_user_id: businessUserId,
-          offer_id: newPromotion.offer_id,
-          days_of_week: newPromotion.days_of_week,
-          start_time: newPromotion.start_time,
-          end_time: newPromotion.end_time,
-          discount_percentage: newPromotion.discount_percentage
-        });
+        .insert(promotionsToCreate);
 
       if (error) throw error;
 
       toast({
         title: "Succès",
-        description: "Créneau promotionnel créé avec succès",
+        description: `${selectedDays.length} créneau${selectedDays.length > 1 ? 'x' : ''} promotionnel${selectedDays.length > 1 ? 's' : ''} créé${selectedDays.length > 1 ? 's' : ''} avec succès`,
       });
 
       setNewPromotion({
         offer_id: '',
-        days_of_week: [],
-        start_time: '',
-        end_time: '',
         discount_percentage: null
       });
+      setSelectedDays([]);
+      setDaySchedules({});
       setIsCreating(false);
       loadRecurringPromotions();
     } catch (error) {
@@ -305,10 +341,8 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
     }
   };
 
-  const getDaysLabel = (days: number[]) => {
-    return days
-      .map(d => DAYS_OF_WEEK.find(day => day.value === d)?.label)
-      .join(', ');
+  const getDayLabel = (day: number) => {
+    return DAYS_OF_WEEK.find(d => d.value === day)?.label || '';
   };
 
   return (
@@ -361,14 +395,18 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                   <div key={day.value} className="flex items-center space-x-2">
                     <Checkbox
                       id={`day-${day.value}`}
-                      checked={newPromotion.days_of_week.includes(day.value)}
+                      checked={selectedDays.includes(day.value)}
                       onCheckedChange={(checked) => {
-                        setNewPromotion(prev => ({
-                          ...prev,
-                          days_of_week: checked
-                            ? [...prev.days_of_week, day.value]
-                            : prev.days_of_week.filter(d => d !== day.value)
-                        }));
+                        if (checked) {
+                          setSelectedDays(prev => [...prev, day.value]);
+                        } else {
+                          setSelectedDays(prev => prev.filter(d => d !== day.value));
+                          setDaySchedules(prev => {
+                            const newSchedules = { ...prev };
+                            delete newSchedules[day.value];
+                            return newSchedules;
+                          });
+                        }
                       }}
                     />
                     <Label htmlFor={`day-${day.value}`} className="cursor-pointer">
@@ -379,28 +417,44 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="start-time">Heure de début</Label>
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={newPromotion.start_time}
-                  onChange={(e) => setNewPromotion(prev => ({ ...prev, start_time: e.target.value }))}
-                  placeholder="Ex: 14:00"
-                />
+            {selectedDays.length > 0 && (
+              <div className="space-y-4">
+                <Label>Horaires pour chaque jour sélectionné</Label>
+                {selectedDays.sort((a, b) => a - b).map((day) => (
+                  <div key={day} className="space-y-2 p-4 border rounded-lg">
+                    <Label className="font-semibold">{getDayLabel(day)}</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor={`start-time-${day}`}>Heure de début</Label>
+                        <Input
+                          id={`start-time-${day}`}
+                          type="time"
+                          value={daySchedules[day]?.start_time || ''}
+                          onChange={(e) => setDaySchedules(prev => ({
+                            ...prev,
+                            [day]: { ...prev[day], start_time: e.target.value, end_time: prev[day]?.end_time || '' }
+                          }))}
+                          placeholder="Ex: 14:00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`end-time-${day}`}>Heure de fin</Label>
+                        <Input
+                          id={`end-time-${day}`}
+                          type="time"
+                          value={daySchedules[day]?.end_time || ''}
+                          onChange={(e) => setDaySchedules(prev => ({
+                            ...prev,
+                            [day]: { ...prev[day], start_time: prev[day]?.start_time || '', end_time: e.target.value }
+                          }))}
+                          placeholder="Ex: 18:00"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <Label htmlFor="end-time">Heure de fin</Label>
-                <Input
-                  id="end-time"
-                  type="time"
-                  value={newPromotion.end_time}
-                  onChange={(e) => setNewPromotion(prev => ({ ...prev, end_time: e.target.value }))}
-                  placeholder="Ex: 18:00"
-                />
-              </div>
-            </div>
+            )}
 
             <div>
               <Label htmlFor="discount">Pourcentage de réduction (%)</Label>
@@ -451,19 +505,23 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
                         {promotion.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span className="truncate">{getDaysLabel(promotion.days_of_week)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span>{promotion.start_time.substring(0, 5)} - {promotion.end_time.substring(0, 5)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Percent className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span>{promotion.discount_percentage}% réduction</span>
-                      </div>
+                    <div className="space-y-2">
+                      {promotion.schedules.map((schedule) => (
+                        <div key={schedule.day} className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">{getDayLabel(schedule.day)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span>{schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Percent className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span>{promotion.discount_percentage}% réduction</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
