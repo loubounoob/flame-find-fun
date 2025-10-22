@@ -226,8 +226,11 @@ const RecurringPromotions: React.FC<RecurringPromotionsProps> = ({ offers, busin
         }
 
         const isWithinSchedule = offerDaySchedules.some(schedule => {
-          return daySchedule.start_time >= schedule.start_time && 
-                 daySchedule.end_time <= schedule.end_time;
+          // Normalize times to HH:MM format for comparison
+          const scheduleStart = schedule.start_time.substring(0, 5);
+          const scheduleEnd = schedule.end_time.substring(0, 5);
+          return daySchedule.start_time >= scheduleStart && 
+                 daySchedule.end_time <= scheduleEnd;
         });
 
         if (!isWithinSchedule) {
