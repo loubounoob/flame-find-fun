@@ -322,7 +322,7 @@ export default function BusinessDashboard() {
           business_user_id: user.id,
           title: formData.title,
           description: formData.description,
-          category: formData.category === "Autre" ? formData.custom_category : formData.category,
+          category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           image_url: imageUrls[0] || null,
@@ -378,7 +378,7 @@ export default function BusinessDashboard() {
         .update({
           title: formData.title,
           description: formData.description,
-          category: formData.category,
+          category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
           address: formData.address || null,
           image_url: imageUrls[0] || null,
@@ -506,15 +506,18 @@ export default function BusinessDashboard() {
   };
 
   const startEditing = (offer: any) => {
+    const predefinedCategories = ['bowling', 'escape-game', 'laser-game', 'karting', 'paintball', 'cinema', 'restaurant', 'bar', 'spa', 'sport', 'musee', 'concert', 'autre'];
+    const isCustomCategory = offer.category && !predefinedCategories.includes(offer.category);
+    
     setEditingOffer(offer);
     setFormData({
       title: offer.title || "",
       description: offer.description || "",
-      category: offer.category || "",
+      category: isCustomCategory ? "autre" : (offer.category || ""),
       address: offer.address || "",
       max_participants: "",
       image_file: null,
-      custom_category: "",
+      custom_category: isCustomCategory ? offer.category : "",
       selectedImageUrls: offer.image_urls || []
     });
     setShowCreateForm(true);
