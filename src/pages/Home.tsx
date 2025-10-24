@@ -304,7 +304,7 @@ export default function Home() {
                     title={offer.title}
                     business={offer.business_user_id}
                     description={offer.description}
-                    location={offer.location}
+                    location={offer.address || offer.location}
                     category={offer.category}
                     image={offer.image_url || undefined}
                     image_urls={imageUrls.length > 0 ? imageUrls : undefined}
@@ -349,7 +349,7 @@ export default function Home() {
                 id={offer.id}
                 title={offer.title}
                 business_user_id={offer.business_user_id}
-                location={offer.location}
+                location={offer.address || offer.location}
                 category={offer.category}
                 image={offer.image_url || undefined}
                 image_urls={imageUrls.length > 0 ? imageUrls : undefined}

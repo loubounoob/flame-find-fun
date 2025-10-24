@@ -7,6 +7,9 @@ interface FlashOffer {
   description: string;
   category: string;
   location: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   image_url?: string;
   image_urls?: any;
   video_url?: string;
