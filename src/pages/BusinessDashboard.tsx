@@ -59,6 +59,8 @@ export default function BusinessDashboard() {
     description: "",
     category: "",
     address: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     max_participants: "",
     image_file: null,
     custom_category: "",
@@ -325,6 +327,8 @@ export default function BusinessDashboard() {
           category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address,
           address: formData.address || null,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls,
           status: 'active'
@@ -345,6 +349,8 @@ export default function BusinessDashboard() {
         description: "",
         category: "",
         address: "",
+        latitude: null,
+        longitude: null,
         max_participants: "",
         image_file: null,
         custom_category: "",
@@ -381,6 +387,8 @@ export default function BusinessDashboard() {
           category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address,
           address: formData.address || null,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls
         })
@@ -515,6 +523,8 @@ export default function BusinessDashboard() {
       description: offer.description || "",
       category: isCustomCategory ? "autre" : (offer.category || ""),
       address: offer.address || "",
+      latitude: offer.latitude || null,
+      longitude: offer.longitude || null,
       max_participants: "",
       image_file: null,
       custom_category: isCustomCategory ? offer.category : "",
@@ -531,6 +541,8 @@ export default function BusinessDashboard() {
       description: "",
       category: "",
       address: "",
+      latitude: null,
+      longitude: null,
       max_participants: "",
       image_file: null,
       custom_category: "",
@@ -735,6 +747,12 @@ export default function BusinessDashboard() {
                         <AddressAutocomplete
                           value={formData.address}
                           onChange={(value) => setFormData({...formData, address: value})}
+                          onAddressSelect={(address, location) => setFormData({
+                            ...formData, 
+                            address: address,
+                            latitude: location.lat,
+                            longitude: location.lng
+                          })}
                           placeholder="Tapez votre adresse..."
                           className="w-full"
                         />

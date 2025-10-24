@@ -314,6 +314,8 @@ export default function Home() {
                     discountText={`${offer.discount_percentage}% de réduction`}
                     endDate={offer.endDate.toISOString()}
                     flames={flamesCounts[offer.id] || 0}
+                    latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined}
+                    longitude={offer.longitude ? parseFloat(offer.longitude.toString()) : undefined}
                   />
                 );
               })}
