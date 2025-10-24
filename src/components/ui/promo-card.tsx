@@ -294,7 +294,7 @@ export function PromoCard({
         <div className="flex items-center justify-between text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin size={14} />
-            <span className="text-sm line-clamp-1">{location}</span>
+            <span className="text-sm line-clamp-1">{location.replace(/, France$/i, '')}</span>
           </div>
           {latitude && longitude && (
             <span className="text-primary font-medium text-sm">

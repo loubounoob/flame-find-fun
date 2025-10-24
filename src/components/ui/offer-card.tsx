@@ -197,7 +197,7 @@ export function OfferCard({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <MapPin size={12} className="text-primary" />
-                  <span className="line-clamp-1">{location}</span>
+                  <span className="line-clamp-1">{location.replace(/, France$/i, '')}</span>
                 </div>
                 {latitude && longitude && (
                   <span className="text-primary font-medium">
