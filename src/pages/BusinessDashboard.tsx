@@ -323,7 +323,7 @@ export default function BusinessDashboard() {
           title: formData.title,
           description: formData.description,
           category: formData.category === "autre" ? formData.custom_category : formData.category,
-          location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
+          location: formData.address,
           address: formData.address || null,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls,
@@ -379,7 +379,7 @@ export default function BusinessDashboard() {
           title: formData.title,
           description: formData.description,
           category: formData.category === "autre" ? formData.custom_category : formData.category,
-          location: formData.address.split(',')[formData.address.split(',').length - 2]?.trim() || formData.address,
+          location: formData.address,
           address: formData.address || null,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls
