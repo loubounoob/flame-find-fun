@@ -36,6 +36,7 @@ import RecurringPromotions from "@/components/RecurringPromotions";
 import ScheduleManager from "@/components/ScheduleManager";
 import OfferScheduleCard from "@/components/OfferScheduleCard";
 import { OfferMediaUpload } from "@/components/OfferMediaUpload";
+import { geocodeAddress } from "@/utils/geocoding";
 
 export default function BusinessDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -318,6 +319,18 @@ export default function BusinessDashboard() {
         if (uploadedUrl) imageUrls.push(uploadedUrl);
       }
 
+      // Geocode address if coordinates are missing
+      let latitude = formData.latitude;
+      let longitude = formData.longitude;
+      
+      if (formData.address && (!latitude || !longitude)) {
+        const geocoded = await geocodeAddress(formData.address);
+        if (geocoded) {
+          latitude = geocoded.lat;
+          longitude = geocoded.lng;
+        }
+      }
+
       const { data: offerData, error } = await supabase
         .from('offers')
         .insert({
@@ -327,8 +340,8 @@ export default function BusinessDashboard() {
           category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address,
           address: formData.address || null,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          latitude: latitude,
+          longitude: longitude,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls,
           status: 'active'
@@ -379,6 +392,18 @@ export default function BusinessDashboard() {
         if (uploadedUrl) imageUrls.push(uploadedUrl);
       }
 
+      // Geocode address if coordinates are missing
+      let latitude = formData.latitude;
+      let longitude = formData.longitude;
+      
+      if (formData.address && (!latitude || !longitude)) {
+        const geocoded = await geocodeAddress(formData.address);
+        if (geocoded) {
+          latitude = geocoded.lat;
+          longitude = geocoded.lng;
+        }
+      }
+
       const { error } = await supabase
         .from('offers')
         .update({
@@ -387,8 +412,8 @@ export default function BusinessDashboard() {
           category: formData.category === "autre" ? formData.custom_category : formData.category,
           location: formData.address,
           address: formData.address || null,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          latitude: latitude,
+          longitude: longitude,
           image_url: imageUrls[0] || null,
           image_urls: imageUrls
         })
