@@ -279,25 +279,25 @@ export function PromoCard({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-3">
+      {/* Content - More compact on mobile */}
+      <div className="p-3 md:p-4 space-y-2 md:space-y-3">
         <div>
-          <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 className="font-bold text-base md:text-lg line-clamp-1 group-hover:text-primary transition-colors">
             {title}
           </h3>
         </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
           {description}
         </p>
 
         <div className="flex items-center justify-between text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin size={14} />
-            <span className="text-sm line-clamp-1">{location.replace(/, France$/i, '')}</span>
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <MapPin size={12} className="flex-shrink-0" />
+            <span className="text-xs md:text-sm line-clamp-1">{location.replace(/, France$/i, '')}</span>
           </div>
           {latitude && longitude && (
-            <span className="text-primary font-medium text-sm">
+            <span className="text-primary font-medium text-xs md:text-sm flex-shrink-0 ml-2">
               {getDistance(latitude, longitude)}
             </span>
           )}
@@ -306,43 +306,43 @@ export function PromoCard({
         {/* Pricing - Only show if prices are valid */}
         {originalPrice > 0 && promotionalPrice > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-primary">
+            <span className="text-base md:text-lg font-bold text-primary">
               {promotionalPrice.toFixed(2)}€
             </span>
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-xs md:text-sm text-muted-foreground line-through">
               {originalPrice.toFixed(2)}€
             </span>
-            <Badge variant="secondary" className="ml-auto">
+            <Badge variant="secondary" className="ml-auto text-[10px] md:text-xs">
               -{Math.round(((originalPrice - promotionalPrice) / originalPrice) * 100)}%
             </Badge>
           </div>
         )}
 
         {/* Stats with flame counter */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between text-xs md:text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 md:gap-4">
             <div className="flex items-center gap-1">
-              <div className="bg-orange-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
-                <Flame size={12} className="fill-current" />
+              <div className="bg-orange-500 text-white rounded-full px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs font-semibold flex items-center gap-1">
+                <Flame size={10} className="fill-current md:w-3 md:h-3" />
                 {currentFlames}
               </div>
             </div>
             {maxParticipants && (
               <div className="flex items-center gap-1">
-                <Users size={14} />
-                <span>Max {maxParticipants}</span>
+                <Users size={12} className="md:w-3.5 md:h-3.5" />
+                <span className="text-xs">Max {maxParticipants}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
+        {/* Action Buttons - More compact on mobile */}
+        <div className="flex gap-2 pt-1 md:pt-2">
           <Button
             variant={isLiked ? "default" : "outline"}
             size="sm"
             className={cn(
-              "flex-1 transition-all duration-300",
+              "flex-1 transition-all duration-300 h-8 md:h-10",
               "hover:scale-105 active:scale-95",
               isLiked 
                 ? "bg-red-500 hover:bg-red-600 text-white font-medium"
@@ -359,22 +359,22 @@ export function PromoCard({
             })}
             disabled={isExpired || flameLoading}
           >
-            <Flame size={16} className={cn("mr-1", isLiked ? "fill-current" : "", "text-white")} />
-            {isLiked ? "Retirer" : "Flamme"}
+            <Flame size={14} className={cn("mr-1 md:w-4 md:h-4", isLiked ? "fill-current" : "", "text-white")} />
+            <span className="text-xs md:text-sm">{isLiked ? "Retirer" : "Flamme"}</span>
           </Button>
           
           <Button
             variant="default"
             size="sm"
             className={cn(
-              "flex-1 transition-all duration-300",
+              "flex-1 transition-all duration-300 h-8 md:h-10",
               "hover:scale-105 active:scale-95"
             )}
             onClick={handleBookClick}
             disabled={isExpired}
           >
-            <Zap size={16} className="mr-1" />
-            {isExpired ? "Expiré" : "Réserver"}
+            <Zap size={14} className="mr-1 md:w-4 md:h-4" />
+            <span className="text-xs md:text-sm">{isExpired ? "Expiré" : "Réserver"}</span>
           </Button>
         </div>
       </div>
