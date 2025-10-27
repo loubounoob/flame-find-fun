@@ -777,14 +777,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      archive_old_bookings: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      auto_mark_old_notifications_read: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      archive_old_bookings: { Args: never; Returns: undefined }
+      auto_mark_old_notifications_read: { Args: never; Returns: undefined }
       calculate_booking_price: {
         Args: {
           p_booking_date: string
