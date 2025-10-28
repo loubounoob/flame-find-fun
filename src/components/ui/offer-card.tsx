@@ -101,9 +101,9 @@ export function OfferCard({
 
 
   return (
-    <div className="mb-4">
+    <div className="mb-3 md:mb-4">
       <Link to={`/offer/${id}`}>
-        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
+        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-auto md:h-[380px]">
           <div className="relative aspect-[3/2]">
             {images.length > 1 ? (
               <div className="relative">
@@ -181,56 +181,56 @@ export function OfferCard({
             )}
           </div>
           
-          <CardContent className="p-4">
-            <div className="space-y-3">
+          <CardContent className="p-3 md:p-4">
+            <div className="space-y-2 md:space-y-3">
               <div>
-                <h3 className="font-semibold text-base text-foreground line-clamp-1">
+                <h3 className="font-semibold text-sm md:text-base text-foreground line-clamp-1">
                   {title}
                 </h3>
                 {business && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] md:text-xs text-muted-foreground">
                     {business}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <MapPin size={12} className="text-primary" />
+              <div className="flex items-center justify-between text-[11px] md:text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={11} className="text-primary flex-shrink-0" />
                   <span className="line-clamp-1">{location.replace(/, France$/i, '')}</span>
                 </div>
                 {latitude && longitude && (
-                  <span className="text-primary font-medium">
+                  <span className="text-primary font-medium flex-shrink-0 ml-2">
                     {getDistance(latitude, longitude)}
                   </span>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-2">
+            <div className="flex items-center justify-between mt-3 md:mt-4 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 h-8 md:h-10 rounded-lg ${
                   hasGivenFlameToOffer(id) 
                     ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
                     : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
                 }`}
               >
                 <Flame 
-                  size={16} 
+                  size={14} 
                   className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
-                <span className="text-sm">
+                <span className="text-xs md:text-sm">
                   {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
                 </span>
               </Button>
               
               <Button 
                 size="sm" 
-                className="bg-gradient-primary hover:opacity-90 px-4 py-2"
+                className="bg-gradient-primary hover:opacity-90 px-3 py-1.5 md:px-4 md:py-2 h-8 md:h-10"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -241,8 +241,8 @@ export function OfferCard({
                   }
                 }}
               >
-                <Calendar size={14} className="mr-1" />
-                {price ? `${price} - Réserver` : 'Réserver'}
+                <Calendar size={12} className="mr-1" />
+                <span className="text-xs md:text-sm">{price ? `${price} - Réserver` : 'Réserver'}</span>
               </Button>
             </div>
           </CardContent>

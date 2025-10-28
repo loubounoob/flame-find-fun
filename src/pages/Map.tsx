@@ -115,7 +115,7 @@ export default function Map() {
   return (
     <div className="h-screen flex flex-col pb-20">
       {/* Header */}
-      <div className="bg-background border-b pt-safe px-4 pb-4">
+      <div className="bg-background border-b p-4">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold">Carte des activités</h1>
           <div className="flex-1 max-w-md">

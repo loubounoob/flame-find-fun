@@ -224,25 +224,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 pt-safe">
-        <div className="flex items-center justify-between px-4 pb-4">
+      {/* Header with safe area */}
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 safe-area-inset-top">
+        <div className="flex items-center justify-between px-3 py-3 md:px-4 md:py-4">
           <div>
             <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
               Ludigo
             </h1>
           </div>
           
-          <div className="flex items-center gap-3">
-            {/* Search input */}
-            <div className="relative flex-1 max-w-sm ml-3">
-              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <div className="flex items-center gap-2 flex-1">
+            {/* Search input - Responsive */}
+            <div className="relative flex-1 max-w-sm">
+              <Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Rechercher une activité..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-background border border-border/50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-8 pr-3 py-1.5 md:py-2 bg-background border border-border/50 rounded-full text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <SearchSuggestions
                 query={searchQuery}
@@ -251,12 +251,13 @@ export default function Home() {
               />
             </div>
             
-            {/* Real-time notifications counter */}
+            {/* Real-time notifications counter - More compact on mobile */}
             <Link to="/notifications">
-              <Button variant="ghost" size="icon" className="relative hover:scale-110 transition-transform duration-200">
-                <Bell size={20} />
+              <Button variant="ghost" size="icon" className="relative hover:scale-110 transition-transform duration-200 h-8 w-8 md:h-10 md:w-10">
+                <Bell size={18} className="md:hidden" />
+                <Bell size={20} className="hidden md:block" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 bg-destructive text-destructive-foreground text-[10px] md:text-xs rounded-full h-4 w-4 md:h-5 md:w-5 flex items-center justify-center font-medium">
                     {unreadNotifications > 99 ? '99+' : unreadNotifications}
                   </span>
                 )}
@@ -268,20 +269,20 @@ export default function Home() {
 
 
 
-      {/* Flash Offers Section */}
-      <section className="p-4 space-y-4 mt-4">
+      {/* Flash Offers Section - More compact on mobile */}
+      <section className="px-3 py-3 md:p-4 space-y-3 md:space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="text-orange-500 animate-pulse" />
-            <h2 className="text-xl font-bold text-gradient-primary">Offres Flash</h2>
-            <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce">
+            <Zap className="text-orange-500 animate-pulse w-5 h-5" />
+            <h2 className="text-lg md:text-xl font-bold text-gradient-primary">Offres Flash</h2>
+            <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce text-[10px] md:text-xs px-1.5 md:px-2 py-0.5">
               LIMITÉ
             </Badge>
           </div>
         </div>
         
         {/* Promotional Offers */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {flashOffersLoading ? (
             <div className="text-center py-8">
               <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
@@ -330,16 +331,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Regular Offers Section */}
-      <section className="p-4 space-y-4">
+      {/* Regular Offers Section - More compact on mobile */}
+      <section className="px-3 py-3 md:p-4 space-y-3 md:space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Star className="text-primary" />
-            <h2 className="text-xl font-bold text-gradient-primary">Toutes les activités</h2>
+            <Star className="text-primary w-5 h-5" />
+            <h2 className="text-lg md:text-xl font-bold text-gradient-primary">Toutes les activités</h2>
           </div>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {sortedOffers.map((offer) => {
             const imageUrls = Array.isArray(offer.image_urls) 
               ? offer.image_urls.filter((url): url is string => typeof url === 'string')
