@@ -38,7 +38,7 @@ export default function Booking() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 pt-safe px-4 pb-4">
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-poppins font-bold text-gradient-primary">
             Mes Réservations

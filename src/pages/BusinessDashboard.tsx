@@ -593,7 +593,7 @@ export default function BusinessDashboard() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 pt-safe px-4 pb-4">
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-poppins font-bold text-foreground">
@@ -738,19 +738,31 @@ export default function BusinessDashboard() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description (max 300 caractères)</Label>
+                    <Label htmlFor="description">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({...formData, description: e.target.value})}
                       placeholder="Décris ton offre en détail..."
                       rows={3}
-                      maxLength={300}
                     />
-                    <p className="text-xs text-muted-foreground text-right">
-                      {formData.description.length}/300
-                    </p>
                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="max_participants">Participants max</Label>
+                     <Input
+                       id="max_participants"
+                       type="number"
+                       value={formData.max_participants}
+                       onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
+                       placeholder="8"
+                     />
+                   </div>
+
+                    {/* Pricing Configuration */}
+                    <div className="space-y-4">
+                      <Label>Configuration des tarifs</Label>
+                    </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Adresse</Label>
@@ -864,6 +876,7 @@ export default function BusinessDashboard() {
                         !formData.title || 
                         !formData.description || 
                         !formData.category ||
+                        !formData.max_participants ||
                         !formData.address ||
                         formData.selectedImageUrls.length === 0
                       }
