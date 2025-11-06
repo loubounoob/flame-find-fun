@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
@@ -76,8 +76,6 @@ export function PromoCard({
   const [currentFlames, setCurrentFlames] = useState(initialFlames);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isInView, setIsInView] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
   const isLiked = hasGivenFlameToOffer(offerId);
 
   // Prepare media array
@@ -132,30 +130,6 @@ export function PromoCard({
     return () => clearInterval(interval);
   }, [endDate]);
 
-  // Intersection Observer for scroll-based scaling
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Card is considered "in view" when it's at least 60% visible
-        setIsInView(entry.isIntersecting && entry.intersectionRatio > 0.6);
-      },
-      {
-        threshold: [0, 0.2, 0.4, 0.6, 0.8, 1],
-        rootMargin: "-20% 0px -20% 0px" // Center focus area
-      }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
-
   const handleCardClick = () => {
     navigate(`/offer/${offerId}`);
   };
@@ -183,22 +157,16 @@ export function PromoCard({
   };
 
   return (
-    <div
-      ref={cardRef}
+    <Card 
       className={cn(
-        "transition-transform duration-500 ease-out",
-        isInView ? "scale-105" : "scale-100"
+        "group relative overflow-hidden cursor-pointer",
+        "transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
+        "border-2 border-primary/20 bg-gradient-to-br from-background via-background to-primary/5",
+        isExpired && "opacity-60 grayscale",
+        className
       )}
+      onClick={handleCardClick}
     >
-      <Card 
-        className={cn(
-          "group relative overflow-hidden cursor-pointer",
-          "border-2 border-primary/20 bg-gradient-to-br from-background via-background to-primary/5",
-          isExpired && "opacity-60 grayscale",
-          className
-        )}
-        onClick={handleCardClick}
-      >
       {/* Promo Badge */}
       <div className="absolute top-3 left-3 z-10">
         <Badge 
@@ -411,6 +379,5 @@ export function PromoCard({
         </div>
       </div>
     </Card>
-    </div>
   );
 }

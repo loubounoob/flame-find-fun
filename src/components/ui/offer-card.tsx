@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +53,6 @@ export function OfferCard({
   const { getDistance } = useDistance();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isInView, setIsInView] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Filter out videos from home page display - only show images
   const imageUrls = image_urls && image_urls.length > 0 
@@ -77,30 +75,6 @@ export function OfferCard({
       setCurrentSlide(carouselApi.selectedScrollSnap());
     });
   }, [carouselApi]);
-
-  // Intersection Observer for scroll-based scaling
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Card is considered "in view" when it's at least 60% visible
-        setIsInView(entry.isIntersecting && entry.intersectionRatio > 0.6);
-      },
-      {
-        threshold: [0, 0.2, 0.4, 0.6, 0.8, 1],
-        rootMargin: "-20% 0px -20% 0px" // Center focus area
-      }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
 
   const handleFlameClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -127,14 +101,9 @@ export function OfferCard({
 
 
   return (
-    <div 
-      ref={cardRef}
-      className={`mb-4 transition-transform duration-500 ease-out ${
-        isInView ? 'scale-105' : 'scale-100'
-      }`}
-    >
+    <div className="mb-4">
       <Link to={`/offer/${id}`}>
-        <Card className="bg-gradient-card border-border/50 overflow-hidden h-[380px]">
+        <Card className="bg-gradient-card border-border/50 hover-lift overflow-hidden h-[380px]">
           <div className="relative aspect-[3/2]">
             {images.length > 1 ? (
               <div className="relative">
