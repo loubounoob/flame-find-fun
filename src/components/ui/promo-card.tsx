@@ -337,16 +337,16 @@ export function PromoCard({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 pt-2">
           <Button
             variant={isLiked ? "default" : "outline"}
             size="sm"
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full shadow-md transition-all duration-200",
+              "flex-1 flex items-center justify-center gap-1 h-10 transition-all duration-300",
               "hover:scale-105 active:scale-95",
               isLiked 
-                ? "bg-red-500 hover:bg-red-600 text-white font-medium shadow-red-500/30"
-                : "bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-orange-500/30"
+                ? "bg-red-500 hover:bg-red-600 text-white font-medium"
+                : "bg-orange-500 hover:bg-orange-600 text-white font-medium"
             )}
             onClick={(e) => handleButtonClick(e, async () => {
               if (isLiked) {
@@ -359,22 +359,22 @@ export function PromoCard({
             })}
             disabled={isExpired || flameLoading}
           >
-            <Flame size={14} className={cn(isLiked ? "fill-current" : "", "text-white")} />
-            <span className="text-xs font-semibold">{isLiked ? "Retirer" : "Flamme"}</span>
+            <Flame size={16} className={cn(isLiked ? "fill-current" : "", "text-white")} />
+            <span className="text-sm">{isLiked ? "Retirer" : "Flamme"}</span>
           </Button>
           
           <Button
             variant="default"
             size="sm"
             className={cn(
-              "flex-1 h-9 rounded-full shadow-md shadow-primary/30 transition-all duration-200",
+              "flex-1 h-10 transition-all duration-300",
               "hover:scale-105 active:scale-95"
             )}
             onClick={handleBookClick}
             disabled={isExpired}
           >
-            <Zap size={14} className="mr-1" />
-            <span className="text-xs font-semibold">{isExpired ? "Expiré" : "Réserver"}</span>
+            <Zap size={16} className="mr-1" />
+            {isExpired ? "Expiré" : "Réserver"}
           </Button>
         </div>
       </div>
