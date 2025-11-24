@@ -207,13 +207,13 @@ export function OfferCard({
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-2">
+            <div className="flex gap-2 mt-4 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex items-center gap-2 px-4 py-2 h-10 rounded-lg ${
+                className={`flex-1 flex items-center justify-center gap-1 h-10 rounded-lg ${
                   hasGivenFlameToOffer(id) 
                     ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
                     : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
@@ -230,7 +230,7 @@ export function OfferCard({
               
               <Button 
                 size="sm" 
-                className="bg-gradient-primary hover:opacity-90 px-4 py-2"
+                className="flex-1 bg-gradient-primary hover:opacity-90 h-10"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
