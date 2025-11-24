@@ -273,7 +273,7 @@ export default function Home() {
         </div>
         
         {/* Promotional Offers */}
-        <div className="space-y-4">
+        <div className="max-w-2xl mx-auto space-y-4">
           {flashOffersLoading ? <div className="text-center py-8">
               <Zap className="mx-auto text-4xl text-primary animate-pulse mb-2" />
               <p className="text-muted-foreground">Chargement des offres flash...</p>
@@ -299,7 +299,7 @@ export default function Home() {
           </div>
         </div>
         
-        <div className="space-y-4 border-none">
+        <div className="max-w-2xl mx-auto space-y-4 border-none">
           {sortedOffers.map(offer => {
           const imageUrls = Array.isArray(offer.image_urls) ? offer.image_urls.filter((url): url is string => typeof url === 'string') : [];
           return <OfferCard key={offer.id} id={offer.id} title={offer.title} business_user_id={offer.business_user_id} location={offer.address || offer.location} category={offer.category} image={offer.image_url || undefined} image_urls={imageUrls.length > 0 ? imageUrls : undefined} description={offer.description} flames={flamesCounts[offer.id] || 0} latitude={offer.latitude ? parseFloat(offer.latitude.toString()) : undefined} longitude={offer.longitude ? parseFloat(offer.longitude.toString()) : undefined} />;
