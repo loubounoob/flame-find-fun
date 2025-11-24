@@ -28,7 +28,7 @@ const App = () => <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <RouteTracker />
           <Routes>
-          <Route path="/" element={<Index />} className="border-0" />
+          <Route path="/" element={<Index />} />
           <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
            <Route path="/offer/:id" element={<OfferDetail />} />
