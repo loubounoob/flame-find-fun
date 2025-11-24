@@ -342,7 +342,7 @@ export function PromoCard({
             variant={isLiked ? "default" : "outline"}
             size="sm"
             className={cn(
-              "flex-1 transition-all duration-300",
+              "flex-1 flex items-center justify-center gap-1 h-10 transition-all duration-300",
               "hover:scale-105 active:scale-95",
               isLiked 
                 ? "bg-red-500 hover:bg-red-600 text-white font-medium"
@@ -359,15 +359,15 @@ export function PromoCard({
             })}
             disabled={isExpired || flameLoading}
           >
-            <Flame size={16} className={cn("mr-1", isLiked ? "fill-current" : "", "text-white")} />
-            {isLiked ? "Retirer" : "Flamme"}
+            <Flame size={16} className={cn(isLiked ? "fill-current" : "", "text-white")} />
+            <span className="text-sm">{isLiked ? "Retirer" : "Flamme"}</span>
           </Button>
           
           <Button
             variant="default"
             size="sm"
             className={cn(
-              "flex-1 transition-all duration-300",
+              "flex-1 h-10 transition-all duration-300",
               "hover:scale-105 active:scale-95"
             )}
             onClick={handleBookClick}
