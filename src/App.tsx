@@ -18,14 +18,9 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessProfile from "./pages/BusinessProfile";
-
-
 import { RouteTracker } from "./components/RouteTracker";
-
 const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
@@ -33,7 +28,7 @@ const App = () => (
         <BrowserRouter>
           <RouteTracker />
           <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Index />} className="border-0" />
           <Route path="/map" element={<ProtectedRoute><Map /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
            <Route path="/offer/:id" element={<OfferDetail />} />
@@ -53,7 +48,5 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
     </AuthProvider>
-  </QueryClientProvider>
-);
-
+  </QueryClientProvider>;
 export default App;
