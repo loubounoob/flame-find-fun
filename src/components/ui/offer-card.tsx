@@ -207,30 +207,30 @@ export function OfferCard({
               </div>
             </div>
             
-            <div className="flex gap-2 mt-4 pt-2">
+            <div className="flex gap-3 mt-4 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleFlameClick}
                 disabled={!canGiveFlame()}
-                className={`flex-1 flex items-center justify-center gap-1 h-10 rounded-lg ${
+                className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95 ${
                   hasGivenFlameToOffer(id) 
-                    ? 'bg-red-500 hover:bg-red-600 text-white font-medium' 
-                    : 'bg-orange-500 hover:bg-orange-600 text-white font-medium'
+                    ? 'bg-red-500 hover:bg-red-600 text-white font-medium shadow-red-500/30' 
+                    : 'bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-orange-500/30'
                 }`}
               >
                 <Flame 
-                  size={16} 
+                  size={14} 
                   className={hasGivenFlameToOffer(id) ? 'fill-current' : ''} 
                 />
-                <span className="text-sm">
+                <span className="text-xs font-semibold">
                   {hasGivenFlameToOffer(id) ? 'Retirer' : 'Flamme'}
                 </span>
               </Button>
               
               <Button 
                 size="sm" 
-                className="flex-1 bg-gradient-primary hover:opacity-90 h-10"
+                className="flex-1 bg-gradient-primary hover:opacity-90 h-9 rounded-full shadow-md shadow-primary/30 transition-all duration-200 hover:scale-105 active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -241,8 +241,8 @@ export function OfferCard({
                   }
                 }}
               >
-                <Calendar size={14} className="mr-1" />
-                {price ? `${price} - Réserver` : 'Réserver'}
+                <Calendar size={13} className="mr-1" />
+                <span className="text-xs font-semibold">{price ? `${price} - Réserver` : 'Réserver'}</span>
               </Button>
             </div>
           </CardContent>
